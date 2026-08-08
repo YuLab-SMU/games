@@ -7,16 +7,14 @@
 <style>
 /* ============ Reset & Base ============ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&display=swap');
 
 html, body {
   width: 100%; height: 100%; overflow: hidden;
   background: #080818;
-  font-family: 'Nunito', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   user-select: none; -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
-  letter-spacing: 0.01em;
 }
 
 /* ============ Canvas ============ */
@@ -111,6 +109,8 @@ html, body {
   border: 2px solid rgba(255,255,255,0.2);
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 0 30px rgba(108,99,255,0.15);
+  will-change: transform;
+  contain: layout style;
 }
 #joystick-thumb {
   width: 50px; height: 50px;
@@ -119,6 +119,7 @@ html, body {
   border: 2px solid rgba(255,255,255,0.4);
   transition: none;
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  will-change: transform;
 }
 
 /* ============ Overlay / Modal ============ */
@@ -157,7 +158,7 @@ html, body {
 }
 
 .overlay-panel h1 {
-  font-family: 'Press Start 2P', 'Nunito', 'PingFang SC', sans-serif;
+  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 1.8rem; margin-bottom: 6px; line-height: 1.4;
   background: linear-gradient(135deg, #FF6B9D 0%, #FFA94D 30%, #FFD93D 60%, #6C63FF 100%);
   background-size: 300% 300%;
@@ -204,7 +205,7 @@ html, body {
 
 /* Buttons */
 .btn {
-  font-family: 'Nunito', 'PingFang SC', sans-serif;
+  font-family: system-ui, -apple-system, 'PingFang SC', sans-serif;
   font-size: 1rem; font-weight: 800;
   padding: 12px 30px; border-radius: 18px; border: none;
   cursor: pointer; margin: 6px;
@@ -239,7 +240,7 @@ html, body {
 .scene-btn {
   padding: 14px 8px; border-radius: 16px; border: 2px solid rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7);
-  cursor: pointer; font-size: 0.82rem; font-family: 'Nunito', inherit;
+  cursor: pointer; font-size: 0.82rem; font-family: inherit;
   font-weight: 700;
   transition: all 0.25s ease;
   backdrop-filter: blur(4px);
@@ -1564,18 +1565,20 @@ function setupInput() {
   });
   
   // Joystick on left side
+  let joystickCX = 0, joystickCY = 0;
   zone.addEventListener('touchstart', e => {
     for (const t of e.changedTouches) {
-      const rect = zone.getBoundingClientRect();
-      // Only activate in bottom-left area
       if (t.clientY > window.innerHeight * 0.35 && t.clientX < window.innerWidth * 0.45) {
         touchId = t.identifier;
         input.joystick.active = true;
         input.tapTarget = null;
-        base.style.left = (t.clientX - 50) + 'px';
-        base.style.bottom = (window.innerHeight - t.clientY - 50) + 'px';
+        base.style.left = (t.clientX - 55) + 'px';
+        base.style.bottom = (window.innerHeight - t.clientY - 55) + 'px';
         base.style.display = 'flex';
-        updateJoystick(t);
+        // Cache joystick center (avoids getBoundingClientRect on every move)
+        joystickCX = t.clientX;
+        joystickCY = t.clientY;
+        updateJoystickCached(t.clientX, t.clientY, t.clientX, t.clientY);
         e.preventDefault();
         break;
       }
@@ -1585,7 +1588,7 @@ function setupInput() {
   zone.addEventListener('touchmove', e => {
     for (const t of e.changedTouches) {
       if (t.identifier === touchId) {
-        updateJoystick(t);
+        updateJoystickCached(joystickCX, joystickCY, t.clientX, t.clientY);
         e.preventDefault();
         break;
       }
@@ -1605,6 +1608,19 @@ function setupInput() {
     }
   });
   
+  function updateJoystickCached(baseCX, baseCY, tx, ty) {
+    const dx = tx - baseCX;
+    const dy = ty - baseCY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const maxR = 42;
+    const clamped = Math.min(dist, maxR);
+    const nx = dist > 0 ? (dx / dist) * clamped : 0;
+    const ny = dist > 0 ? (dy / dist) * clamped : 0;
+    thumb.style.transform = `translate(${nx}px, ${ny}px)`;
+    input.joystick.dx = dist > 0 ? dx / dist : 0;
+    input.joystick.dy = dist > 0 ? dy / dist : 0;
+  }
+  
   // Mouse support for desktop testing of touch features
   canvas.addEventListener('mousedown', e => {
     if (!state.running || input.joystick.active) return;
@@ -1620,21 +1636,6 @@ function setupInput() {
   canvas.addEventListener('mouseup', () => { input.tapTarget = null; });
   canvas.addEventListener('mouseleave', () => { input.tapTarget = null; });
   
-  function updateJoystick(touch) {
-    const brect = base.getBoundingClientRect();
-    const cx = brect.left + brect.width / 2;
-    const cy = brect.top + brect.height / 2;
-    const dx = touch.clientX - cx;
-    const dy = touch.clientY - cy;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const maxR = 40;
-    const clamped = Math.min(dist, maxR);
-    const nx = dist > 0 ? (dx / dist) * clamped : 0;
-    const ny = dist > 0 ? (dy / dist) * clamped : 0;
-    thumb.style.transform = `translate(${nx}px, ${ny}px)`;
-    input.joystick.dx = dist > 0 ? dx / dist : 0;
-    input.joystick.dy = dist > 0 ? dy / dist : 0;
-  }
 }
 
 // ==================== UPDATE ====================
