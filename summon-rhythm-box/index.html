@@ -620,6 +620,12 @@ const state = {
   dogRescued: 0,      // count of rescued dog heads
   gratitudeMode: false, // 狗头人的报恩 mode active
   gratitudeTimer: 0,  // remaining gratitude seconds
+  // effects
+  shakeAmount: 0,     // screen shake
+  floatTexts: [],     // [{x, y, text, life, color, vy}]
+  eatTimestamps: [],  // recent eat times for glutton mode
+  gluttonMode: false, // 暴食模式
+  gluttonTimer: 0,    // 暴食剩余秒数
   // particles
   particles: [],
   eatParticles: [],
@@ -645,10 +651,16 @@ function createCharacter(x, y, level, isPlayer = false) {
     wanderTimer: 0, wanderAngle: Math.random() * Math.PI * 2,
     bobPhase: Math.random() * Math.PI * 2,
     bobOffset: Math.sin(Math.random() * Math.PI * 2) * 1.5,
+    behavior: isPlayer ? 'none' : ['patrol','wander','skittish','dasher'][Math.floor(Math.random() * 4)],
+    dashCooldown: 0,
   };
 }
 
-function getPlayerSpeed() { return 240 - state.playerLevel * 8; }
+function getPlayerSpeed() {
+  let speed = 240 - state.playerLevel * 8;
+  if (state.gluttonMode) speed *= 1.4; // 暴食加速
+  return speed;
+}
 function getAISpeed(level) { return 80 + level * 12; }
 
 // ==================== SCENE BACKGROUND ====================
@@ -1171,14 +1183,51 @@ function playerEatChar(ai) {
   state.totalEats++;
   state.score += (ai.level + 1) * 10;
   
+  // Screen shake
+  state.shakeAmount = Math.max(state.shakeAmount, 3 + level * 0.8);
+  
+  // Float text
+  state.floatTexts.push({
+    x: ai.x, y: ai.y, text: '+' + ((level + 1) * 10),
+    life: 0.9, maxLife: 0.9, color: LEVELS[level]?.accent || '#fff', vy: -60,
+  });
+  
   // Combo
   state.combo++;
-  state.comboTime = 1.2;
+  state.comboTime = 1.5;
+  if (state.combo >= 3) {
+    state.floatTexts.push({
+      x: ai.x, y: ai.y - 20, text: 'x' + state.combo + ' COMBO!',
+      life: 1.2, maxLife: 1.2, color: '#FFD700', vy: -80,
+    });
+  }
   if (state.combo > state.maxCombo) state.maxCombo = state.combo;
   
-  // SFX
-  if (state.combo >= 3) sfxCombo(state.combo);
-  else sfxEat(state.playerLevel);
+  // Glutton mode (暴食): 3 eats in 3 seconds
+  const now = Date.now();
+  state.eatTimestamps.push(now);
+  while (state.eatTimestamps.length > 0 && now - state.eatTimestamps[0] > 3000) {
+    state.eatTimestamps.shift();
+  }
+  if (state.eatTimestamps.length >= 3 && !state.gluttonMode) {
+    state.gluttonMode = true;
+    state.gluttonTimer = 5;
+    state.floatTexts.push({
+      x: player.x, y: player.y - 40, text: '🍖 暴食！',
+      life: 1.5, maxLife: 1.5, color: '#FF4500', vy: -100,
+    });
+    sfxCombo(5); // extra loud fanfare
+  }
+  
+  // SFX - layered by level
+  if (state.combo >= 3) {
+    sfxCombo(Math.min(state.combo, 5));
+  } else {
+    // Different instrument per level range
+    const inst = level <= 2 ? 'square' : level <= 5 ? 'triangle' : 'sawtooth';
+    playTone(300 + level * 80, 0.1, inst, 0.1);
+    setTimeout(() => playTone(300 + level * 120, 0.08, inst, 0.07), 50);
+  }
   
   // Particles
   spawnEatParticles(ai.x, ai.y, LEVELS[level]?.accent || '#fff');
@@ -1445,55 +1494,70 @@ function checkCollisions() {
 // ==================== AI MOVEMENT ====================
 function updateAI(dt) {
   for (const ai of aiChars) {
-    const levelDiff = ai.level - state.playerLevel;
     const aiSpeed = getAISpeed(ai.level);
+    const b = ai.behavior || 'wander';
     
-    // Wander timer
+    // Wander timer for all behaviors
     ai.wanderTimer -= dt;
+    ai.dashCooldown -= dt;
+    
     if (ai.wanderTimer <= 0) {
       ai.wanderTimer = 0.8 + Math.random() * 2.5;
-      ai.wanderAngle = Math.random() * Math.PI * 2;
       
-      // Modify wander based on level diff vs player
-      if (player && ai.level > state.playerLevel && Math.random() < 0.4) {
-        // Chase player
-        const dx = player.x - ai.x;
-        const dy = player.y - ai.y;
-        ai.wanderAngle = Math.atan2(dy, dx);
-      } else if (player && ai.level < state.playerLevel && Math.random() < 0.5) {
-        // Flee from player
-        const dx = ai.x - player.x;
-        const dy = ai.y - player.y;
-        ai.wanderAngle = Math.atan2(dy, dx);
+      if (b === 'patrol') {
+        // Patrol: keep moving in straight lines, turn at walls
+        ai.wanderTimer = 1.5 + Math.random() * 3;
+      } else if (b === 'dasher' && ai.dashCooldown <= 0 && player) {
+        // Dasher: occasional burst toward/away from player
+        ai.dashCooldown = 3 + Math.random() * 5;
+        if (ai.level > state.playerLevel) {
+          ai.wanderAngle = Math.atan2(player.y - ai.y, player.x - ai.x);
+        } else {
+          ai.wanderAngle = Math.atan2(ai.y - player.y, ai.x - player.x);
+        }
+        ai.wanderTimer = 0.3; // short burst
+      } else if (b === 'skittish' && player) {
+        // Skittish: stay near other AI, flee from player
+        if (ai.level < state.playerLevel) {
+          ai.wanderAngle = Math.atan2(ai.y - player.y, ai.x - player.x);
+        } else {
+          ai.wanderAngle = Math.random() * Math.PI * 2;
+        }
+      } else {
+        // Wander: random direction with chase/flee bias
+        ai.wanderAngle = Math.random() * Math.PI * 2;
+        if (player && ai.level > state.playerLevel && Math.random() < 0.35) {
+          ai.wanderAngle = Math.atan2(player.y - ai.y, player.x - ai.x);
+        } else if (player && ai.level < state.playerLevel && Math.random() < 0.45) {
+          ai.wanderAngle = Math.atan2(ai.y - player.y, ai.x - player.x);
+        }
       }
     }
     
-    // Smooth velocity towards target
-    const targetVx = Math.cos(ai.wanderAngle) * aiSpeed;
-    const targetVy = Math.sin(ai.wanderAngle) * aiSpeed;
+    // Dasher speed boost
+    const speedMult = (b === 'dasher' && ai.dashCooldown > 2.8) ? 2.5 : 1;
+    
+    const targetVx = Math.cos(ai.wanderAngle) * aiSpeed * speedMult;
+    const targetVy = Math.sin(ai.wanderAngle) * aiSpeed * speedMult;
     ai.vx += (targetVx - ai.vx) * dt * 2;
     ai.vy += (targetVy - ai.vy) * dt * 2;
     
-    // Move
     ai.x += ai.vx * dt;
     ai.y += ai.vy * dt;
     
-    // World boundaries with bounce
     const margin = 40;
     if (ai.x < margin) { ai.x = margin; ai.vx = Math.abs(ai.vx); ai.wanderAngle = Math.random() * Math.PI - Math.PI / 2; }
     if (ai.x > state.worldW - margin) { ai.x = state.worldW - margin; ai.vx = -Math.abs(ai.vx); ai.wanderAngle = Math.PI + Math.random() * Math.PI - Math.PI / 2; }
     if (ai.y < margin) { ai.y = margin; ai.vy = Math.abs(ai.vy); ai.wanderAngle = Math.random() * Math.PI; }
     if (ai.y > state.worldH - margin) { ai.y = state.worldH - margin; ai.vy = -Math.abs(ai.vy); ai.wanderAngle = Math.PI + Math.random() * -Math.PI; }
     
-    // Speed limit
     const s = Math.sqrt(ai.vx * ai.vx + ai.vy * ai.vy);
-    if (s > aiSpeed) { ai.vx = (ai.vx / s) * aiSpeed; ai.vy = (ai.vy / s) * aiSpeed; }
+    const maxSpeed = aiSpeed * speedMult;
+    if (s > maxSpeed) { ai.vx = (ai.vx / s) * maxSpeed; ai.vy = (ai.vy / s) * maxSpeed; }
     
-    // Update angle for visuals
     if (Math.abs(ai.vx) > 2 || Math.abs(ai.vy) > 2) {
       ai.angle = Math.atan2(ai.vy, ai.vx);
     }
-    
     ai.bobPhase += dt * 3;
   }
 }
@@ -1699,10 +1763,15 @@ function updateHUD() {
   document.getElementById('score-display').textContent = state.score;
   
   // Show follower count or dog rescue progress
-  if (state.gratitudeMode) {
+  if (state.gluttonMode) {
+    document.getElementById('target-display').textContent = `🍖 ${state.gluttonTimer.toFixed(1)}s`;
+    document.getElementById('target-display').style.color = '#FF4500';
+  } else if (state.gratitudeMode) {
     document.getElementById('target-display').textContent = `⏱ ${Math.ceil(state.gratitudeTimer)}s`;
+    document.getElementById('target-display').style.color = '#FFD700';
   } else {
     document.getElementById('target-display').textContent = `🐕 ${state.dogRescued}/${DOG_RESCUE_TARGET}`;
+    document.getElementById('target-display').style.color = '';
   }
   
   const pct = Math.min(100, state.followers.length * 5);
@@ -1714,8 +1783,16 @@ function updateHUD() {
   
   // Gratitude glow on progress bar
   const progressWrap = document.getElementById('progress-wrap');
-  progressWrap.style.border = state.gratitudeMode ? '2px solid #FFD700' : 'none';
-  progressWrap.style.boxShadow = state.gratitudeMode ? '0 0 15px rgba(255,215,0,0.5)' : 'none';
+  if (state.gluttonMode) {
+    progressWrap.style.border = '2px solid #FF4500';
+    progressWrap.style.boxShadow = '0 0 20px rgba(255,69,0,0.6)';
+  } else if (state.gratitudeMode) {
+    progressWrap.style.border = '2px solid #FFD700';
+    progressWrap.style.boxShadow = '0 0 15px rgba(255,215,0,0.5)';
+  } else {
+    progressWrap.style.border = 'none';
+    progressWrap.style.boxShadow = 'none';
+  }
   
   const comboEl = document.getElementById('hud-combo');
   if (state.combo >= 2 && state.comboTime > 0) {
@@ -1739,6 +1816,23 @@ function update(dt) {
   
   // Invulnerability timer
   if (state.invulnTimer > 0) state.invulnTimer -= dt;
+  
+  // Shake decay
+  if (state.shakeAmount > 0) state.shakeAmount = Math.max(0, state.shakeAmount - dt * 8);
+  
+  // Float texts
+  for (let i = state.floatTexts.length - 1; i >= 0; i--) {
+    const ft = state.floatTexts[i];
+    ft.life -= dt;
+    ft.y += ft.vy * dt;
+    if (ft.life <= 0) state.floatTexts.splice(i, 1);
+  }
+  
+  // Glutton timer
+  if (state.gluttonMode) {
+    state.gluttonTimer -= dt;
+    if (state.gluttonTimer <= 0) state.gluttonMode = false;
+  }
   
   updatePlayer(dt);
   updateAI(dt);
@@ -1781,7 +1875,10 @@ function drawCharacter(cx, cy, char, isPlayer) {
   
   // Player glow
   if (isPlayer) {
-    if (state.gratitudeMode) {
+    if (state.gluttonMode) {
+      ctx.shadowColor = '#FF4500';
+      ctx.shadowBlur = 24 + Math.sin(Date.now() * 0.008) * 8;
+    } else if (state.gratitudeMode) {
       ctx.shadowColor = '#FFD700';
       ctx.shadowBlur = 25 + Math.sin(Date.now() * 0.005) * 10;
     } else {
@@ -1925,9 +2022,11 @@ function render() {
   
   ctx.save();
   
-  // Camera transform
-  const camX = state.camX - w / 2;
-  const camY = state.camY - h / 2;
+  // Camera transform with shake
+  const shakeX = state.shakeAmount * (Math.random() - 0.5) * 2;
+  const shakeY = state.shakeAmount * (Math.random() - 0.5) * 2;
+  const camX = state.camX - w / 2 + shakeX;
+  const camY = state.camY - h / 2 + shakeY;
   ctx.translate(-camX, -camY);
   
   // ===== Scene background =====
@@ -1999,6 +2098,22 @@ function render() {
   ctx.globalAlpha = 1;
   
   ctx.restore();
+  
+  // ===== Float texts (combo, score popups) =====
+  for (const ft of state.floatTexts) {
+    const sx = ft.x - state.camX + w/2;
+    const sy = ft.y - state.camY + h/2;
+    const alpha = ft.life / ft.maxLife;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = 'bold 18px system-ui, "PingFang SC", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = ft.color;
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(ft.text, sx, sy);
+    ctx.restore();
+  }
   
   // ===== Minimap (on top of everything) =====
   drawMinimap();
@@ -2078,6 +2193,11 @@ function startGame() {
   state.dogRescued = 0;
   state.gratitudeMode = false;
   state.gratitudeTimer = 0;
+  state.shakeAmount = 0;
+  state.floatTexts = [];
+  state.eatTimestamps = [];
+  state.gluttonMode = false;
+  state.gluttonTimer = 0;
   state.startTime = Date.now();
   state.eatParticles = [];
   
