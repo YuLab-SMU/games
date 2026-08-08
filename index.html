@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🎯 24点大冒险</title>
+<style>
+/* ============ CSS Variables & Themes ============ */
+:root {
+  --font-main: 'Comic Sans MS', 'KaiTi', 'STKaiti', cursive, sans-serif;
+  --font-size-xl: 2.2rem;
+  --font-size-lg: 1.5rem;
+  --font-size-md: 1.1rem;
+  --font-size-sm: 0.9rem;
+  --card-size: 110px;
+  --card-gap: 16px;
+  --card-radius: 24px;
+  --card-font-size: 2.6rem;
+  --btn-radius: 18px;
+  --btn-font-size: 1.3rem;
+  --op-btn-size: 60px;
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-card: 0 6px 20px rgba(0,0,0,0.12);
+  --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme="fruit"] {
+  --bg: #FFF8F0; --bg2: #FFF0E0;
+  --card-1: #FF6B6B; --card-1-shadow: #ff4444;
+  --card-2: #FFA94D; --card-2-shadow: #ff8c1a;
+  --card-3: #FFD93D; --card-3-shadow: #e6c200;
+  --card-4: #6BCB77; --card-4-shadow: #4aad5c;
+  --accent: #FF6B6B; --accent2: #FFD93D;
+  --btn-bg: #FFE66D; --btn-hover: #FFD93D; --btn-text: #5D4037;
+  --text: #4A3728; --text-light: #8D6E63;
+  --surface: #FFFFFF; --success: #4CAF50; --danger: #E74C3C;
+}
+
+[data-theme="space"] {
+  --bg: #0B0D2E; --bg2: #151845;
+  --card-1: #6C63FF; --card-1-shadow: #4a44cc;
+  --card-2: #00D2FF; --card-2-shadow: #00a8cc;
+  --card-3: #FF6F91; --card-3-shadow: #cc5974;
+  --card-4: #F9F871; --card-4-shadow: #d6d55a;
+  --accent: #6C63FF; --accent2: #00D2FF;
+  --btn-bg: #2A2D6E; --btn-hover: #3D40A0; --btn-text: #E8E8FF;
+  --text: #E8E8FF; --text-light: #9898CC;
+  --surface: #1A1B4A; --success: #00E676; --danger: #FF5252;
+}
+
+[data-theme="forest"] {
+  --bg: #F1F8E9; --bg2: #DCEDC8;
+  --card-1: #81C784; --card-1-shadow: #5da860;
+  --card-2: #AED581; --card-2-shadow: #8bc34a;
+  --card-3: #FFB74D; --card-3-shadow: #ff9800;
+  --card-4: #4FC3F7; --card-4-shadow: #29b6f6;
+  --accent: #66BB6A; --accent2: #FFB74D;
+  --btn-bg: #C8E6C9; --btn-hover: #A5D6A7; --btn-text: #2E3B2E;
+  --text: #2E3B2E; --text-light: #6B7B6B;
+  --surface: #FFFFFF; --success: #43A047; --danger: #EF5350;
+}
+
+/* ============ Base ============ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center;
+  overflow-x: hidden;
+  transition: background var(--transition-normal), color var(--transition-normal);
+  user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============ Header ============ */
+.game-header {
+  width: 100%; max-width: 600px;
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap;
+}
+.title-area { display: flex; align-items: center; gap: 8px; font-size: var(--font-size-lg); font-weight: bold; }
+.mascot { font-size: 2rem; animation: mascot-bounce 1.5s infinite; }
+@keyframes mascot-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+.header-badge {
+  display: flex; align-items: center; gap: 4px;
+  font-size: var(--font-size-sm); font-weight: bold;
+  background: var(--surface); padding: 5px 12px;
+  border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* Combo badge */
+.combo-badge {
+  background: var(--accent2) !important; color: var(--btn-text) !important;
+  display: none;
+  animation: combo-pop 0.3s var(--bounce);
+}
+.combo-badge.active { display: flex; }
+@keyframes combo-pop { 0%{transform:scale(0)} 100%{transform:scale(1)} }
+
+/* Survival timer */
+.survival-timer { display: none; }
+.survival-mode .survival-timer { display: flex; }
+.survival-mode .timer-display { display: none; }
+
+.survival-timer.urgent { animation: timer-pulse 0.5s infinite; }
+.survival-timer.urgent .timer-text { color: var(--danger); }
+@keyframes timer-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+/* ============ Settings Bar ============ */
+.settings-bar {
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+  padding: 4px 20px 8px;
+}
+.setting-btn {
+  font-family: var(--font-main); font-size: var(--font-size-sm);
+  padding: 5px 12px; border-radius: 14px;
+  border: 2px solid var(--accent);
+  background: var(--surface); color: var(--accent);
+  cursor: pointer; transition: all var(--transition-fast); white-space: nowrap;
+}
+.setting-btn:hover, .setting-btn.active { background: var(--accent); color: #fff; }
+.survival-mode .setting-btn.mode-btn { border-color: var(--danger); color: var(--danger); }
+.survival-mode .setting-btn.mode-btn.active { background: var(--danger); color: #fff; }
+
+/* Mode bar */
+.mode-bar { display: flex; gap: 6px; justify-content: center; padding: 0 20px 4px; }
+.mode-btn {
+  font-family: var(--font-main); font-size: var(--font-size-sm);
+  padding: 6px 16px; border-radius: 14px;
+  border: 2px solid var(--accent2);
+  background: var(--surface); color: var(--accent2);
+  cursor: pointer; transition: all var(--transition-fast); font-weight: bold;
+}
+.mode-btn:hover, .mode-btn.active { background: var(--accent2); color: var(--btn-text); }
+.survival-mode .mode-btn.survival { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+/* ============ Game Area ============ */
+.game-container {
+  flex: 1; width: 100%; max-width: 600px;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px; padding: 6px 20px 20px;
+}
+
+/* Cards */
+.cards-area { display: flex; gap: var(--card-gap); justify-content: center; flex-wrap: wrap; perspective: 800px; }
+.game-card {
+  width: var(--card-size); height: var(--card-size);
+  border-radius: var(--card-radius);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; font-weight: bold; color: #fff;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast);
+  position: relative; overflow: hidden;
+}
+.game-card:active { transform: scale(0.92); }
+.game-card.selected {
+  transform: translateY(-8px) scale(1.05); box-shadow: 0 12px 32px rgba(0,0,0,0.22);
+  animation: card-pulse 0.8s infinite;
+}
+@keyframes card-pulse {
+  0%,100%{box-shadow:0 12px 32px rgba(0,0,0,0.22)}
+  50%{box-shadow:0 12px 40px rgba(255,255,255,0.4),0 0 0 6px rgba(255,255,255,0.15)}
+}
+.game-card.merged { animation: card-merge 0.5s var(--bounce); }
+@keyframes card-merge { 0%{transform:scale(1)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
+.game-card .card-number { font-size: var(--card-font-size); line-height: 1; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+.game-card .card-emoji { font-size: 1.6rem; margin-top: 2px; }
+.game-card.card-result {
+  background: var(--accent2) !important; color: var(--btn-text) !important;
+  animation: result-glow 0.6s ease infinite alternate;
+}
+@keyframes result-glow {
+  from{box-shadow:0 0 15px rgba(255,255,255,0.3)} to{box-shadow:0 0 30px rgba(255,255,255,0.6)}
+}
+.game-card.card-0 { background: var(--card-1); box-shadow: 0 6px 20px var(--card-1-shadow); }
+.game-card.card-1 { background: var(--card-2); box-shadow: 0 6px 20px var(--card-2-shadow); }
+.game-card.card-2 { background: var(--card-3); box-shadow: 0 6px 20px var(--card-3-shadow); }
+.game-card.card-3 { background: var(--card-4); box-shadow: 0 6px 20px var(--card-4-shadow); }
+
+/* Operators */
+.operators-area { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.op-btn {
+  width: var(--op-btn-size); height: var(--op-btn-size); border-radius: 50%;
+  border: none; font-family: var(--font-main); font-size: var(--btn-font-size); font-weight: bold;
+  background: var(--btn-bg); color: var(--btn-text); cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all var(--transition-fast);
+  display: flex; align-items: center; justify-content: center;
+}
+.op-btn:hover:not(:disabled) { transform: scale(1.1); background: var(--btn-hover); box-shadow: 0 6px 18px rgba(0,0,0,0.15); }
+.op-btn:active:not(:disabled) { transform: scale(0.9); }
+.op-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.op-btn.op-selected { transform: scale(1.15); box-shadow: 0 0 20px rgba(255,200,0,0.5); border: 3px solid var(--accent); }
+
+/* Step display */
+.step-display {
+  min-height: 36px; font-size: var(--font-size-md); color: var(--text-light);
+  text-align: center; padding: 6px 16px; background: var(--surface);
+  border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  max-width: 100%; word-break: break-all;
+}
+.step-display .highlight { color: var(--accent); font-weight: bold; }
+
+/* Step history */
+.step-history { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; min-height: 28px; }
+.step-tag {
+  font-size: var(--font-size-sm); background: var(--bg2);
+  padding: 2px 10px; border-radius: 10px; color: var(--text-light); opacity: 0.7;
+}
+
+/* Controls */
+.controls-area { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.ctrl-btn {
+  font-family: var(--font-main); font-size: var(--font-size-sm);
+  padding: 8px 16px; border-radius: var(--btn-radius); border: none;
+  cursor: pointer; font-weight: bold;
+  transition: all var(--transition-fast); box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.ctrl-btn:hover { transform: translateY(-2px); }
+.ctrl-btn.undo { background: #E0E0E0; color: #555; }
+.ctrl-btn.hint { background: var(--accent2); color: var(--btn-text); }
+.ctrl-btn.skip { background: var(--accent); color: #fff; }
+.ctrl-btn.new-game { background: var(--success); color: #fff; }
+.ctrl-btn.leaderboard { background: #AB47BC; color: #fff; }
+
+/* ============ Toast ============ */
+.toast {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%) scale(0);
+  background: var(--surface); border-radius: 24px; padding: 24px 32px;
+  text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  z-index: 100; transition: transform 0.3s var(--bounce); pointer-events: none;
+  max-width: 90vw;
+}
+.toast.show { transform: translate(-50%,-50%) scale(1); pointer-events: auto; }
+.toast .toast-emoji { font-size: 3.5rem; display: block; margin-bottom: 8px; }
+.toast .toast-title { font-size: var(--font-size-xl); font-weight: bold; margin-bottom: 4px; }
+.toast .toast-subtitle { font-size: var(--font-size-md); color: var(--text-light); margin-bottom: 4px; }
+.toast .toast-btn {
+  font-family: var(--font-main); font-size: var(--font-size-md);
+  margin-top: 12px; padding: 8px 24px; border-radius: 18px; border: none;
+  background: var(--accent); color: #fff; cursor: pointer; font-weight: bold;
+}
+.toast .toast-btns { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+.toast .toast-btns .toast-btn-secondary {
+  background: var(--btn-bg); color: var(--btn-text);
+}
+
+/* ============ Leaderboard Modal ============ */
+.leaderboard-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); z-index: 300;
+  display: none; align-items: center; justify-content: center;
+}
+.leaderboard-overlay.show { display: flex; }
+.leaderboard-panel {
+  background: var(--surface); border-radius: 24px; padding: 24px;
+  width: 90%; max-width: 420px;
+  text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.leaderboard-panel h2 { font-size: var(--font-size-lg); margin-bottom: 16px; }
+.leaderboard-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.leaderboard-table th, .leaderboard-table td {
+  padding: 8px 6px; text-align: center; font-size: var(--font-size-sm);
+  border-bottom: 1px solid var(--bg2);
+}
+.leaderboard-table th { color: var(--text-light); font-weight: bold; }
+.leaderboard-table .rank-1 { color: #FFD700; font-size: 1.2em; }
+.leaderboard-table .rank-2 { color: #C0C0C0; font-size: 1.1em; }
+.leaderboard-table .rank-3 { color: #CD7F32; }
+.leaderboard-empty { color: var(--text-light); padding: 20px; font-size: var(--font-size-md); }
+.leaderboard-close {
+  font-family: var(--font-main); font-size: var(--font-size-md);
+  padding: 8px 24px; border-radius: 18px; border: none;
+  background: var(--accent); color: #fff; cursor: pointer; font-weight: bold;
+  margin-top: 8px;
+}
+
+/* ============ Confetti ============ */
+#confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 200; }
+
+/* ============ Progress dots ============ */
+.progress-dots { display: flex; gap: 8px; }
+.progress-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--bg2); transition: all var(--transition-normal); }
+.progress-dot.done { background: var(--success); transform: scale(1.2); }
+.progress-dot.current { background: var(--accent); animation: dot-pulse 1s infinite; }
+@keyframes dot-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.5} }
+
+/* ============ Animations ============ */
+@keyframes float-up { 0%{opacity:1;transform:translateY(0)scale(1)} 100%{opacity:0;transform:translateY(-80px)scale(1.6)} }
+.float-text {
+  position: fixed; pointer-events: none; font-weight: bold; font-size: 1.8rem;
+  z-index: 150; animation: float-up 1.2s ease-out forwards;
+}
+.combo-text {
+  color: #FF6B6B; text-shadow: 0 0 20px rgba(255,107,107,0.6), 2px 2px 0 rgba(0,0,0,0.15);
+  font-size: 2.6rem;
+}
+
+.survival-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6); z-index: 200;
+  display: none; align-items: center; justify-content: center; flex-direction: column;
+}
+.survival-overlay.show { display: flex; }
+.survival-overlay .overlay-title { font-size: 2.5rem; color: #fff; font-weight: bold; margin-bottom: 8px; }
+.survival-overlay .overlay-score { font-size: 1.4rem; color: #FFD93D; margin-bottom: 16px; }
+.survival-overlay .overlay-btn {
+  font-family: var(--font-main); font-size: 1.2rem;
+  padding: 10px 28px; border-radius: 20px; border: none;
+  background: var(--accent); color: #fff; cursor: pointer; font-weight: bold;
+  margin: 4px;
+}
+
+/* ============ Responsive ============ */
+@media (max-width: 768px) {
+  :root {
+    --card-size: 95px; --card-gap: 12px; --card-font-size: 2.2rem;
+    --op-btn-size: 52px; --btn-font-size: 1.1rem;
+    --font-size-xl: 1.8rem; --font-size-lg: 1.3rem;
+    --font-size-md: 1rem; --font-size-sm: 0.8rem;
+  }
+}
+@media (max-width: 480px) {
+  :root {
+    --card-size: 78px; --card-gap: 8px; --card-font-size: 1.8rem;
+    --card-radius: 18px; --op-btn-size: 46px; --btn-font-size: 1rem;
+    --btn-radius: 14px;
+    --font-size-xl: 1.5rem; --font-size-lg: 1.1rem;
+    --font-size-md: 0.9rem; --font-size-sm: 0.7rem;
+  }
+  .game-header { padding: 6px 12px; }
+  .game-container { padding: 4px 12px 14px; gap: 12px; }
+  .settings-bar, .mode-bar { gap: 4px; }
+  .setting-btn, .mode-btn { padding: 4px 8px; font-size: 0.65rem; }
+  .ctrl-btn { padding: 6px 10px; font-size: 0.75rem; }
+  .game-card .card-emoji { font-size: 1.1rem; }
+}
+</style>
+</head>
+<body data-theme="fruit">
+
+<!-- Header -->
+<div class="game-header">
+  <div class="title-area">
+    <span class="mascot" id="mascot">🍎</span>
+    <span id="mode-label">24点大冒险</span>
+  </div>
+  <div class="header-badge combo-badge" id="combo-badge">
+    <span>🔥</span><span id="combo-text">x1</span>
+  </div>
+  <div class="header-badge stars-display">
+    <span>⭐</span><span id="star-count">0</span>
+  </div>
+  <div class="header-badge timer-display" id="timer-display">
+    <span>⏱</span><span id="timer">00:00</span>
+  </div>
+  <div class="header-badge survival-timer" id="survival-timer">
+    <span>⏳</span><span class="timer-text" id="survival-time">2:00</span>
+  </div>
+  <div class="header-badge" id="survival-score" style="display:none">
+    <span>🏆</span><span id="survival-score-text">0</span>
+  </div>
+</div>
+
+<!-- Mode toggle -->
+<div class="mode-bar">
+  <button class="mode-btn active" onclick="setGameMode('normal')">📝 普通模式</button>
+  <button class="mode-btn survival" onclick="setGameMode('survival')">⚡ 生存挑战</button>
+</div>
+
+<!-- Settings -->
+<div class="settings-bar">
+  <button class="setting-btn" data-setting="theme" data-value="fruit" onclick="setTheme('fruit')">🍎 水果</button>
+  <button class="setting-btn" data-setting="theme" data-value="space" onclick="setTheme('space')">🚀 太空</button>
+  <button class="setting-btn" data-setting="theme" data-value="forest" onclick="setTheme('forest')">🐸 森林</button>
+  <button class="setting-btn" onclick="showLeaderboard()">🏅 排行</button>
+</div>
+
+<!-- Game Area -->
+<div class="game-container" id="game-container">
+  <div class="progress-dots" id="progress-dots">
+    <div class="progress-dot"></div><div class="progress-dot"></div><div class="progress-dot"></div>
+  </div>
+  <div class="cards-area" id="cards-area"></div>
+  <div class="step-display" id="step-display">选第一个数字～</div>
+  <div class="step-history" id="step-history"></div>
+  <div class="operators-area" id="operators-area">
+    <button class="op-btn" data-op="+" id="op-add">+</button>
+    <button class="op-btn" data-op="-" id="op-sub">−</button>
+    <button class="op-btn" data-op="*" id="op-mul">×</button>
+    <button class="op-btn" data-op="/" id="op-div">÷</button>
+  </div>
+  <div class="controls-area">
+    <button class="ctrl-btn undo" onclick="undo()">↩ 撤销</button>
+    <button class="ctrl-btn hint" onclick="showHint()">💡 提示</button>
+    <button class="ctrl-btn skip" onclick="newProblem()">🔄 换题</button>
+    <button class="ctrl-btn new-game" onclick="resetGame()">🎮 新游戏</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-emoji" id="toast-emoji"></span>
+  <div class="toast-title" id="toast-title"></div>
+  <div class="toast-subtitle" id="toast-subtitle"></div>
+  <div class="toast-btns" id="toast-btns" style="display:none">
+    <button class="toast-btn-secondary" onclick="hideToastSurvivalRestart()">🔄 再来一局</button>
+  </div>
+  <button class="toast-btn" id="toast-continue" onclick="hideToast()">继续！</button>
+</div>
+
+<!-- Leaderboard -->
+<div class="leaderboard-overlay" id="leaderboard-overlay" onclick="hideLeaderboard(event)">
+  <div class="leaderboard-panel" onclick="event.stopPropagation()">
+    <h2>🏅 排行榜 Top 5</h2>
+    <div id="leaderboard-content"></div>
+    <button class="leaderboard-close" onclick="hideLeaderboard()">关闭</button>
+    <button style="font-size:0.7rem;background:none;border:none;color:var(--text-light);cursor:pointer;margin-top:8px;text-decoration:underline"
+            onclick="clearLeaderboard()">清空记录</button>
+  </div>
+</div>
+
+<!-- Survival game over overlay -->
+<div class="survival-overlay" id="survival-overlay">
+  <div class="overlay-title">⏰ 时间到！</div>
+  <div class="overlay-score" id="overlay-score-text"></div>
+  <div>
+    <button class="overlay-btn" onclick="restartSurvival()">🔄 再来一局</button>
+    <button class="overlay-btn" style="background:#888" onclick="setGameMode('normal')">📝 回到普通模式</button>
+  </div>
+</div>
+
+<!-- Confetti -->
+<canvas id="confetti-canvas"></canvas>
+
+<script>
+// ==================== AUDIO ====================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function ensureAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
+function playTone(freq, dur, type = 'sine', vol = 0.15) {
+  ensureAudio();
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur);
+}
+function sfxClick() { playTone(800, 0.08, 'sine', 0.1); }
+function sfxSelect() { playTone(1000, 0.1, 'sine', 0.12); }
+function sfxMerge() { playTone(600, 0.2, 'triangle', 0.12); }
+function sfxSuccess() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 0.2, 'sine', 0.15), i * 120)); }
+function sfxFail() { playTone(200, 0.4, 'sawtooth', 0.08); }
+function sfxStar() { playTone(1200, 0.15, 'sine', 0.18); playTone(1600, 0.1, 'sine', 0.12); }
+function sfxCombo(lvl) {
+  const notes = lvl >= 5 ? [523, 659, 784, 1047, 1319]
+    : lvl >= 3 ? [523, 659, 784] : [523, 659];
+  notes.forEach((f, i) => setTimeout(() => playTone(f, 0.15, 'square', 0.12), i * 80));
+}
+
+// ==================== STATE ====================
+const state = {
+  cards: [], phase: 'pick-first', firstIdx: null, selectedOp: null,
+  history: [], steps: [],
+  stars: 0, totalStars: 0, problemIndex: 0,
+  theme: 'fruit',
+  timerSeconds: 0, timerInterval: null,
+  solved: false,
+  // combo
+  combo: 0, maxCombo: 0,
+  // survival
+  gameMode: 'normal',
+  survivalTimeLeft: 120, survivalInterval: null,
+  survivalScore: 0, survivalQuestions: 0,
+};
+
+// ==================== SOLVER ====================
+function solve24(nums) {
+  if (nums.length === 1) return Math.abs(nums[0] - 24) < 0.0001;
+  for (let i = 0; i < nums.length; i++) {
+    for (let j = i + 1; j < nums.length; j++) {
+      const a = nums[i], b = nums[j];
+      const rest = nums.filter((_, k) => k !== i && k !== j);
+      const ops = [a + b, a - b, b - a, a * b,
+        ...(Math.abs(b) > 0.0001 ? [a / b] : []),
+        ...(Math.abs(a) > 0.0001 ? [b / a] : [])];
+      for (const r of ops) {
+        if (Number.isFinite(r) && solve24([...rest, r])) return true;
+      }
+    }
+  }
+  return false;
+}
+function hasSolution(nums) { return solve24(nums.map(Number)); }
+
+function findHintMove(cards) {
+  const n = cards.length;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const a = cards[i], b = cards[j];
+      const rest = cards.filter((_, k) => k !== i && k !== j);
+      const ops = [
+        { r: a + b, op: '+', a, b }, { r: a - b, op: '-', a, b },
+        { r: b - a, op: '-', a: b, b: a }, { r: a * b, op: '×', a, b },
+      ];
+      if (Math.abs(b) > 0.0001) ops.push({ r: a / b, op: '÷', a, b });
+      if (Math.abs(a) > 0.0001) ops.push({ r: b / a, op: '÷', a: b, b: a });
+      for (const { r, op } of ops) {
+        if (!Number.isFinite(r)) continue;
+        if (Math.abs(r - Math.round(r)) > 0.0001 && rest.length > 0) continue;
+        const nc = [...rest, Math.round(r * 10000) / 10000];
+        if ((nc.length === 1 && Math.abs(nc[0] - 24) < 0.0001) || (nc.length > 1 && solve24(nc))) {
+          return { i, j, op, result: Math.round(r * 10000) / 10000 };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function generateProblem() {
+  let n, t = 0;
+  do { n = Array.from({ length: 4 }, () => Math.floor(Math.random() * 10) + 1); t++; if (t > 1000) { n = [1, 2, 3, 4]; break; }
+  } while (!hasSolution(n));
+  return n;
+}
+
+// ==================== EMOJIS ====================
+const emojiSets = {
+  fruit: ['🍎', '🍊', '🍇', '🍋', '🍑', '🍒', '🥝', '🍌', '🍓', '🥭'],
+  space: ['🌍', '⭐', '🌙', '🪐', '☄️', '🌟', '🌞', '🔭', '🛸', '💫'],
+  forest: ['🐸', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🐮', '🐷', '🐵'],
+};
+function getCardEmoji(num, idx) {
+  return emojiSets[state.theme] ? emojiSets[state.theme][(num - 1 + idx * 3) % 10] : '🎴';
+}
+
+// ==================== RENDER ====================
+function render() {
+  renderCards(); renderProgress(); renderSteps(); updateOpButtons();
+  updateComboBadge(); renderStarCount(); renderSurvivalUI();
+}
+function renderCards() {
+  const area = document.getElementById('cards-area');
+  area.innerHTML = '';
+  state.cards.forEach((num, idx) => {
+    const card = document.createElement('div');
+    card.className = `game-card card-${idx}`;
+    if (state.firstIdx === idx) card.classList.add('selected');
+    if (state.solved && state.cards.length === 1) card.classList.add('card-result');
+    card.innerHTML = `<span class="card-number">${Number.isInteger(num) ? num : num.toFixed(1)}</span><span class="card-emoji">${getCardEmoji(Math.round(num), idx)}</span>`;
+    card.addEventListener('click', () => onCardClick(idx));
+    area.appendChild(card);
+  });
+}
+function renderProgress() {
+  const dots = document.getElementById('progress-dots');
+  const total = state.cards.length - 1, done = state.steps.length;
+  dots.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div'); d.className = 'progress-dot';
+    if (i < done) d.classList.add('done');
+    if (i === done && !state.solved) d.classList.add('current');
+    dots.appendChild(d);
+  }
+}
+function renderSteps() {
+  const d = document.getElementById('step-display');
+  if (state.solved && state.cards.length === 1 && Math.abs(state.cards[0] - 24) < 0.0001) {
+    d.innerHTML = '<span class="highlight">🎉 等于 24！太棒了！</span>';
+  } else if (state.phase === 'pick-first') {
+    d.innerHTML = '选<span class="highlight">第一个</span>数字～';
+  } else if (state.phase === 'pick-operator') {
+    d.innerHTML = `已选 <span class="highlight">${state.cards[state.firstIdx]}</span>，再选一个<span class="highlight">运算符</span>～`;
+  } else if (state.phase === 'pick-second') {
+    const s = { '+': '+', '-': '−', '*': '×', '/': '÷' }[state.selectedOp];
+    d.innerHTML = `<span class="highlight">${state.cards[state.firstIdx]} ${s} ?</span> = ？再选<span class="highlight">第二个</span>数字～`;
+  }
+  document.getElementById('step-history').innerHTML = state.steps.map(s => `<span class="step-tag">${s}</span>`).join('');
+}
+function updateOpButtons() {
+  const on = state.phase === 'pick-operator' || state.phase === 'pick-second';
+  document.querySelectorAll('.op-btn').forEach(b => {
+    b.disabled = !on;
+    b.classList.toggle('op-selected', state.selectedOp && b.dataset.op === state.selectedOp);
+  });
+}
+function renderStarCount() { document.getElementById('star-count').textContent = state.totalStars; }
+function updateComboBadge() {
+  const badge = document.getElementById('combo-badge');
+  if (state.combo >= 2) {
+    badge.classList.add('active');
+    document.getElementById('combo-text').textContent = 'x' + state.combo;
+  } else {
+    badge.classList.remove('active');
+  }
+}
+function renderSurvivalUI() {
+  const isS = state.gameMode === 'survival';
+  document.getElementById('survival-timer').style.display = isS ? 'flex' : 'none';
+  document.getElementById('timer-display').style.display = isS ? 'none' : 'flex';
+  document.getElementById('survival-score').style.display = isS ? 'flex' : 'none';
+  if (isS) document.getElementById('survival-score-text').textContent = state.survivalScore;
+}
+
+// ==================== ACTIONS ====================
+function onCardClick(idx) {
+  if (state.solved) return;
+  sfxClick();
+  if (state.phase === 'pick-first') { state.firstIdx = idx; state.phase = 'pick-operator'; sfxSelect(); }
+  else if (state.phase === 'pick-operator') {
+    if (state.firstIdx === idx) { state.firstIdx = null; state.phase = 'pick-first'; }
+    else { state.firstIdx = idx; sfxSelect(); }
+  } else if (state.phase === 'pick-second') {
+    if (state.firstIdx === idx) return;
+    doCalculate(state.firstIdx, idx, state.selectedOp);
+    return;
+  }
+  render();
+}
+function onOperator(op) {
+  if (state.solved) return;
+  if (state.phase !== 'pick-operator' && state.phase !== 'pick-second') return;
+  sfxClick(); state.selectedOp = op;
+  if (state.phase === 'pick-operator') state.phase = 'pick-second';
+  render();
+}
+function doCalculate(i, j, op) {
+  const a = state.cards[i], b = state.cards[j];
+  let r, s;
+  switch (op) {
+    case '+': r = a + b; s = '+'; break;
+    case '-': r = a - b; s = '−'; break;
+    case '*': r = a * b; s = '×'; break;
+    case '/':
+      if (Math.abs(b) < 0.0001) { showFloatText('不能除以0哦～', '#ff4444'); sfxFail(); return; }
+      r = a / b; s = '÷'; break;
+  }
+  if (r !== Math.round(r)) { showFloatText('中间结果必须是整数哦～', '#ff9800'); sfxFail(); return; }
+
+  state.history.push({ cards: [...state.cards], steps: [...state.steps], phase: 'pick-first', firstIdx: null, selectedOp: null });
+  const hi = Math.max(i, j), lo = Math.min(i, j);
+  state.cards[hi] = r; state.cards.splice(lo, 1);
+  state.steps.push(`${a} ${s} ${b} = ${r}`);
+  state.phase = 'pick-operator'; state.firstIdx = Math.max(i, j) - 1; state.selectedOp = null;
+  sfxMerge();
+
+  if (state.cards.length === 1 && Math.abs(state.cards[0] - 24) < 0.0001) {
+    onWin();
+  } else if (state.cards.length === 1 && Math.abs(state.cards[0] - 24) >= 0.0001) {
+    showFloatText(`结果是 ${Math.round(state.cards[0])}，不是24哦～再试试！`, '#ff4444');
+    sfxFail();
+    undo();
+  }
+  render();
+}
+
+function onWin() {
+  state.solved = true;
+  stopAllTimers();
+
+  // Combo
+  state.combo++;
+  if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+  const multiplier = state.combo >= 5 ? 5 : state.combo; // cap at 5x
+  const baseStars = state.steps.length === 3 ? 3 : 2;
+  state.stars = baseStars * multiplier;
+  state.totalStars += state.stars;
+
+  // Combo SFX & text
+  if (state.combo >= 2) {
+    sfxCombo(state.combo);
+    showComboText(state.combo);
+  } else {
+    sfxStar();
+  }
+
+  // Survival scoring
+  if (state.gameMode === 'survival') {
+    state.survivalQuestions++;
+    state.survivalScore += state.stars;
+    // Bonus for speed: <10s = +2, <30s = +1
+    if (state.survivalTimeLeft > 110) { state.survivalScore += 2; showFloatText('⚡闪电! +2', '#FFD93D'); }
+    else if (state.survivalTimeLeft > 90) { state.survivalScore += 1; showFloatText('👍快速! +1', '#4FC3F7'); }
+    // Reset survival timer
+    state.survivalTimeLeft = 120;
+    updateSurvivalDisplay();
+  }
+
+  // Win toast
+  const comboStr = state.combo >= 2 ? ` 🔥${state.combo}连击` : '';
+  showToast('🎉', '太棒了！', `获得 ${state.stars} 颗星星！${comboStr}`);
+  spawnConfetti(); animateResultCard();
+
+  // Save leaderboard
+  saveToLeaderboard();
+}
+
+function showComboText(lvl) {
+  const el = document.createElement('div');
+  el.className = 'float-text combo-text';
+  el.textContent = `COMBO ×${lvl}!`;
+  el.style.left = '50%'; el.style.top = '30%';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+// ==================== UNDO / HINT / SKIP / RESET ====================
+function undo() {
+  if (state.history.length === 0 || state.solved) return;
+  const p = state.history.pop();
+  state.cards = p.cards; state.steps = p.steps;
+  state.phase = p.phase; state.firstIdx = p.firstIdx; state.selectedOp = p.selectedOp;
+  sfxClick(); render();
+}
+function showHint() {
+  if (state.solved) return;
+  const h = findHintMove(state.cards);
+  if (!h) { showFloatText('这题有点难，换个题试试？', '#ff9800'); return; }
+  state.firstIdx = h.i; state.selectedOp = h.op; state.phase = 'pick-second';
+  render(); sfxSelect();
+  const m = { '+': 'op-add', '-': 'op-sub', '×': 'op-mul', '÷': 'op-div' };
+  const b = document.getElementById(m[h.op]);
+  if (b) { b.style.transform = 'scale(1.3)'; b.style.boxShadow = '0 0 24px rgba(255,200,0,0.6)'; setTimeout(() => { b.style.transform = ''; b.style.boxShadow = ''; }, 800); }
+}
+function newProblem() {
+  state.cards = generateProblem(); state.history = []; state.steps = [];
+  state.solved = false; state.stars = 0; state.problemIndex++;
+  state.combo = 0; // reset combo on skip
+  resetPhase();
+  if (state.gameMode === 'survival') {
+    state.survivalTimeLeft = Math.max(0, state.survivalTimeLeft - 5); // 5s penalty
+    updateSurvivalDisplay();
+    if (state.survivalTimeLeft <= 0) endSurvival();
+  }
+  resetTimer();
+  render();
+  document.getElementById('step-display').innerHTML = '新题目来啦～加油！';
+}
+function resetGame() {
+  state.cards = generateProblem(); state.history = []; state.steps = [];
+  state.solved = false; state.stars = 0; state.totalStars = 0; state.problemIndex = 0;
+  state.combo = 0; state.maxCombo = 0;
+  if (state.gameMode === 'survival') {
+    state.survivalScore = 0; state.survivalQuestions = 0; state.survivalTimeLeft = 120;
+    updateSurvivalDisplay(); startSurvivalTimer();
+  }
+  resetPhase(); resetTimer(); render();
+}
+function resetPhase() { state.phase = 'pick-first'; state.firstIdx = null; state.selectedOp = null; }
+
+// ==================== GAME MODE ====================
+function setGameMode(mode) {
+  if (mode === state.gameMode) return;
+  state.gameMode = mode;
+  document.body.classList.toggle('survival-mode', mode === 'survival');
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', false));
+  if (mode === 'normal') {
+    document.querySelector('.mode-btn:not(.survival)').classList.add('active');
+    document.getElementById('mode-label').textContent = '24点大冒险';
+    stopSurvivalTimer(); resetTimer();
+  } else {
+    document.querySelector('.mode-btn.survival').classList.add('active');
+    document.getElementById('mode-label').textContent = '⚡ 生存挑战';
+    stopAllTimers();
+    state.survivalTimeLeft = 120; state.survivalScore = 0; state.survivalQuestions = 0;
+    updateSurvivalDisplay(); startSurvivalTimer();
+  }
+  resetGame();
+  sfxClick();
+}
+
+// ==================== SURVIVAL TIMER ====================
+function startSurvivalTimer() {
+  stopSurvivalTimer();
+  state.survivalInterval = setInterval(() => {
+    state.survivalTimeLeft--;
+    updateSurvivalDisplay();
+    if (state.survivalTimeLeft <= 0) endSurvival();
+  }, 1000);
+}
+function stopSurvivalTimer() {
+  if (state.survivalInterval) { clearInterval(state.survivalInterval); state.survivalInterval = null; }
+}
+function updateSurvivalDisplay() {
+  const m = Math.floor(state.survivalTimeLeft / 60);
+  const s = state.survivalTimeLeft % 60;
+  document.getElementById('survival-time').textContent = `${m}:${String(s).padStart(2, '0')}`;
+  const el = document.getElementById('survival-timer');
+  el.classList.toggle('urgent', state.survivalTimeLeft <= 15);
+  document.getElementById('survival-score-text').textContent = state.survivalScore;
+}
+function endSurvival() {
+  stopSurvivalTimer(); stopTimer();
+  state.solved = true;
+  saveToLeaderboard();
+  const overlay = document.getElementById('survival-overlay');
+  document.getElementById('overlay-score-text').textContent =
+    `答对 ${state.survivalQuestions} 题 · 共获得 ${state.survivalScore} 颗星星 · 最高 ${state.maxCombo} 连击`;
+  overlay.classList.add('show');
+}
+function restartSurvival() {
+  document.getElementById('survival-overlay').classList.remove('show');
+  state.survivalTimeLeft = 120; state.survivalScore = 0; state.survivalQuestions = 0;
+  state.combo = 0; state.maxCombo = 0;
+  updateSurvivalDisplay(); startSurvivalTimer();
+  resetGame();
+}
+function hideToastSurvivalRestart() {
+  document.getElementById('toast').classList.remove('show');
+  restartSurvival();
+}
+
+// ==================== NORMAL TIMER ====================
+function startTimer() {
+  if (state.gameMode === 'survival') return;
+  stopTimer();
+  state.timerSeconds = 0; updateTimerDisplay();
+  state.timerInterval = setInterval(() => { state.timerSeconds++; updateTimerDisplay(); }, 1000);
+}
+function stopTimer() { if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; } }
+function stopAllTimers() { stopTimer(); stopSurvivalTimer(); }
+function resetTimer() { stopTimer(); startTimer(); }
+function updateTimerDisplay() {
+  const m = Math.floor(state.timerSeconds / 60), s = state.timerSeconds % 60;
+  document.getElementById('timer').textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+// ==================== THEME ====================
+function setTheme(t) {
+  state.theme = t; document.body.setAttribute('data-theme', t);
+  document.getElementById('mascot').textContent = emojiSets[t][0];
+  document.querySelectorAll('[data-setting="theme"]').forEach(b => b.classList.toggle('active', b.dataset.value === t));
+  render(); sfxClick();
+}
+
+// ==================== LEADERBOARD ====================
+const LB_KEY = 'make24_leaderboard_v2';
+function loadLeaderboard() {
+  try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch { return []; }
+}
+function saveToLeaderboard() {
+  const entry = {
+    stars: state.gameMode === 'survival' ? state.survivalScore : state.totalStars,
+    mode: state.gameMode,
+    combo: state.maxCombo,
+    questions: state.survivalQuestions,
+    time: state.timerSeconds,
+    date: new Date().toLocaleDateString('zh-CN'),
+  };
+  let lb = loadLeaderboard();
+  lb.push(entry);
+  lb.sort((a, b) => b.stars - a.stars);
+  lb = lb.slice(0, 5);
+  try { localStorage.setItem(LB_KEY, JSON.stringify(lb)); } catch {}
+}
+function showLeaderboard() {
+  const lb = loadLeaderboard();
+  const c = document.getElementById('leaderboard-content');
+  if (lb.length === 0) {
+    c.innerHTML = '<div class="leaderboard-empty">还没有记录哦～快去答题吧！</div>';
+  } else {
+    const ranks = ['🥇', '🥈', '🥉', '4', '5'];
+    c.innerHTML = `<table class="leaderboard-table"><thead><tr><th>#</th><th>星星</th><th>连击</th><th>模式</th><th>日期</th></tr></thead><tbody>${
+      lb.map((e, i) => `<tr><td class="rank-${i+1}">${ranks[i]}</td><td>⭐${e.stars}</td><td>🔥${e.combo||0}</td><td>${e.mode==='survival'?'⚡生存':'📝普通'}</td><td>${e.date}</td></tr>`).join('')
+    }</tbody></table>`;
+  }
+  document.getElementById('leaderboard-overlay').classList.add('show');
+}
+function hideLeaderboard(e) {
+  if (e && e.target !== document.getElementById('leaderboard-overlay')) return;
+  document.getElementById('leaderboard-overlay').classList.remove('show');
+}
+function clearLeaderboard() {
+  if (confirm('确定清空排行榜记录？')) {
+    try { localStorage.removeItem(LB_KEY); } catch {}
+    showLeaderboard();
+  }
+}
+
+// ==================== TOAST ====================
+function showToast(emoji, title, subtitle) {
+  document.getElementById('toast-emoji').textContent = emoji;
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-subtitle').textContent = subtitle;
+  document.getElementById('toast-btns').style.display = 'none';
+  document.getElementById('toast-continue').style.display = '';
+  document.getElementById('toast').classList.add('show');
+}
+function hideToast() {
+  document.getElementById('toast').classList.remove('show');
+  newProblem();
+}
+
+// ==================== FLOAT TEXT ====================
+function showFloatText(text, color) {
+  const el = document.createElement('div'); el.className = 'float-text';
+  el.textContent = text; el.style.color = color;
+  el.style.left = '50%'; el.style.top = '40%';
+  document.body.appendChild(el); setTimeout(() => el.remove(), 1200);
+}
+
+// ==================== CONFETTI ====================
+const canvas = document.getElementById('confetti-canvas'), ctx = canvas.getContext('2d');
+let confettiParticles = [], confettiRunning = false;
+
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+function spawnConfetti() {
+  resizeCanvas(); confettiParticles = [];
+  const colors = ['#FF6B6B', '#FFD93D', '#6BCB77', '#4FC3F7', '#FFA94D', '#AB47BC', '#FF7043', '#26C6DA'];
+  for (let i = 0; i < 120; i++) {
+    confettiParticles.push({
+      x: Math.random() * canvas.width, y: Math.random() * -canvas.height,
+      w: Math.random() * 10 + 5, h: Math.random() * 6 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 3, vy: Math.random() * 3 + 2,
+      rotation: Math.random() * 360, rotSpeed: (Math.random() - 0.5) * 10,
+    });
+  }
+  if (!confettiRunning) { confettiRunning = true; animateConfetti(); }
+}
+function animateConfetti() {
+  if (!confettiRunning) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let alive = false;
+  for (const p of confettiParticles) {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.rotation += p.rotSpeed;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rotation * Math.PI / 180);
+    ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); ctx.restore();
+    if (p.y < canvas.height + 20) alive = true;
+  }
+  if (alive) requestAnimationFrame(animateConfetti); else confettiRunning = false;
+}
+
+function animateResultCard() {
+  setTimeout(() => document.querySelectorAll('.game-card').forEach(c => c.classList.add('merged')), 100);
+}
+
+// ==================== INIT ====================
+function init() {
+  resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+  document.querySelectorAll('.op-btn').forEach(b => b.addEventListener('click', () => onOperator(b.dataset.op)));
+  document.querySelector('[data-setting="theme"][data-value="fruit"]').classList.add('active');
+  state.cards = generateProblem(); startTimer(); render();
+}
+init();
+</script>
+</body>
+</html>
