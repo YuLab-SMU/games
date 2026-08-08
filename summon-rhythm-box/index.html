@@ -7,12 +7,16 @@
 <style>
 /* ============ Reset & Base ============ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&display=swap');
+
 html, body {
   width: 100%; height: 100%; overflow: hidden;
-  background: #0a0a1a; font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  background: #080818;
+  font-family: 'Nunito', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   user-select: none; -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
+  letter-spacing: 0.01em;
 }
 
 /* ============ Canvas ============ */
@@ -21,55 +25,76 @@ html, body {
   display: block;
 }
 
-/* ============ HUD (HTML Overlay) ============ */
+/* ============ HUD ============ */
 #hud {
-  position: fixed; top: 0; left: 0; width: 100%;
+  position: fixed; top: 0; left: 0; right: 0;
   pointer-events: none; z-index: 10;
-  padding: 12px 16px;
+  padding: 14px 18px;
   display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
 }
 
 .hud-item {
-  background: rgba(10, 10, 26, 0.75);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 14px;
-  padding: 8px 14px;
-  color: #e0e0f0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  display: flex; align-items: center; gap: 6px;
+  background: rgba(20, 20, 50, 0.55);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 16px;
+  padding: 10px 16px;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
   white-space: nowrap;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
 }
-
-.hud-level { font-size: 1rem; }
-.hud-label { font-size: 0.7rem; color: #9090b0; }
+.hud-level { 
+  font-size: 1.05rem; 
+  background: linear-gradient(135deg, #FFD93D, #FF9F43);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+}
+.hud-label { font-size: 0.65rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Progress bar */
 #progress-wrap {
-  position: fixed; bottom: 80px; left: 50%;
+  position: fixed; bottom: 85px; left: 50%;
   transform: translateX(-50%); z-index: 10; pointer-events: none;
-  width: min(320px, 70vw);
-  background: rgba(10,10,26,0.7);
-  border-radius: 10px;
-  padding: 6px 12px;
-  display: flex; align-items: center; gap: 8px;
+  width: min(340px, 72vw);
+  background: rgba(20, 20, 50, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 8px 16px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
 }
 #progress-bar {
-  flex: 1; height: 8px; border-radius: 4px;
-  background: rgba(255,255,255,0.1);
+  flex: 1; height: 10px; border-radius: 5px;
+  background: rgba(255,255,255,0.08);
   overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
 }
 #progress-fill {
-  height: 100%; border-radius: 4px;
-  background: linear-gradient(90deg, #ff6b9d, #ffa94d);
-  transition: width 0.3s ease;
+  height: 100%; border-radius: 5px;
+  background: linear-gradient(90deg, #FF6B9D, #FFA94D, #FFD93D);
+  background-size: 200% 100%;
+  animation: progressShimmer 2s linear infinite;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   width: 0%;
+  box-shadow: 0 0 12px rgba(255,169,77,0.5);
+}
+@keyframes progressShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 #progress-text {
-  font-size: 0.7rem; color: #b0b0d0;
-  white-space: nowrap; min-width: 40px; text-align: right;
+  font-size: 0.7rem; color: rgba(255,255,255,0.7);
+  white-space: nowrap; min-width: 36px; text-align: right;
+  font-weight: 700;
 }
 
 /* ============ Virtual Joystick ============ */
@@ -80,123 +105,223 @@ html, body {
 }
 #joystick-base {
   position: absolute; bottom: 60px; left: 60px;
-  width: 100px; height: 100px;
+  width: 110px; height: 110px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  border: 2px solid rgba(255,255,255,0.15);
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%);
+  border: 2px solid rgba(255,255,255,0.2);
   display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 30px rgba(108,99,255,0.15);
 }
 #joystick-thumb {
-  width: 46px; height: 46px;
+  width: 50px; height: 50px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.25);
-  border: 2px solid rgba(255,255,255,0.35);
+  background: radial-gradient(circle at 40% 40%, rgba(255,255,255,0.5), rgba(255,255,255,0.2));
+  border: 2px solid rgba(255,255,255,0.4);
   transition: none;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
 /* ============ Overlay / Modal ============ */
 .overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.7); z-index: 100;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
   display: none; align-items: center; justify-content: center;
   flex-direction: column;
+  animation: fadeIn 0.2s ease;
 }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .overlay.show { display: flex; }
 
 .overlay-panel {
-  background: rgba(20, 20, 45, 0.95);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 24px;
-  padding: 32px 28px;
+  background: linear-gradient(145deg, rgba(35, 30, 70, 0.95), rgba(25, 20, 55, 0.98));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 28px;
+  padding: 36px 30px;
   text-align: center;
-  max-width: 380px; width: 90%;
-  color: #e0e0f0;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  max-width: 400px; width: 92%;
+  color: #f0e8ff;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.05),
+    0 25px 70px rgba(0,0,0,0.5),
+    0 0 80px rgba(108,99,255,0.08);
+  animation: panelSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes panelSlideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .overlay-panel h1 {
-  font-size: 1.8rem; margin-bottom: 4px;
-  background: linear-gradient(135deg, #ff6b9d, #ffa94d, #ffd93d);
+  font-family: 'Press Start 2P', 'Nunito', 'PingFang SC', sans-serif;
+  font-size: 1.8rem; margin-bottom: 6px; line-height: 1.4;
+  background: linear-gradient(135deg, #FF6B9D 0%, #FFA94D 30%, #FFD93D 60%, #6C63FF 100%);
+  background-size: 300% 300%;
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: titleShimmer 3s ease infinite;
+  text-shadow: none;
+  letter-spacing: 0.04em;
 }
-.overlay-panel h2 { font-size: 1.4rem; margin-bottom: 8px; color: #ffd93d; }
-.overlay-panel .big-emoji { font-size: 4rem; display: block; margin: 12px 0; }
-.overlay-panel .tagline { font-size: 1.1rem; color: #b0b0d0; margin-bottom: 16px; }
-.overlay-panel .stat-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; color: #9090b0; border-bottom: 1px solid rgba(255,255,255,0.06); }
-.overlay-panel .stat-row span:last-child { color: #e0e0f0; font-weight: 600; }
+@keyframes titleShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.overlay-panel h2 {
+  font-size: 1.5rem; margin-bottom: 8px;
+  background: linear-gradient(135deg, #FFD93D, #FF9F43);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+}
+.overlay-panel .big-emoji { 
+  font-size: 5rem; display: block; margin: 16px 0;
+  filter: drop-shadow(0 8px 20px rgba(255,200,0,0.4));
+  animation: emojiFloat 2s ease-in-out infinite;
+}
+@keyframes emojiFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.overlay-panel .tagline { 
+  font-size: 1.05rem; color: rgba(240,232,255,0.65); margin-bottom: 18px;
+  font-weight: 600;
+}
+.overlay-panel .stat-row { 
+  display: flex; justify-content: space-between; 
+  padding: 8px 4px; font-size: 0.9rem; 
+  color: rgba(240,232,255,0.6); 
+  border-bottom: 1px solid rgba(255,255,255,0.06); 
+}
+.overlay-panel .stat-row span:last-child { 
+  color: #fff; font-weight: 800;
+  text-shadow: 0 0 8px rgba(255,255,255,0.2);
+}
 
+/* Buttons */
 .btn {
-  font-family: inherit; font-size: 1rem; font-weight: 700;
-  padding: 10px 28px; border-radius: 16px; border: none;
+  font-family: 'Nunito', 'PingFang SC', sans-serif;
+  font-size: 1rem; font-weight: 800;
+  padding: 12px 30px; border-radius: 18px; border: none;
   cursor: pointer; margin: 6px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   color: #fff;
+  position: relative; overflow: hidden;
+  letter-spacing: 0.02em;
 }
-.btn:active { transform: scale(0.95); }
-.btn-primary { background: linear-gradient(135deg, #6C63FF, #00D2FF); box-shadow: 0 4px 15px rgba(108,99,255,0.4); }
-.btn-gold { background: linear-gradient(135deg, #FF6B6B, #FFD93D); color: #2a1a00; }
-.btn-secondary { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: scale(0.96) translateY(0); }
+.btn-primary { 
+  background: linear-gradient(135deg, #6C63FF, #4834D4);
+  box-shadow: 0 6px 24px rgba(108,99,255,0.45), 0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+.btn-primary:hover { box-shadow: 0 8px 30px rgba(108,99,255,0.55), 0 0 0 1px rgba(255,255,255,0.2) inset; }
+.btn-gold { 
+  background: linear-gradient(135deg, #FF6B6B, #FFD93D); 
+  color: #1a0a00;
+  box-shadow: 0 6px 24px rgba(255,107,107,0.4);
+}
+.btn-secondary { 
+  background: rgba(255,255,255,0.08); 
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.3); }
 
 /* Scene selector */
-.scene-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
-.scene-btn {
-  padding: 10px 6px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.05); color: #c0c0d0;
-  cursor: pointer; font-size: 0.8rem; font-family: inherit;
-  transition: all 0.2s ease;
+.scene-grid { 
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; 
 }
-.scene-btn:hover, .scene-btn.active { border-color: #6C63FF; background: rgba(108,99,255,0.15); color: #fff; }
+.scene-btn {
+  padding: 14px 8px; border-radius: 16px; border: 2px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7);
+  cursor: pointer; font-size: 0.82rem; font-family: 'Nunito', inherit;
+  font-weight: 700;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.scene-btn:hover { 
+  transform: translateY(-3px); 
+  border-color: rgba(255,255,255,0.3); 
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+.scene-btn.active { 
+  border-color: #6C63FF !important; 
+  background: rgba(108,99,255,0.2) !important; 
+  color: #fff !important;
+  box-shadow: 0 0 25px rgba(108,99,255,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  transform: translateY(-2px);
+}
 
 /* Leaderboard */
-.lb-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85rem; }
-.lb-table th { color: #9090b0; padding: 6px 8px; border-bottom: 2px solid rgba(255,255,255,0.1); }
-.lb-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #d0d0e0; }
-.lb-table .rank-gold { color: #FFD700; }
-.lb-table .rank-silver { color: #C0C0C0; }
-.lb-table .rank-bronze { color: #CD7F32; }
-.lb-empty { color: #707090; padding: 20px; font-size: 0.9rem; }
+.lb-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88rem; }
+.lb-table th { 
+  color: rgba(255,255,255,0.5); padding: 8px; 
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.lb-table td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); color: #e8e0f0; }
+.lb-table tr:hover td { background: rgba(255,255,255,0.03); }
+.lb-table .rank-gold { color: #FFD700; font-weight: 900; }
+.lb-table .rank-silver { color: #C0C0C0; font-weight: 800; }
+.lb-table .rank-bronze { color: #CD7F32; font-weight: 700; }
+.lb-empty { color: rgba(255,255,255,0.4); padding: 24px; font-size: 0.9rem; }
 
-/* Toast */
+/* Toast - arcade bounce */
 #toast {
-  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+  position: fixed; top: 40%; left: 50%; transform: translate(-50%,-50%) scale(0);
   z-index: 200; pointer-events: none;
-  font-size: 1.6rem; font-weight: 900; color: #fff;
-  text-shadow: 0 0 20px rgba(255,200,0,0.8);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-size: 2rem; font-weight: 900;
+  background: linear-gradient(135deg, rgba(30,20,60,0.9), rgba(20,15,45,0.95));
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.2);
+  text-shadow: 0 0 20px rgba(255,200,0,0.6);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 40px rgba(108,99,255,0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
 }
 #toast.show { transform: translate(-50%,-50%) scale(1); }
 
-/* ============ Responsive ============ */
+/* Responsive */
 @media (max-width: 900px) {
-  #hud { padding: 6px 8px; }
-  .hud-item { padding: 5px 8px; font-size: 0.75rem; border-radius: 10px; }
-  .overlay-panel { padding: 20px 16px; font-size: 0.85rem; max-width: 340px; }
-  .overlay-panel h1 { font-size: 1.5rem; }
-  .scene-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .scene-btn { padding: 10px 4px; font-size: 0.75rem; }
-  .btn { padding: 8px 20px; font-size: 0.9rem; }
-  #progress-wrap { bottom: 70px; width: min(260px, 65vw); }
+  #hud { padding: 10px 12px; }
+  .hud-item { padding: 8px 12px; font-size: 0.78rem; border-radius: 12px; }
+  .overlay-panel { padding: 24px 18px; max-width: 350px; }
+  .overlay-panel h1 { font-size: 1.4rem; }
+  .scene-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .scene-btn { padding: 12px 6px; font-size: 0.78rem; }
+  .btn { padding: 10px 22px; font-size: 0.9rem; }
+  #progress-wrap { bottom: 72px; width: min(280px, 68vw); }
 }
 @media (max-width: 600px) {
-  #hud { padding: 5px 6px; gap: 4px; }
-  .hud-item { padding: 4px 7px; font-size: 0.68rem; border-radius: 8px; }
+  #hud { padding: 6px 8px; gap: 6px; }
+  .hud-item { padding: 6px 10px; font-size: 0.68rem; border-radius: 10px; }
   #joystick-zone { width: 50%; height: 50%; display: block !important; }
-  #joystick-base { width: 80px; height: 80px; bottom: 40px; left: 30px; }
-  #joystick-thumb { width: 38px; height: 38px; }
-  .overlay-panel { padding: 16px 12px; max-width: 300px; }
-  .overlay-panel h1 { font-size: 1.3rem; }
+  #joystick-base { width: 85px; height: 85px; bottom: 40px; left: 25px; }
+  #joystick-thumb { width: 40px; height: 40px; }
+  .overlay-panel { padding: 20px 14px; max-width: 310px; border-radius: 22px; }
+  .overlay-panel h1 { font-size: 1.2rem; }
   .overlay-panel h2 { font-size: 1.1rem; }
-  .overlay-panel .big-emoji { font-size: 3rem; }
-  .btn { padding: 7px 16px; font-size: 0.8rem; margin: 4px; }
-  #progress-wrap { bottom: 55px; width: min(220px, 60vw); font-size: 0.65rem; padding: 4px 8px; }
-  #progress-bar { height: 6px; }
+  .overlay-panel .big-emoji { font-size: 3.5rem; }
+  .btn { padding: 8px 18px; font-size: 0.82rem; margin: 4px; }
+  #progress-wrap { bottom: 55px; width: min(220px, 62vw); padding: 6px 10px; }
+  #progress-bar { height: 7px; }
+  #toast { font-size: 1.4rem; padding: 10px 20px; }
 }
 @media (max-width: 380px) {
-  .hud-item { padding: 3px 5px; font-size: 0.6rem; }
-  #joystick-base { width: 65px; height: 65px; bottom: 30px; left: 20px; }
-  #joystick-thumb { width: 30px; height: 30px; }
+  .hud-item { padding: 4px 7px; font-size: 0.6rem; }
+  #joystick-base { width: 68px; height: 68px; bottom: 30px; left: 18px; }
+  #joystick-thumb { width: 32px; height: 32px; }
 }
 </style>
 </head>
@@ -319,7 +444,9 @@ html, body {
 <script>
 // ==================== IMAGE LOADING ====================
 const CHAR_IMAGES = {};
+const BG_IMAGES = {};
 const IMG_ROLE_MAP = ['raddy','garnold','black','gray','fun-bot','sky','oren','mr-sun','mr-tree','jevin','pinki'];
+const BG_NAMES = ['space','ocean','forest','cyber','candy'];
 function preloadImages() {
   let loaded = 0; const total = IMG_ROLE_MAP.length + 1;
   IMG_ROLE_MAP.forEach((name, i) => {
@@ -329,12 +456,18 @@ function preloadImages() {
     img.src = 'images/' + name + '.png';
     CHAR_IMAGES[i] = img;
   });
-  // Dog head (keep separate)
+  // Dog head
   const dh = new Image();
   dh.onload = () => { loaded++; };
   dh.onerror = () => { loaded++; };
   dh.src = 'images/doghead.png';
   CHAR_IMAGES['doghead'] = dh;
+  // Scene backgrounds
+  BG_NAMES.forEach(name => {
+    const img = new Image();
+    img.src = 'images/bg-' + name + '.png';
+    BG_IMAGES[name] = img;
+  });
 }
 preloadImages();
 
@@ -397,11 +530,37 @@ const LEVELS = [
 ];
 
 const SCENES = [
-  { id: 'space',  name: '🚀 太空',  bg: '#0a0a1e', particleColors: ['#ffffff','#6C63FF','#00D2FF','#FF6F91'], particleCount: 80 },
-  { id: 'ocean',  name: '🌊 深海',  bg: '#0a1628', particleColors: ['#54A0FF','#00D2FF','#1E90FF','#87CEEB'], particleCount: 70 },
-  { id: 'forest', name: '🌲 森林',  bg: '#0d1a0d', particleColors: ['#6BCB77','#AED581','#FFD93D','#81C784'], particleCount: 60 },
-  { id: 'cyber',  name: '💾 赛博',  bg: '#0d0d1a', particleColors: ['#FF6B6B','#AB47BC','#00E676','#00D2FF'], particleCount: 90 },
-  { id: 'candy',  name: '🍬 糖果',  bg: '#1a0d20', particleColors: ['#FF9FF3','#FECA57','#FF6B6B','#48DBFB'], particleCount: 75 },
+  { id: 'space', name: '🚀 太空', bg: '#05051a',
+    stars: { count: 200, colors: ['#fff','#aaccff','#ffddaa','#ffaacc'], minSize: 0.5, maxSize: 2.5 },
+    nebulae: [{ x: 600, y: 400, r: 280, color: 'rgba(108,99,255,0.06)' }, { x: 2000, y: 1200, r: 350, color: 'rgba(255,111,145,0.05)' }, { x: 1400, y: 300, r: 220, color: 'rgba(0,210,255,0.05)' }],
+    planets: [{ x: 500, y: 1500, r: 40, color: '#ff9966', ring: true }, { x: 2400, y: 400, r: 30, color: '#66ccff' }],
+    shootingStars: true,
+  },
+  { id: 'ocean', name: '🌊 深海', bg: '#061220',
+    bubbles: { count: 60, minSize: 2, maxSize: 10 },
+    lightRays: 5,
+    kelp: true,
+    fish: { count: 8, colors: ['#ff9f43','#54a0ff','#feca57','#ff6b6b'] },
+  },
+  { id: 'forest', name: '🌲 森林', bg: '#0a1a0a',
+    fireflies: { count: 40, glow: '#ffd93d' },
+    leaves: { count: 30, colors: ['#6bcb77','#aed581','#ffb74d','#c62828'] },
+    trees: { count: 8 },
+    grass: '#1b3a1b',
+  },
+  { id: 'cyber', name: '💾 赛博', bg: '#080810',
+    grid: { color: 'rgba(0,210,255,0.08)', spacing: 80 },
+    dataStreams: { count: 12, color: '#00d2ff' },
+    neonCircles: [{ x: 300, y: 300, r: 80, color: 'rgba(255,107,107,0.06)' }, { x: 2200, y: 1200, r: 120, color: 'rgba(171,71,188,0.06)' }, { x: 1500, y: 600, r: 100, color: 'rgba(0,210,255,0.06)' }],
+    glitch: true,
+    particles: { count: 40, colors: ['#ff6b6b','#ab47bc','#00e676','#00d2ff'], size: 1.5 },
+  },
+  { id: 'candy', name: '🍬 糖果', bg: '#1a0d24',
+    clouds: [{ x: 400, y: 300, r: 90, color: 'rgba(255,200,220,0.08)' }, { x: 1800, y: 800, r: 110, color: 'rgba(200,230,255,0.07)' }, { x: 1000, y: 1500, r: 80, color: 'rgba(255,220,200,0.07)' }],
+    lollipops: { count: 6, colors: ['#ff9ff3','#feca57','#ff6b6b','#48dbfb','#a29bfe'] },
+    sparkles: { count: 50, colors: ['#fff','#ffd700','#ff9ff3','#48dbfb'], minSize: 1, maxSize: 3 },
+    particles: { count: 30, colors: ['#ff9ff3','#feca57','#ff6b6b','#48dbfb'], size: 2 },
+  },
 ];
 
 // ==================== AUDIO ====================
@@ -491,30 +650,351 @@ function createCharacter(x, y, level, isPlayer = false) {
 function getPlayerSpeed() { return 240 - state.playerLevel * 8; }
 function getAISpeed(level) { return 80 + level * 12; }
 
-// ==================== SCENE PARTICLES ====================
-const bgParticles = [];
+// ==================== SCENE BACKGROUND ====================
+const bgData = {};
 
 function initBgParticles() {
-  bgParticles.length = 0;
   const sc = SCENES.find(s => s.id === state.scene);
-  for (let i = 0; i < sc.particleCount; i++) {
-    bgParticles.push({
-      x: Math.random() * state.worldW,
-      y: Math.random() * state.worldH,
-      size: Math.random() * 2.5 + 0.5,
-      speed: Math.random() * 0.3 + 0.05,
-      color: sc.particleColors[Math.floor(Math.random() * sc.particleColors.length)],
-      alpha: Math.random() * 0.5 + 0.2,
-      twinkle: Math.random() * Math.PI * 2,
-    });
+  // Reset all scene-specific data
+  Object.assign(bgData, {
+    stars: [], bubbles: [], leaves: [], fireflies: [],
+    kelpNodes: [], fishData: [], dataStreams: [], sparkles: [],
+    particles: [], candyClouds: [], lollipops: [],
+    shootStarTimer: 0, glitchTimer: 0, neonGlow: 0,
+  });
+  
+  // Space: generate star positions
+  if (sc.stars) {
+    for (let i = 0; i < sc.stars.count; i++) {
+      bgData.stars.push({
+        x: Math.random() * state.worldW, y: Math.random() * state.worldH,
+        r: sc.stars.minSize + Math.random() * (sc.stars.maxSize - sc.stars.minSize),
+        color: sc.stars.colors[Math.floor(Math.random() * sc.stars.colors.length)],
+        twinkle: Math.random() * Math.PI * 2, twinkleSpeed: 0.5 + Math.random() * 2,
+      });
+    }
+  }
+  // Ocean: bubbles & kelp
+  if (sc.bubbles) {
+    for (let i = 0; i < sc.bubbles.count; i++) {
+      bgData.bubbles.push({
+        x: Math.random() * state.worldW, y: state.worldH + Math.random() * 400,
+        r: sc.bubbles.minSize + Math.random() * (sc.bubbles.maxSize - sc.bubbles.minSize),
+        speed: 0.3 + Math.random() * 0.8, wobble: Math.random() * Math.PI * 2,
+      });
+    }
+    if (sc.kelp) {
+      for (let i = 0; i < 12; i++) {
+        bgData.kelpNodes.push({ x: i * (state.worldW / 12) + Math.random() * 100, h: 80 + Math.random() * 150 });
+      }
+    }
+    if (sc.fish) {
+      for (let i = 0; i < sc.fish.count; i++) {
+        bgData.fishData.push({
+          x: Math.random() * state.worldW, y: Math.random() * state.worldH * 0.6 + 200,
+          vx: (Math.random() - 0.5) * 40, size: 6 + Math.random() * 8,
+          color: sc.fish.colors[Math.floor(Math.random() * sc.fish.colors.length)],
+        });
+      }
+    }
+  }
+  // Forest: fireflies & leaves
+  if (sc.fireflies) {
+    for (let i = 0; i < sc.fireflies.count; i++) {
+      bgData.fireflies.push({
+        x: Math.random() * state.worldW, y: Math.random() * state.worldH,
+        vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 20,
+        phase: Math.random() * Math.PI * 2, alpha: 0,
+      });
+    }
+    for (let i = 0; i < sc.leaves.count; i++) {
+      bgData.leaves.push({
+        x: Math.random() * state.worldW, y: Math.random() * state.worldH,
+        vx: (Math.random() - 0.5) * 25, vy: 15 + Math.random() * 25,
+        color: sc.leaves.colors[Math.floor(Math.random() * sc.leaves.colors.length)],
+        angle: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 2,
+        size: 3 + Math.random() * 5,
+      });
+    }
+  }
+  // Cyber: data streams
+  if (sc.dataStreams) {
+    for (let i = 0; i < sc.dataStreams.count; i++) {
+      bgData.dataStreams.push({
+        x: Math.random() * state.worldW, y: Math.random() * -state.worldH,
+        speed: 60 + Math.random() * 120, alpha: 0.1 + Math.random() * 0.3,
+        length: 20 + Math.random() * 60,
+      });
+    }
+    for (let i = 0; i < (sc.particles?.count || 0); i++) {
+      bgData.particles.push({
+        x: Math.random() * state.worldW, y: Math.random() * state.worldH,
+        r: sc.particles.size, color: sc.particles.colors[Math.floor(Math.random() * sc.particles.colors.length)],
+        alpha: Math.random() * 0.5, twinkle: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+  // Candy: sparkles & lollipops
+  if (sc.sparkles) {
+    for (let i = 0; i < sc.sparkles.count; i++) {
+      bgData.sparkles.push({
+        x: Math.random() * state.worldW, y: Math.random() * state.worldH,
+        r: sc.sparkles.minSize + Math.random() * (sc.sparkles.maxSize - sc.sparkles.minSize),
+        color: sc.sparkles.colors[Math.floor(Math.random() * sc.sparkles.colors.length)],
+        alpha: Math.random(), twinkle: Math.random() * Math.PI * 2,
+      });
+    }
+    for (let i = 0; i < sc.lollipops.count; i++) {
+      bgData.lollipops.push({
+        x: Math.random() * state.worldW, y: Math.random() * state.worldH,
+        color: sc.lollipops.colors[Math.floor(Math.random() * sc.lollipops.colors.length)],
+        r: 15 + Math.random() * 20, swirl: Math.random() * Math.PI * 2,
+      });
+    }
   }
 }
 
 function updateBgParticles(dt) {
-  for (const p of bgParticles) {
-    p.y -= p.speed * dt * 30;
-    p.twinkle += dt * 2;
-    if (p.y < -20) { p.y = state.worldH + 20; p.x = Math.random() * state.worldW; }
+  // Update scene-specific elements
+  if (bgData.shootStarTimer !== undefined) bgData.shootStarTimer -= dt;
+  if (bgData.shootStarTimer <= 0) bgData.shootStarTimer = 5 + Math.random() * 15;
+  
+  for (const s of bgData.stars || []) { s.twinkle += s.twinkleSpeed * dt; }
+  for (const b of bgData.bubbles || []) {
+    b.y -= b.speed * dt * 30; b.wobble += dt * 2;
+    if (b.y < -50) { b.y = state.worldH + 50; b.x = Math.random() * state.worldW; }
+  }
+  for (const f of bgData.fireflies || []) {
+    f.x += f.vx * dt; f.y += f.vy * dt;
+    f.vy += (Math.sin(f.phase + Date.now() * 0.002) * 5 - f.vy) * dt;
+    f.vx += (Math.cos(f.phase + Date.now() * 0.003) * 5 - f.vx) * dt;
+    if (f.x < 0) f.x = state.worldW; if (f.x > state.worldW) f.x = 0;
+    if (f.y < 0) f.y = state.worldH; if (f.y > state.worldH) f.y = 0;
+  }
+  for (const l of bgData.leaves || []) {
+    l.x += l.vx * dt; l.y += l.vy * dt; l.angle += l.rotSpeed * dt;
+    if (l.y > state.worldH + 50) { l.y = -50; l.x = Math.random() * state.worldW; }
+  }
+  for (const d of bgData.dataStreams || []) {
+    d.y += d.speed * dt;
+    if (d.y > state.worldH + 100) { d.y = -100; d.x = Math.random() * state.worldW; }
+  }
+  for (const p of bgData.particles || []) { p.twinkle += dt * 2; }
+  for (const s of bgData.sparkles || []) { s.twinkle += dt * 3; s.alpha = 0.3 + Math.sin(s.twinkle) * 0.4; }
+}
+
+function drawSceneBg(sc, camX, camY, w, h) {
+  // View bounds in world coords
+  const vl = camX - w/2, vt = camY - h/2, vr = camX + w/2, vb = camY + h/2;
+  
+  // === Draw background image (tiled across the world) ===
+  const bgImg = BG_IMAGES[sc.id];
+  if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
+    const iw = bgImg.naturalWidth, ih = bgImg.naturalHeight;
+    // Slow parallax offset
+    const px = -(camX * 0.3) % iw;
+    const py = -(camY * 0.3) % ih;
+    for (let tx = px; tx < w + iw; tx += iw) {
+      for (let ty = py; ty < h + ih; ty += ih) {
+        ctx.drawImage(bgImg, tx, ty, iw, ih);
+      }
+    }
+    // Light overlay for gameplay clarity
+     ctx.fillStyle = 'rgba(0,0,0,0.06)';
+     ctx.fillRect(vl, vt, w, h);
+  }
+  
+  if (sc.stars) {
+    // Stars + nebulae + planets
+    for (const n of sc.nebulae || []) {
+      if (n.x + n.r > vl && n.x - n.r < vr && n.y + n.r > vt && n.y - n.r < vb) {
+        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        grad.addColorStop(0, n.color); grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    for (const p of sc.planets || []) {
+      if (p.x + p.r > vl && p.x - p.r < vr && p.y + p.r > vt && p.y - p.r < vb) {
+        ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        if (p.ring) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r * 1.6, p.r * 0.35, 0.3, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+    }
+    for (const s of bgData.stars) {
+      if (s.x > vl && s.x < vr && s.y > vt && s.y < vb) {
+        const alpha = 0.4 + Math.sin(s.twinkle) * 0.3;
+        ctx.fillStyle = s.color; ctx.globalAlpha = alpha;
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    // Shooting star
+    if (sc.shootingStars && bgData.shootStarTimer <= 0) {
+      bgData.shootStarTimer = 5 + Math.random() * 15;
+      bgData._shooting = { x: vl + Math.random() * w, y: vt + Math.random() * h * 0.5, life: 1.5 };
+    }
+    if (bgData._shooting) {
+      bgData._shooting.life -= 0.016;
+      if (bgData._shooting.life > 0) {
+        const sx = bgData._shooting.x, sy = bgData._shooting.y;
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 80, sy + 30); ctx.stroke();
+      } else { bgData._shooting = null; }
+    }
+    ctx.globalAlpha = 1;
+  }
+  
+  if (sc.bubbles) {
+    // Light rays
+    for (let i = 0; i < (sc.lightRays || 0); i++) {
+      const rx = (i / sc.lightRays) * state.worldW + 100;
+      ctx.fillStyle = `rgba(100,180,255,${0.02 + Math.sin(Date.now()*0.0003 + i)*0.01})`;
+      ctx.beginPath(); ctx.moveTo(rx - 40, vt); ctx.lineTo(rx + 40, vt);
+      ctx.lineTo(rx + 200, vb); ctx.lineTo(rx - 200, vb); ctx.fill();
+    }
+    // Kelp
+    for (const k of bgData.kelpNodes || []) {
+      ctx.strokeStyle = 'rgba(40,120,80,0.4)'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(k.x, state.worldH);
+      ctx.quadraticCurveTo(k.x + 20, state.worldH - k.h * 0.5, k.x + Math.sin(Date.now()*0.001 + k.x) * 15, state.worldH - k.h);
+      ctx.stroke();
+    }
+    // Fish
+    for (const f of bgData.fishData || []) {
+      if (f.x > vl - 30 && f.x < vr + 30 && f.y > vt - 20 && f.y < vb + 20) {
+        ctx.fillStyle = f.color; ctx.strokeStyle = f.color; ctx.lineWidth = 1.5;
+        const dir = f.vx > 0 ? 1 : -1;
+        ctx.beginPath(); ctx.moveTo(f.x + dir * f.size, f.y); ctx.lineTo(f.x - dir * f.size * 0.6, f.y - f.size * 0.3);
+        ctx.lineTo(f.x - dir * f.size * 0.6, f.y + f.size * 0.3); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(f.x + dir * f.size * 0.3, f.y, f.size * 0.25, 0, Math.PI * 2); ctx.fill();
+      }
+      f.x += f.vx * 0.016;
+      if (f.x < -50) f.x = state.worldW + 50;
+      if (f.x > state.worldW + 50) f.x = -50;
+    }
+    // Bubbles
+    for (const b of bgData.bubbles || []) {
+      if (b.x > vl - 20 && b.x < vr + 20 && b.y > vt - 20 && b.y < vb + 20) {
+        ctx.strokeStyle = 'rgba(180,220,255,0.4)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(b.x + Math.sin(b.wobble) * 3, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.beginPath(); ctx.arc(b.x + Math.sin(b.wobble) * 3 - b.r * 0.25, b.y - b.r * 0.3, b.r * 0.3, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+  
+  if (sc.fireflies) {
+    // Trees
+    for (let i = 0; i < (sc.trees?.count || 0); i++) {
+      const tx = (i / sc.trees.count) * state.worldW + (i % 2) * 60;
+      ctx.fillStyle = '#0d200d'; ctx.fillRect(tx - 25, state.worldH - 250, 50, 250);
+      ctx.fillStyle = '#0a1a0a';
+      ctx.beginPath(); ctx.arc(tx, state.worldH - 280, 60, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(tx - 30, state.worldH - 240, 45, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(tx + 30, state.worldH - 240, 45, 0, Math.PI * 2); ctx.fill();
+    }
+    // Grass floor
+    ctx.fillStyle = sc.grass; ctx.fillRect(0, state.worldH - 20, state.worldW, 20);
+    // Fireflies
+    for (const f of bgData.fireflies || []) {
+      if (f.x > vl - 30 && f.x < vr + 30 && f.y > vt - 30 && f.y < vb + 30) {
+        f.alpha = 0.3 + Math.sin(Date.now() * 0.003 + f.phase) * 0.3;
+        ctx.fillStyle = sc.fireflies.glow;
+        ctx.globalAlpha = f.alpha;
+        ctx.shadowColor = sc.fireflies.glow; ctx.shadowBlur = 8 + Math.sin(Date.now() * 0.004 + f.phase) * 4;
+        ctx.beginPath(); ctx.arc(f.x, f.y, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+      }
+    }
+    // Falling leaves
+    for (const l of bgData.leaves || []) {
+      if (l.x > vl - 20 && l.x < vr + 20 && l.y > vt - 20 && l.y < vb + 20) {
+        ctx.save(); ctx.translate(l.x, l.y); ctx.rotate(l.angle);
+        ctx.fillStyle = l.color;
+        ctx.beginPath(); ctx.ellipse(0, 0, l.size, l.size * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+  
+  if (sc.dataStreams) {
+    // Grid floor
+    ctx.strokeStyle = sc.grid.color; ctx.lineWidth = 1;
+    for (let x = 0; x < state.worldW; x += sc.grid.spacing) {
+      ctx.beginPath(); ctx.moveTo(x, state.worldH - 200); ctx.lineTo(x, state.worldH); ctx.stroke();
+    }
+    // Neon circles
+    for (const nc of sc.neonCircles || []) {
+      ctx.strokeStyle = nc.color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(nc.x, nc.y, nc.r, 0, Math.PI * 2); ctx.stroke();
+    }
+    // Data streams
+    for (const d of bgData.dataStreams || []) {
+      ctx.strokeStyle = `rgba(0,210,255,${d.alpha})`; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x, d.y + d.length); ctx.stroke();
+      // Some "characters" on the stream
+      if (Math.random() < 0.3) {
+        ctx.fillStyle = `rgba(0,255,100,${d.alpha})`;
+        ctx.fillRect(d.x + (Math.random() - 0.5) * 6, d.y + Math.random() * d.length, 3, 12);
+      }
+    }
+    // Glitch bars
+    if (sc.glitch && Math.random() < 0.02) { bgData.glitchTimer = 0.15; }
+    if (bgData.glitchTimer > 0) {
+      bgData.glitchTimer -= 0.016;
+      const gy = vt + Math.random() * h;
+      ctx.fillStyle = `rgba(0,210,255,${0.08 * Math.min(1, bgData.glitchTimer / 0.08)})`;
+      ctx.fillRect(vl, gy, w, 2 + Math.random() * 6);
+    }
+    // Particles
+    for (const p of bgData.particles || []) {
+      const alpha = p.alpha * (0.5 + Math.sin(p.twinkle) * 0.5);
+      ctx.fillStyle = p.color; ctx.globalAlpha = alpha;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  
+  if (sc.sparkles) {
+    // Candy clouds
+    for (const c of sc.clouds || []) {
+      const grad = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+      grad.addColorStop(0, c.color); grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.fill();
+    }
+    // Sparkles
+    for (const s of bgData.sparkles || []) {
+      if (s.x > vl - 10 && s.x < vr + 10 && s.y > vt - 10 && s.y < vb + 10) {
+        ctx.fillStyle = s.color; ctx.globalAlpha = s.alpha;
+        // Star shape
+        const cx = s.x, cy = s.y;
+        ctx.beginPath();
+        for (let i = 0; i < 4; i++) {
+          const a = i * Math.PI / 2;
+          ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * s.r * 2, cy + Math.sin(a) * s.r * 2);
+        }
+        ctx.strokeStyle = s.color; ctx.lineWidth = 1; ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, s.r, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    // Lollipops
+    for (const l of bgData.lollipops || []) {
+      if (l.x > vl - l.r && l.x < vr + l.r) {
+        // Stick
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(l.x, l.y + l.r); ctx.lineTo(l.x, l.y + l.r * 2.5); ctx.stroke();
+        // Swirl candy
+        const grad = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r);
+        grad.addColorStop(0, l.color); grad.addColorStop(0.5, 'rgba(255,255,255,0.3)'); grad.addColorStop(1, l.color);
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.5;
+        for (let a = 0; a < Math.PI * 2; a += 0.3) {
+          ctx.beginPath(); ctx.arc(l.x, l.y, l.r, a, a + 0.15); ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
   }
 }
 
@@ -796,6 +1276,7 @@ function evolvePlayer() {
   sfxLevelUp(state.playerLevel);
   spawnEatParticles(player.x, player.y, lv.accent);
   
+  player.level = state.playerLevel;
   player.size = lv.size;
   player.color = lv.color;
   player.dark = lv.dark;
@@ -1424,21 +1905,19 @@ function drawMinimap() {
 
 function render() {
   const w = canvas.width, h = canvas.height;
+  const sc = SCENES.find(s => s.id === state.scene);
   
   // Clear
-  ctx.fillStyle = SCENES.find(s => s.id === state.scene).bg;
+  ctx.fillStyle = sc.bg;
   ctx.fillRect(0, 0, w, h);
   
   if (!state.running && !state.paused) {
-    // Draw a few particles even when not running
-    for (const p of bgParticles.slice(0, 20)) {
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = p.alpha * 0.3;
-      ctx.beginPath();
-      ctx.arc(p.x % w, p.y % h, p.size, 0, Math.PI * 2);
-      ctx.fill();
+    // Draw a simple idle starry background
+    for (let i = 0; i < 30; i++) {
+      const sx = (i * 137 + 50) % w, sy = (i * 73 + 30 + Date.now() * 0.01) % h;
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.beginPath(); ctx.arc(sx, sy, 1, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.globalAlpha = 1;
     requestAnimationFrame(render);
     return;
   }
@@ -1450,23 +1929,16 @@ function render() {
   const camY = state.camY - h / 2;
   ctx.translate(-camX, -camY);
   
-  // ===== Background particles =====
-  for (const p of bgParticles) {
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = p.alpha * (0.5 + Math.sin(p.twinkle) * 0.5);
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
+  // ===== Scene background =====
+  drawSceneBg(sc, state.camX, state.camY, w, h);
   
   // ===== World border =====
-  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
   ctx.lineWidth = 2;
   ctx.strokeRect(0, 0, state.worldW, state.worldH);
   
   // Grid lines
-  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
   ctx.lineWidth = 1;
   const gridSize = 150;
   for (let x = gridSize; x < state.worldW; x += gridSize) {
