@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>召唤节奏盒子</title>
+<style>
+/* ============ Reset & Base ============ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: #0a0a1a; font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+/* ============ Canvas ============ */
+#game-canvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  display: block;
+}
+
+/* ============ HUD (HTML Overlay) ============ */
+#hud {
+  position: fixed; top: 0; left: 0; width: 100%;
+  pointer-events: none; z-index: 10;
+  padding: 12px 16px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 8px;
+}
+
+.hud-item {
+  background: rgba(10, 10, 26, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 8px 14px;
+  color: #e0e0f0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+
+.hud-level { font-size: 1rem; }
+.hud-label { font-size: 0.7rem; color: #9090b0; }
+
+/* Progress bar */
+#progress-wrap {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%); z-index: 10; pointer-events: none;
+  width: min(320px, 70vw);
+  background: rgba(10,10,26,0.7);
+  border-radius: 10px;
+  padding: 6px 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+#progress-bar {
+  flex: 1; height: 8px; border-radius: 4px;
+  background: rgba(255,255,255,0.1);
+  overflow: hidden;
+}
+#progress-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, #ff6b9d, #ffa94d);
+  transition: width 0.3s ease;
+  width: 0%;
+}
+#progress-text {
+  font-size: 0.7rem; color: #b0b0d0;
+  white-space: nowrap; min-width: 40px; text-align: right;
+}
+
+/* ============ Virtual Joystick ============ */
+#joystick-zone {
+  position: fixed; bottom: 0; left: 0;
+  width: 45%; height: 55%;
+  z-index: 20; pointer-events: auto;
+}
+#joystick-base {
+  position: absolute; bottom: 60px; left: 60px;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+}
+#joystick-thumb {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  border: 2px solid rgba(255,255,255,0.35);
+  transition: none;
+}
+
+/* ============ Overlay / Modal ============ */
+.overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); z-index: 100;
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+.overlay.show { display: flex; }
+
+.overlay-panel {
+  background: rgba(20, 20, 45, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 24px;
+  padding: 32px 28px;
+  text-align: center;
+  max-width: 380px; width: 90%;
+  color: #e0e0f0;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.overlay-panel h1 {
+  font-size: 1.8rem; margin-bottom: 4px;
+  background: linear-gradient(135deg, #ff6b9d, #ffa94d, #ffd93d);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.overlay-panel h2 { font-size: 1.4rem; margin-bottom: 8px; color: #ffd93d; }
+.overlay-panel .big-emoji { font-size: 4rem; display: block; margin: 12px 0; }
+.overlay-panel .tagline { font-size: 1.1rem; color: #b0b0d0; margin-bottom: 16px; }
+.overlay-panel .stat-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; color: #9090b0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.overlay-panel .stat-row span:last-child { color: #e0e0f0; font-weight: 600; }
+
+.btn {
+  font-family: inherit; font-size: 1rem; font-weight: 700;
+  padding: 10px 28px; border-radius: 16px; border: none;
+  cursor: pointer; margin: 6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  color: #fff;
+}
+.btn:active { transform: scale(0.95); }
+.btn-primary { background: linear-gradient(135deg, #6C63FF, #00D2FF); box-shadow: 0 4px 15px rgba(108,99,255,0.4); }
+.btn-gold { background: linear-gradient(135deg, #FF6B6B, #FFD93D); color: #2a1a00; }
+.btn-secondary { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
+
+/* Scene selector */
+.scene-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.scene-btn {
+  padding: 10px 6px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05); color: #c0c0d0;
+  cursor: pointer; font-size: 0.8rem; font-family: inherit;
+  transition: all 0.2s ease;
+}
+.scene-btn:hover, .scene-btn.active { border-color: #6C63FF; background: rgba(108,99,255,0.15); color: #fff; }
+
+/* Leaderboard */
+.lb-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85rem; }
+.lb-table th { color: #9090b0; padding: 6px 8px; border-bottom: 2px solid rgba(255,255,255,0.1); }
+.lb-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #d0d0e0; }
+.lb-table .rank-gold { color: #FFD700; }
+.lb-table .rank-silver { color: #C0C0C0; }
+.lb-table .rank-bronze { color: #CD7F32; }
+.lb-empty { color: #707090; padding: 20px; font-size: 0.9rem; }
+
+/* Toast */
+#toast {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+  z-index: 200; pointer-events: none;
+  font-size: 1.6rem; font-weight: 900; color: #fff;
+  text-shadow: 0 0 20px rgba(255,200,0,0.8);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#toast.show { transform: translate(-50%,-50%) scale(1); }
+
+/* ============ Responsive ============ */
+@media (max-width: 900px) {
+  #hud { padding: 6px 8px; }
+  .hud-item { padding: 5px 8px; font-size: 0.75rem; border-radius: 10px; }
+  .overlay-panel { padding: 20px 16px; font-size: 0.85rem; max-width: 340px; }
+  .overlay-panel h1 { font-size: 1.5rem; }
+  .scene-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .scene-btn { padding: 10px 4px; font-size: 0.75rem; }
+  .btn { padding: 8px 20px; font-size: 0.9rem; }
+  #progress-wrap { bottom: 70px; width: min(260px, 65vw); }
+}
+@media (max-width: 600px) {
+  #hud { padding: 5px 6px; gap: 4px; }
+  .hud-item { padding: 4px 7px; font-size: 0.68rem; border-radius: 8px; }
+  #joystick-zone { width: 50%; height: 50%; display: block !important; }
+  #joystick-base { width: 80px; height: 80px; bottom: 40px; left: 30px; }
+  #joystick-thumb { width: 38px; height: 38px; }
+  .overlay-panel { padding: 16px 12px; max-width: 300px; }
+  .overlay-panel h1 { font-size: 1.3rem; }
+  .overlay-panel h2 { font-size: 1.1rem; }
+  .overlay-panel .big-emoji { font-size: 3rem; }
+  .btn { padding: 7px 16px; font-size: 0.8rem; margin: 4px; }
+  #progress-wrap { bottom: 55px; width: min(220px, 60vw); font-size: 0.65rem; padding: 4px 8px; }
+  #progress-bar { height: 6px; }
+}
+@media (max-width: 380px) {
+  .hud-item { padding: 3px 5px; font-size: 0.6rem; }
+  #joystick-base { width: 65px; height: 65px; bottom: 30px; left: 20px; }
+  #joystick-thumb { width: 30px; height: 30px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-item" id="hud-level">
+    <span style="font-size:1.2rem;">📦</span>
+    <span><span class="hud-label">等级</span> <span class="hud-level" id="level-name">瑞迪</span></span>
+  </div>
+  <div class="hud-item" id="hud-score">
+    <span>⭐</span><span id="score-display">0</span>
+  </div>
+  <div class="hud-item" id="hud-combo" style="display:none;">
+    <span>🔥</span><span id="combo-display">x1</span>
+  </div>
+  <div class="hud-item" id="hud-target">
+    <span>🎯</span><span id="target-display">0/6</span>
+  </div>
+</div>
+
+<!-- Progress Bar -->
+<div id="progress-wrap">
+  <span style="font-size:0.9rem;" id="prev-emoji">👶</span>
+  <div id="progress-bar"><div id="progress-fill"></div></div>
+  <span style="font-size:0.9rem;" id="next-emoji">😎</span>
+  <span id="progress-text">0/6</span>
+</div>
+
+<!-- Joystick -->
+<div id="joystick-zone">
+  <div id="joystick-base">
+    <div id="joystick-thumb"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Start Menu -->
+<div class="overlay show" id="menu-overlay">
+  <div class="overlay-panel">
+    <h1>召唤节奏盒子</h1>
+    <p class="tagline">吃小的，躲大的，一路进化到平基！</p>
+    <div style="font-size:0.8rem;color:#707090;margin-bottom:12px;">场景选择</div>
+    <div class="scene-grid" id="scene-selector"></div>
+    <button class="btn btn-primary" onclick="startGame()" style="margin-top:12px;font-size:1.1rem;padding:12px 40px;">
+      ▶ 开始召唤
+    </button>
+    <div style="margin-top:12px;">
+      <button class="btn btn-secondary" style="font-size:0.8rem;" onclick="showLeaderboard()">🏅 排行榜</button>
+      <button class="btn btn-secondary" style="font-size:0.8rem;" onclick="showHelp()">📖 怎么玩</button>
+    </div>
+  </div>
+</div>
+
+<!-- Victory -->
+<div class="overlay" id="win-overlay">
+  <div class="overlay-panel">
+    <span class="big-emoji">👑</span>
+    <h2>你召唤出了平基！</h2>
+    <p style="font-size:1.3rem;color:#FFD700;margin:8px 0;">打败100%的玩家</p>
+    <p style="font-size:1.1rem;color:#ff6b9d;margin-bottom:16px;">🎉 好事发生 🎉</p>
+    <div id="win-stats"></div>
+    <button class="btn btn-primary" onclick="restartGame()">再来一局</button>
+    <button class="btn btn-secondary" onclick="showMenu()">返回主菜单</button>
+  </div>
+</div>
+
+<!-- Defeat -->
+<div class="overlay" id="lose-overlay">
+  <div class="overlay-panel">
+    <span class="big-emoji">💔</span>
+    <h2 id="lose-title">被吃掉了！</h2>
+    <p class="tagline" id="lose-by"></p>
+    <div id="lose-stats"></div>
+    <button class="btn btn-primary" onclick="restartGame()">再来一局</button>
+    <button class="btn btn-secondary" onclick="showMenu()">返回主菜单</button>
+  </div>
+</div>
+
+<!-- Leaderboard -->
+<div class="overlay" id="lb-overlay">
+  <div class="overlay-panel">
+    <h2>🏅 排行榜 Top 10</h2>
+    <div id="lb-content"></div>
+    <button class="btn btn-secondary" onclick="hideOverlay('lb-overlay')">关闭</button>
+    <button style="font-size:0.7rem;background:none;border:none;color:#606080;cursor:pointer;margin-top:8px;text-decoration:underline" onclick="clearLeaderboard()">清空记录</button>
+  </div>
+</div>
+
+<!-- Help -->
+<div class="overlay" id="help-overlay">
+  <div class="overlay-panel" style="text-align:left;">
+    <h2 style="text-align:center;">📖 玩法说明</h2>
+    <div style="font-size:0.85rem;line-height:1.7;color:#b0b0d0;">
+      <p>🎮 <b style="color:#fff;">操作</b>：方向键/WASD 或触屏左下角摇杆移动</p>
+      <p>🍽 <b style="color:#fff;">吃</b>：碰到同等或更低等级的盒子会吃掉它们，涨进化槽</p>
+      <p>💀 <b style="color:#FF6B6B;">被吃</b>：碰到比你高级的盒子直接游戏结束</p>
+      <p>📈 <b style="color:#FFD93D;">进化</b>：吃够一定数量自动进化到下一级</p>
+      <p>👑 <b style="color:#FFD700;">胜利</b>：进化到终极形态「平基」即通关</p>
+    </div>
+    <button class="btn btn-secondary" onclick="hideOverlay('help-overlay')" style="margin-top:12px;display:block;text-align:center;">知道啦</button>
+  </div>
+</div>
+
+<!-- Pause -->
+<div class="overlay" id="pause-overlay">
+  <div class="overlay-panel">
+    <h2>⏸ 暂停</h2>
+    <button class="btn btn-primary" onclick="togglePause()">继续</button>
+    <button class="btn btn-secondary" onclick="restartGame()">重新开始</button>
+    <button class="btn btn-secondary" onclick="showMenu()">返回主菜单</button>
+  </div>
+</div>
+
+<script>
+// ==================== IMAGE LOADING ====================
+const CHAR_IMAGES = {};
+const IMG_ROLE_MAP = ['raddy','garnold','black','gray','fun-bot','sky','oren','mr-sun','mr-tree','jevin','pinki'];
+function preloadImages() {
+  let loaded = 0; const total = IMG_ROLE_MAP.length + 1;
+  IMG_ROLE_MAP.forEach((name, i) => {
+    const img = new Image();
+    img.onload = () => { loaded++; };
+    img.onerror = () => { loaded++; };
+    img.src = 'images/' + name + '.png';
+    CHAR_IMAGES[i] = img;
+  });
+  // Dog head (keep separate)
+  const dh = new Image();
+  dh.onload = () => { loaded++; };
+  dh.onerror = () => { loaded++; };
+  dh.src = 'images/doghead.png';
+  CHAR_IMAGES['doghead'] = dh;
+}
+preloadImages();
+
+// ==================== POLYFILLS ====================
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
+    this.beginPath();
+    this.moveTo(x + r.tl, y);
+    this.lineTo(x + w - r.tr, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+    this.lineTo(x + w, y + h - r.br);
+    this.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+    this.lineTo(x + r.bl, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+    this.lineTo(x, y + r.tl);
+    this.quadraticCurveTo(x, y, x + r.tl, y);
+    this.closePath();
+  };
+}
+
+// ==================== CONSTANTS ====================
+
+// Sprunki 角色定义 - 基于 Incredibox Sprunki MOD 真实角色
+// color: 主体色, dark: 深色/阴影色, accent: 强调色
+const LEVELS = [
+  { id: 0,  name: '瑞迪',   color: '#E53935', dark: '#B71C1C', accent: '#C62828', size: 28,
+    role: 'rattler',  // 5 horns + grumpy snare drum
+    horns: 5, eyes: 'angry', mouth: 'frown' },
+  { id: 1,  name: '佳诺德', color: '#F9A825', dark: '#C79100', accent: '#00BCD4', size: 31,
+    role: 'gold',     // gold suit + visor + synth
+    visor: true, eyes: 'visor', mouth: 'droop' },
+  { id: 2,  name: '布莱克', color: '#111111', dark: '#000000', accent: '#FFFFFF', size: 33,
+    role: 'black',    // pure black + white tie + tophat
+    hat: true, tie: true, eyes: 'hidden', mouth: 'hidden' },
+  { id: 3,  name: '格雷',   color: '#A0A0B0', dark: '#707080', accent: '#C0C0D0', size: 35,
+    role: 'gray',     // cat ears + freckles + tired bass
+    ears: 'cat', freckles: true, eyes: 'tired', mouth: 'flat' },
+  { id: 4,  name: '快乐机器人', color: '#B0BEC5', dark: '#78909C', accent: '#FFD54F', size: 38,
+    role: 'funbot',   // silver robot + gold neck + Amen break
+    robot: true, visor: true, eyes: 'robot', mouth: 'smile' },
+  { id: 5,  name: '小天',   color: '#4FC3F7', dark: '#0288D1', accent: '#81D4FA', size: 42,
+    role: 'sky',      // sky blue + bear ears + music box
+    ears: 'bear', eyes: 'worried', mouth: 'open' },
+  { id: 6,  name: '奥伦',   color: '#FF9800', dark: '#E65100', accent: '#FFB74D', size: 46,
+    role: 'oren',     // orange + 2 antennae + headphones + kick
+    antennae: 2, headphone: true, eyes: 'bold', mouth: 'grin' },
+  { id: 7,  name: '太阳先生', color: '#FFC107', dark: '#F57F17', accent: '#FFE082', size: 50,
+    role: 'mrsun',    // round sun + rays + melody
+    sun: true, eyes: 'dot', mouth: 'simple' },
+  { id: 8,  name: '大树先生', color: '#795548', dark: '#4E342E', accent: '#66BB6A', size: 54,
+    role: 'mrtree',   // brown trunk + green foliage + melody
+    tree: true, eyes: 'calm', mouth: 'simple' },
+  { id: 9,  name: '杰文',   color: '#1E3A8A', dark: '#0F1D5C', accent: '#3B5CB8', size: 58,
+    role: 'jevin',    // blue + dark hood + choir
+    hood: true, eyes: 'ominous', mouth: 'frown' },
+  { id: 10, name: '平基',   color: '#F48FB1', dark: '#C2185B', accent: '#FCE4EC', size: 63,
+    role: 'pinki',    // pink + bunny ears + vocals
+    ears: 'bunny', eyes: 'cute', mouth: 'smile' },
+];
+
+const SCENES = [
+  { id: 'space',  name: '🚀 太空',  bg: '#0a0a1e', particleColors: ['#ffffff','#6C63FF','#00D2FF','#FF6F91'], particleCount: 80 },
+  { id: 'ocean',  name: '🌊 深海',  bg: '#0a1628', particleColors: ['#54A0FF','#00D2FF','#1E90FF','#87CEEB'], particleCount: 70 },
+  { id: 'forest', name: '🌲 森林',  bg: '#0d1a0d', particleColors: ['#6BCB77','#AED581','#FFD93D','#81C784'], particleCount: 60 },
+  { id: 'cyber',  name: '💾 赛博',  bg: '#0d0d1a', particleColors: ['#FF6B6B','#AB47BC','#00E676','#00D2FF'], particleCount: 90 },
+  { id: 'candy',  name: '🍬 糖果',  bg: '#1a0d20', particleColors: ['#FF9FF3','#FECA57','#FF6B6B','#48DBFB'], particleCount: 75 },
+];
+
+// ==================== AUDIO ====================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function ensureAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
+
+function playTone(freq, dur, type = 'sine', vol = 0.08) {
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + dur);
+}
+
+function sfxEat(level) {
+  const base = 300 + level * 60;
+  [0, 0.06, 0.12].forEach((d, i) => setTimeout(() => playTone(base + i * 100, 0.12, 'square', 0.1), d * 1000));
+}
+
+function sfxLevelUp(level) {
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((f, i) => setTimeout(() => playTone(f, 0.18, 'triangle', 0.12), i * 100));
+  if (level >= 10) {
+    setTimeout(() => { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => playTone(f, 0.25, 'triangle', 0.15), i * 80)); }, 500);
+  }
+}
+
+function sfxDie() { playTone(150, 0.5, 'sawtooth', 0.12); playTone(100, 0.6, 'sawtooth', 0.08); }
+function sfxCombo(lvl) {
+  const notes = lvl >= 4 ? [523, 659, 784, 1047] : [523, 659];
+  notes.forEach((f, i) => setTimeout(() => playTone(f, 0.12, 'square', 0.08), i * 60));
+}
+
+// ==================== STATE ====================
+const state = {
+  running: false, paused: false, won: false,
+  scene: 'space',
+  playerLevel: 0,
+  score: 0,
+  combo: 0, comboTime: 0,
+  maxCombo: 0,
+  invulnTimer: 0,
+  startTime: 0,
+  totalEats: 0,
+  // camera
+  camX: 0, camY: 0,
+  worldW: 3000, worldH: 2200,
+  // followers system
+  followers: [],      // [{level, x, y, targetX, targetY, size, ...}]
+  pathHistory: [],    // [{x, y}] for trailing
+  // dog head rescue
+  dogHeads: [],       // imprisoned dog heads [{x, y}]
+  dogRescued: 0,      // count of rescued dog heads
+  gratitudeMode: false, // 狗头人的报恩 mode active
+  gratitudeTimer: 0,  // remaining gratitude seconds
+  // particles
+  particles: [],
+  eatParticles: [],
+};
+
+// ==================== CHARACTERS ====================
+let player = null;
+let aiChars = [];
+const AI_COUNT_TARGET = 25;
+
+function createCharacter(x, y, level, isPlayer = false) {
+  const lv = LEVELS[level];
+  return {
+    x, y, level, isPlayer,
+    size: lv.size,
+    name: lv.name,
+    color: lv.color,
+    dark: lv.dark,
+    accent: lv.accent,
+    role: lv.role,
+    vx: 0, vy: 0,
+    angle: Math.random() * Math.PI * 2,
+    wanderTimer: 0, wanderAngle: Math.random() * Math.PI * 2,
+    bobPhase: Math.random() * Math.PI * 2,
+    bobOffset: Math.sin(Math.random() * Math.PI * 2) * 1.5,
+  };
+}
+
+function getPlayerSpeed() { return 240 - state.playerLevel * 8; }
+function getAISpeed(level) { return 80 + level * 12; }
+
+// ==================== SCENE PARTICLES ====================
+const bgParticles = [];
+
+function initBgParticles() {
+  bgParticles.length = 0;
+  const sc = SCENES.find(s => s.id === state.scene);
+  for (let i = 0; i < sc.particleCount; i++) {
+    bgParticles.push({
+      x: Math.random() * state.worldW,
+      y: Math.random() * state.worldH,
+      size: Math.random() * 2.5 + 0.5,
+      speed: Math.random() * 0.3 + 0.05,
+      color: sc.particleColors[Math.floor(Math.random() * sc.particleColors.length)],
+      alpha: Math.random() * 0.5 + 0.2,
+      twinkle: Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+function updateBgParticles(dt) {
+  for (const p of bgParticles) {
+    p.y -= p.speed * dt * 30;
+    p.twinkle += dt * 2;
+    if (p.y < -20) { p.y = state.worldH + 20; p.x = Math.random() * state.worldW; }
+  }
+}
+
+// ==================== SPAWN AI ====================
+function spawnAI(safeSpawn = false) {
+  const margin = 60;
+  let x, y;
+  
+  // Safe spawn: keep distance from player
+  if (safeSpawn && player) {
+    const safeDist = 400;
+    let attempts = 0;
+    do {
+      x = margin + Math.random() * (state.worldW - margin * 2);
+      y = margin + Math.random() * (state.worldH - margin * 2);
+      attempts++;
+    } while (attempts < 50 && Math.hypot(x - player.x, y - player.y) < safeDist);
+  } else {
+    x = margin + Math.random() * (state.worldW - margin * 2);
+    y = margin + Math.random() * (state.worldH - margin * 2);
+  }
+  
+  // Level distribution: mostly near player level, some higher threats
+  let level;
+  const r = Math.random();
+  if (r < 0.30) {
+    // Easy food: level 0 to playerLevel-1
+    level = Math.floor(Math.random() * Math.max(1, state.playerLevel));
+  } else if (r < 0.65) {
+    // Near player level ±1
+    const lo = Math.max(0, state.playerLevel - 1);
+    const hi = Math.min(9, state.playerLevel + 1);
+    level = lo + Math.floor(Math.random() * (hi - lo + 1));
+  } else if (r < 0.88) {
+    // Higher threat (above player, 1-3 levels higher)
+    level = Math.min(9, state.playerLevel + 1 + Math.floor(Math.random() * 3));
+  } else {
+    // Random any level 0-9
+    level = Math.floor(Math.random() * 10);
+  }
+  
+  // Don't spawn level 10 (平基) as AI
+  level = Math.min(9, level);
+  
+  const c = createCharacter(x, y, level, false);
+  aiChars.push(c);
+}
+
+function maintainAIPopulation() {
+  while (aiChars.length < AI_COUNT_TARGET) spawnAI();
+}
+
+// ==================== DOG HEAD RESCUE ====================
+const DOG_RESCUE_TARGET = 10;
+const GRATITUDE_DURATION = 60;
+
+function spawnDogHead() {
+  if (state.dogHeads.length >= 5) return; // max 5 on screen
+  const m = 80;
+  state.dogHeads.push({
+    x: m + Math.random() * (state.worldW - m * 2),
+    y: m + Math.random() * (state.worldH - m * 2),
+    bobPhase: Math.random() * Math.PI * 2,
+    size: 22,
+  });
+}
+
+function checkDogHeadRescue() {
+  if (!player || state.gratitudeMode) return;
+  for (let i = state.dogHeads.length - 1; i >= 0; i--) {
+    const dh = state.dogHeads[i];
+    const dx = player.x - dh.x, dy = player.y - dh.y;
+    if (Math.sqrt(dx * dx + dy * dy) < player.size + dh.size) {
+      // Rescued!
+      state.dogHeads.splice(i, 1);
+      state.dogRescued++;
+      sfxLevelUp(Math.min(state.dogRescued, 10));
+      spawnEatParticles(dh.x, dh.y, '#F5A623');
+      showToast(`🐕 解救狗头！${state.dogRescued}/${DOG_RESCUE_TARGET}`);
+      
+      if (state.dogRescued >= DOG_RESCUE_TARGET) {
+        activateGratitude();
+      }
+    }
+  }
+}
+
+function activateGratitude() {
+  state.gratitudeMode = true;
+  state.gratitudeTimer = GRATITUDE_DURATION;
+  state.dogRescued = 0;
+  state.invulnTimer = 3; // brief invulnerability
+  
+  // Fanfare
+  [523, 659, 784, 1047, 1319].forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.3, 'triangle', 0.15), i * 100);
+  });
+  showToast('🌟 狗头人的报恩！无所不能！');
+  
+  // Massive particles
+  if (player) {
+    for (let i = 0; i < 30; i++) spawnEatParticles(player.x, player.y, '#FFD700');
+  }
+}
+
+function updateGratitude(dt) {
+  if (!state.gratitudeMode) {
+    // Spawn dog heads periodically when not in gratitude mode
+    if (!state._dogSpawnTimer) state._dogSpawnTimer = 0;
+    state._dogSpawnTimer += dt;
+    if (state._dogSpawnTimer > 8) { // every 8 seconds
+      state._dogSpawnTimer = 0;
+      spawnDogHead();
+    }
+    return;
+  }
+  
+  state.gratitudeTimer -= dt;
+  
+  // Gratitude particles
+  if (player && Math.random() < dt * 20) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = player.size * 2 + Math.random() * 40;
+    state.eatParticles.push({
+      x: player.x + Math.cos(angle) * dist,
+      y: player.y + Math.sin(angle) * dist,
+      vx: -Math.cos(angle) * 2, vy: -Math.sin(angle) * 2,
+      life: 1, maxLife: 1, size: 3, color: '#FFD700', alpha: 1,
+    });
+  }
+  
+  if (state.gratitudeTimer <= 0) {
+    state.gratitudeMode = false;
+    state.dogHeads = [];
+    showToast('⏰ 报恩时间结束！');
+  }
+}
+
+// ==================== PARTICLES (eat fx) ====================
+function spawnEatParticles(x, y, color) {
+  for (let i = 0; i < 12; i++) {
+    const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.5;
+    const speed = 2 + Math.random() * 4;
+    state.eatParticles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0.6 + Math.random() * 0.4,
+      maxLife: 0.6 + Math.random() * 0.4,
+      size: 2 + Math.random() * 3,
+      color,
+      alpha: 1,
+    });
+  }
+}
+
+function updateEatParticles(dt) {
+  for (let i = state.eatParticles.length - 1; i >= 0; i--) {
+    const p = state.eatParticles[i];
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+    p.life -= dt;
+    p.alpha = p.life / p.maxLife;
+    p.size *= 0.98;
+    if (p.life <= 0) state.eatParticles.splice(i, 1);
+  }
+}
+
+// ==================== GAME LOGIC ====================
+// Add AI to player's follower chain
+function playerEatChar(ai) {
+  const level = ai.level;
+  state.totalEats++;
+  state.score += (ai.level + 1) * 10;
+  
+  // Combo
+  state.combo++;
+  state.comboTime = 1.2;
+  if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+  
+  // SFX
+  if (state.combo >= 3) sfxCombo(state.combo);
+  else sfxEat(state.playerLevel);
+  
+  // Particles
+  spawnEatParticles(ai.x, ai.y, LEVELS[level]?.accent || '#fff');
+  
+  // AI becomes follower
+  const lv = LEVELS[level];
+  state.followers.push({
+    level,
+    x: ai.x, y: ai.y,
+    targetX: player.x, targetY: player.y,
+    size: lv.size,
+    color: lv.color,
+    dark: lv.dark,
+    accent: lv.accent,
+    role: lv.role,
+    name: lv.name,
+    bobPhase: Math.random() * Math.PI * 2,
+  });
+  
+  // Remove AI
+  const idx = aiChars.indexOf(ai);
+  if (idx >= 0) aiChars.splice(idx, 1);
+  
+  // Check for merge
+  checkFollowerMerge();
+}
+
+// Check if 3 same-level entities exist (player + followers) → merge them
+function checkFollowerMerge() {
+  // Count player level
+  const counts = {};
+  const followerIdxs = {}; // level → array of follower indices
+  counts[state.playerLevel] = (counts[state.playerLevel] || 0) + 1;
+  for (let i = 0; i < state.followers.length; i++) {
+    const lv = state.followers[i].level;
+    counts[lv] = (counts[lv] || 0) + 1;
+    if (!followerIdxs[lv]) followerIdxs[lv] = [];
+    followerIdxs[lv].push(i);
+  }
+  
+  // Find first level with 3+
+  for (const [lvStr, cnt] of Object.entries(counts)) {
+    const lv = parseInt(lvStr);
+    if (cnt >= 3) {
+      // Merge exactly 3 → 1
+      const playerInMerge = state.playerLevel === lv;
+      let consumedFollowers = 0;
+      const needFromFollowers = playerInMerge ? 2 : 3; // need 2 if player counts, 3 if only followers
+      
+      // Consume followers of this level (from end to keep indices stable)
+      const idxs = (followerIdxs[lv] || []).sort((a, b) => b - a); // descending
+      for (const i of idxs) {
+        if (consumedFollowers >= needFromFollowers) break;
+        spawnEatParticles(state.followers[i].x, state.followers[i].y, LEVELS[lv]?.accent || '#fff');
+        state.followers.splice(i, 1);
+        consumedFollowers++;
+      }
+      
+      // Evolve player if they're part of the merge
+      if (playerInMerge) {
+        evolvePlayer(); // player becomes lv+1, no extra follower needed
+      } else {
+        // 3 followers → 1 follower at next level
+        const nextLv = lv + 1;
+        if (nextLv <= 10) {
+          const nl = LEVELS[nextLv];
+          const lastF = state.followers.length > 0 ? state.followers[state.followers.length - 1] : player;
+          state.followers.push({
+            level: nextLv,
+            x: lastF.x, y: lastF.y,
+            targetX: player.x, targetY: player.y,
+            size: nl.size, color: nl.color, dark: nl.dark, accent: nl.accent,
+            role: nl.role, name: nl.name,
+            bobPhase: Math.random() * Math.PI * 2,
+          });
+          
+          if (nextLv >= 10) { winGame(); return; }
+          sfxLevelUp(nextLv);
+          showToast(`🔺 合成！ ${nl.name}`);
+        }
+      }
+      
+      // Recurse (merged result might trigger another merge)
+      checkFollowerMerge();
+      break;
+    }
+  }
+}
+
+function evolvePlayer() {
+  if (state.playerLevel >= 10) return;
+  state.playerLevel++;
+  state.invulnTimer = 1.5;
+  
+  const lv = LEVELS[state.playerLevel];
+  sfxLevelUp(state.playerLevel);
+  spawnEatParticles(player.x, player.y, lv.accent);
+  
+  player.size = lv.size;
+  player.color = lv.color;
+  player.dark = lv.dark;
+  player.accent = lv.accent;
+  player.name = lv.name;
+  player.role = lv.role;
+  
+  showToast(`🔺 进化！ ${lv.name}`);
+  
+  if (state.playerLevel >= 10) {
+    winGame();
+  }
+  updateHUD();
+}
+
+function playerDies(ai) {
+  state.running = false;
+  sfxDie();
+  saveToLeaderboard(false);
+  
+  document.getElementById('lose-title').textContent = `被 ${ai.name} 吃掉了！`;
+  document.getElementById('lose-by').textContent = `你止步于 ${LEVELS[state.playerLevel].name}`;
+  document.getElementById('lose-stats').innerHTML = `
+    <div class="stat-row"><span>最终等级</span><span> ${LEVELS[state.playerLevel].name}</span></div>
+    <div class="stat-row"><span>总得分</span><span>⭐ ${state.score}</span></div>
+    <div class="stat-row"><span>跟随者</span><span> ${state.followers.length} 个</span></div>
+    <div class="stat-row"><span>最高连击</span><span>🔥 x${state.maxCombo}</span></div>
+  `;
+  showOverlay('lose-overlay');
+}
+
+function winGame() {
+  state.running = false;
+  state.won = true;
+  saveToLeaderboard(true);
+  
+  const elapsed = ((Date.now() - state.startTime) / 1000).toFixed(1);
+  document.getElementById('win-stats').innerHTML = `
+    <div class="stat-row"><span>通关用时</span><span>⏱ ${elapsed}s</span></div>
+    <div class="stat-row"><span>总得分</span><span>⭐ ${state.score}</span></div>
+    <div class="stat-row"><span>吞噬数</span><span>🍽 ${state.totalEats}</span></div>
+    <div class="stat-row"><span>最高连击</span><span>🔥 x${state.maxCombo}</span></div>
+  `;
+  showOverlay('win-overlay');
+  
+  [523, 587, 659, 784, 880, 1047, 1175, 1319].forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.3, 'triangle', 0.13), i * 120);
+  });
+}
+
+// Update follower positions (trail behind player)
+function updateFollowers(dt) {
+  // Record path
+  const PATH_INTERVAL = 2; // record path more frequently
+  if (!state._pathCounter) state._pathCounter = 0;
+  state._pathCounter += dt * 60;
+  if (state._pathCounter >= PATH_INTERVAL) {
+    state._pathCounter -= PATH_INTERVAL;
+    state.pathHistory.push({ x: player.x, y: player.y });
+    // Keep limited history
+    const maxHistory = state.followers.length * PATH_INTERVAL + 30;
+    while (state.pathHistory.length > maxHistory) state.pathHistory.shift();
+  }
+  
+  // Each follower follows 12 steps behind the previous
+  const FOLLOW_DIST = 5; // in history points (was 12, tighter follow)
+  for (let i = 0; i < state.followers.length; i++) {
+    const f = state.followers[i];
+    const histIdx = state.pathHistory.length - 1 - ((i + 1) * FOLLOW_DIST);
+    if (histIdx >= 0) {
+      const target = state.pathHistory[Math.max(0, histIdx)];
+      const dx = target.x - f.x;
+      const dy = target.y - f.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 2) {
+        const speed = Math.min(400, dist * 5);
+        f.x += (dx / dist) * speed * dt;
+        f.y += (dy / dist) * speed * dt;
+      }
+    }
+    f.bobPhase += dt * 3;
+  }
+}
+
+// Also let followers eat AI they touch
+function checkFollowerCollisions() {
+  for (let fi = state.followers.length - 1; fi >= 0; fi--) {
+    const f = state.followers[fi];
+    for (let ai = aiChars.length - 1; ai >= 0; ai--) {
+      const a = aiChars[ai];
+      const dx = f.x - a.x, dy = f.y - a.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < f.size + a.size - 4 && a.level <= f.level) {
+        // Follower eats the AI
+        state.totalEats++;
+        state.score += (a.level + 1) * 5;
+        spawnEatParticles(a.x, a.y, LEVELS[a.level]?.accent || '#fff');
+        
+        // Eaten AI joins as new follower
+        const nl = LEVELS[a.level];
+        state.followers.push({
+          level: a.level,
+          x: a.x, y: a.y,
+          targetX: f.x, targetY: f.y,
+          size: nl.size, color: nl.color, dark: nl.dark, accent: nl.accent,
+          role: nl.role, name: nl.name,
+          bobPhase: Math.random() * Math.PI * 2,
+        });
+        aiChars.splice(ai, 1);
+        sfxEat(f.level);
+        checkFollowerMerge();
+        break; // one eat per follower per frame
+      }
+    }
+  }
+}
+
+// ==================== COLLISION DETECTION ====================
+function checkCollisions() {
+  if (!player || !state.running) return;
+  if (state.invulnTimer > 0) return;
+  
+  // Player vs AI
+  for (let i = aiChars.length - 1; i >= 0; i--) {
+    const ai = aiChars[i];
+    const dx = player.x - ai.x, dy = player.y - ai.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const touchDist = player.size + ai.size - 8;
+    
+    if (dist < touchDist) {
+      if (ai.level <= state.playerLevel || state.gratitudeMode) {
+        playerEatChar(ai);
+      } else {
+        playerDies(ai);
+        return;
+      }
+    }
+  }
+  
+  // Follower vs AI (eating chain)
+  checkFollowerCollisions();
+  
+  // Dog head rescue
+  checkDogHeadRescue();
+  
+  // AI vs AI bounce
+  for (let i = 0; i < aiChars.length; i++) {
+    for (let j = i + 1; j < aiChars.length; j++) {
+      const a = aiChars[i], b = aiChars[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const minDist = a.size + b.size;
+      if (dist < minDist && dist > 0) {
+        const nx = dx / dist, ny = dy / dist;
+        const overlap = minDist - dist;
+        a.x += nx * overlap * 0.5; a.y += ny * overlap * 0.5;
+        b.x -= nx * overlap * 0.5; b.y -= ny * overlap * 0.5;
+        a.vx += nx * 0.5; a.vy += ny * 0.5;
+        b.vx -= nx * 0.5; b.vy -= ny * 0.5;
+      }
+    }
+  }
+}
+
+// ==================== AI MOVEMENT ====================
+function updateAI(dt) {
+  for (const ai of aiChars) {
+    const levelDiff = ai.level - state.playerLevel;
+    const aiSpeed = getAISpeed(ai.level);
+    
+    // Wander timer
+    ai.wanderTimer -= dt;
+    if (ai.wanderTimer <= 0) {
+      ai.wanderTimer = 0.8 + Math.random() * 2.5;
+      ai.wanderAngle = Math.random() * Math.PI * 2;
+      
+      // Modify wander based on level diff vs player
+      if (player && ai.level > state.playerLevel && Math.random() < 0.4) {
+        // Chase player
+        const dx = player.x - ai.x;
+        const dy = player.y - ai.y;
+        ai.wanderAngle = Math.atan2(dy, dx);
+      } else if (player && ai.level < state.playerLevel && Math.random() < 0.5) {
+        // Flee from player
+        const dx = ai.x - player.x;
+        const dy = ai.y - player.y;
+        ai.wanderAngle = Math.atan2(dy, dx);
+      }
+    }
+    
+    // Smooth velocity towards target
+    const targetVx = Math.cos(ai.wanderAngle) * aiSpeed;
+    const targetVy = Math.sin(ai.wanderAngle) * aiSpeed;
+    ai.vx += (targetVx - ai.vx) * dt * 2;
+    ai.vy += (targetVy - ai.vy) * dt * 2;
+    
+    // Move
+    ai.x += ai.vx * dt;
+    ai.y += ai.vy * dt;
+    
+    // World boundaries with bounce
+    const margin = 40;
+    if (ai.x < margin) { ai.x = margin; ai.vx = Math.abs(ai.vx); ai.wanderAngle = Math.random() * Math.PI - Math.PI / 2; }
+    if (ai.x > state.worldW - margin) { ai.x = state.worldW - margin; ai.vx = -Math.abs(ai.vx); ai.wanderAngle = Math.PI + Math.random() * Math.PI - Math.PI / 2; }
+    if (ai.y < margin) { ai.y = margin; ai.vy = Math.abs(ai.vy); ai.wanderAngle = Math.random() * Math.PI; }
+    if (ai.y > state.worldH - margin) { ai.y = state.worldH - margin; ai.vy = -Math.abs(ai.vy); ai.wanderAngle = Math.PI + Math.random() * -Math.PI; }
+    
+    // Speed limit
+    const s = Math.sqrt(ai.vx * ai.vx + ai.vy * ai.vy);
+    if (s > aiSpeed) { ai.vx = (ai.vx / s) * aiSpeed; ai.vy = (ai.vy / s) * aiSpeed; }
+    
+    // Update angle for visuals
+    if (Math.abs(ai.vx) > 2 || Math.abs(ai.vy) > 2) {
+      ai.angle = Math.atan2(ai.vy, ai.vx);
+    }
+    
+    ai.bobPhase += dt * 3;
+  }
+}
+
+// ==================== INPUT ====================
+const input = { up: false, down: false, left: false, right: false, joystick: { active: false, dx: 0, dy: 0 }, tapTarget: null };
+
+function setupInput() {
+  document.addEventListener('keydown', e => {
+    switch (e.key) {
+      case 'ArrowUp': case 'w': case 'W': input.up = true; e.preventDefault(); break;
+      case 'ArrowDown': case 's': case 'S': input.down = true; e.preventDefault(); break;
+      case 'ArrowLeft': case 'a': case 'A': input.left = true; e.preventDefault(); break;
+      case 'ArrowRight': case 'd': case 'D': input.right = true; e.preventDefault(); break;
+      case 'Escape': case 'p': case 'P': togglePause(); e.preventDefault(); break;
+    }
+  });
+  document.addEventListener('keyup', e => {
+    switch (e.key) {
+      case 'ArrowUp': case 'w': case 'W': input.up = false; break;
+      case 'ArrowDown': case 's': case 'S': input.down = false; break;
+      case 'ArrowLeft': case 'a': case 'A': input.left = false; break;
+      case 'ArrowRight': case 'd': case 'D': input.right = false; break;
+    }
+  });
+
+  // Touch controls
+  const isMobile = /Mobi|Android|iPhone|iPad|Tablet/i.test(navigator.userAgent) || ('ontouchstart' in window);
+  const base = document.getElementById('joystick-base');
+  const thumb = document.getElementById('joystick-thumb');
+  const zone = document.getElementById('joystick-zone');
+  
+  // Always show joystick zone on touch devices
+  zone.style.display = isMobile ? 'block' : 'none';
+  base.style.display = 'none';
+  
+  let touchId = null;
+  let tapTouchId = null;
+  
+  // TAP TO MOVE: tap anywhere on the right side or non-joystick area
+  canvas.addEventListener('touchstart', e => {
+    if (!state.running) return;
+    for (const t of e.changedTouches) {
+      // Right half of screen = tap-to-move
+      if (t.clientX > window.innerWidth * 0.45 && !input.joystick.active) {
+        tapTouchId = t.identifier;
+        input.tapTarget = { x: t.clientX, y: t.clientY };
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+  
+  canvas.addEventListener('touchmove', e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === tapTouchId) {
+        input.tapTarget = { x: t.clientX, y: t.clientY };
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+  
+  canvas.addEventListener('touchend', e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === tapTouchId) {
+        tapTouchId = null;
+        input.tapTarget = null;
+      }
+    }
+  });
+  
+  // Joystick on left side
+  zone.addEventListener('touchstart', e => {
+    for (const t of e.changedTouches) {
+      const rect = zone.getBoundingClientRect();
+      // Only activate in bottom-left area
+      if (t.clientY > window.innerHeight * 0.35 && t.clientX < window.innerWidth * 0.45) {
+        touchId = t.identifier;
+        input.joystick.active = true;
+        input.tapTarget = null;
+        base.style.left = (t.clientX - 50) + 'px';
+        base.style.bottom = (window.innerHeight - t.clientY - 50) + 'px';
+        base.style.display = 'flex';
+        updateJoystick(t);
+        e.preventDefault();
+        break;
+      }
+    }
+  }, { passive: false });
+  
+  zone.addEventListener('touchmove', e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === touchId) {
+        updateJoystick(t);
+        e.preventDefault();
+        break;
+      }
+    }
+  }, { passive: false });
+  
+  zone.addEventListener('touchend', e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === touchId) {
+        touchId = null;
+        input.joystick.active = false;
+        input.joystick.dx = 0; input.joystick.dy = 0;
+        thumb.style.transform = 'translate(0, 0)';
+        base.style.display = 'none';
+        break;
+      }
+    }
+  });
+  
+  // Mouse support for desktop testing of touch features
+  canvas.addEventListener('mousedown', e => {
+    if (!state.running || input.joystick.active) return;
+    if (e.button === 0) {
+      input.tapTarget = { x: e.clientX, y: e.clientY };
+    }
+  });
+  canvas.addEventListener('mousemove', e => {
+    if (input.tapTarget) {
+      input.tapTarget = { x: e.clientX, y: e.clientY };
+    }
+  });
+  canvas.addEventListener('mouseup', () => { input.tapTarget = null; });
+  canvas.addEventListener('mouseleave', () => { input.tapTarget = null; });
+  
+  function updateJoystick(touch) {
+    const brect = base.getBoundingClientRect();
+    const cx = brect.left + brect.width / 2;
+    const cy = brect.top + brect.height / 2;
+    const dx = touch.clientX - cx;
+    const dy = touch.clientY - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const maxR = 40;
+    const clamped = Math.min(dist, maxR);
+    const nx = dist > 0 ? (dx / dist) * clamped : 0;
+    const ny = dist > 0 ? (dy / dist) * clamped : 0;
+    thumb.style.transform = `translate(${nx}px, ${ny}px)`;
+    input.joystick.dx = dist > 0 ? dx / dist : 0;
+    input.joystick.dy = dist > 0 ? dy / dist : 0;
+  }
+}
+
+// ==================== UPDATE ====================
+function updatePlayer(dt) {
+  if (!player || !state.running) return;
+  
+  const speed = getPlayerSpeed();
+  let mx = 0, my = 0;
+  
+  if (input.joystick.active) {
+    mx = input.joystick.dx;
+    my = input.joystick.dy;
+  } else if (input.tapTarget) {
+    // Convert screen tap to world direction
+    const worldTx = input.tapTarget.x + state.camX - canvas.width / 2;
+    const worldTy = input.tapTarget.y + state.camY - canvas.height / 2;
+    const dx = worldTx - player.x;
+    const dy = worldTy - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 5) {
+      mx = dx / dist;
+      my = dy / dist;
+    }
+  } else {
+    if (input.left) mx -= 1;
+    if (input.right) mx += 1;
+    if (input.up) my -= 1;
+    if (input.down) my += 1;
+  }
+  
+  // Normalize
+  const mag = Math.sqrt(mx * mx + my * my);
+  if (mag > 1) { mx /= mag; my /= mag; }
+  
+  player.x += mx * speed * dt;
+  player.y += my * speed * dt;
+  
+  // Update player angle for drawing
+  if (mag > 0.01) player.angle = Math.atan2(my, mx);
+  
+  // World bounds
+  const m = player.size;
+  if (player.x < m) player.x = m;
+  if (player.x > state.worldW - m) player.x = state.worldW - m;
+  if (player.y < m) player.y = m;
+  if (player.y > state.worldH - m) player.y = state.worldH - m;
+}
+
+function updateCamera() {
+  if (!player) {
+    state.camX = state.worldW / 2;
+    state.camY = state.worldH / 2;
+    return;
+  }
+  state.camX += (player.x - state.camX) * 0.08;
+  state.camY += (player.y - state.camY) * 0.08;
+}
+
+function updateHUD() {
+  document.getElementById('level-name').textContent = LEVELS[state.playerLevel].name;
+  document.getElementById('score-display').textContent = state.score;
+  
+  // Show follower count or dog rescue progress
+  if (state.gratitudeMode) {
+    document.getElementById('target-display').textContent = `⏱ ${Math.ceil(state.gratitudeTimer)}s`;
+  } else {
+    document.getElementById('target-display').textContent = `🐕 ${state.dogRescued}/${DOG_RESCUE_TARGET}`;
+  }
+  
+  const pct = Math.min(100, state.followers.length * 5);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${state.followers.length}`;
+  
+  document.getElementById('prev-emoji').textContent = '📦';
+  document.getElementById('next-emoji').textContent = state.playerLevel < 10 ? '📦' : '🏆';
+  
+  // Gratitude glow on progress bar
+  const progressWrap = document.getElementById('progress-wrap');
+  progressWrap.style.border = state.gratitudeMode ? '2px solid #FFD700' : 'none';
+  progressWrap.style.boxShadow = state.gratitudeMode ? '0 0 15px rgba(255,215,0,0.5)' : 'none';
+  
+  const comboEl = document.getElementById('hud-combo');
+  if (state.combo >= 2 && state.comboTime > 0) {
+    comboEl.style.display = 'flex';
+    document.getElementById('combo-display').textContent = 'x' + state.combo;
+  } else {
+    comboEl.style.display = 'none';
+  }
+}
+
+function update(dt) {
+  if (!state.running || state.paused) return;
+  
+  dt = Math.min(dt, 0.1); // Cap dt
+  
+  // Combo timer
+  if (state.comboTime > 0) {
+    state.comboTime -= dt;
+    if (state.comboTime <= 0) state.combo = 0;
+  }
+  
+  // Invulnerability timer
+  if (state.invulnTimer > 0) state.invulnTimer -= dt;
+  
+  updatePlayer(dt);
+  updateAI(dt);
+  updateFollowers(dt);
+  updateGratitude(dt);
+  checkCollisions();
+  maintainAIPopulation();
+  updateCamera();
+  updateBgParticles(dt);
+  updateEatParticles(dt);
+  updateHUD();
+}
+
+// ==================== RENDER ====================
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  // Scale world based on screen size for mobile
+  const area = canvas.width * canvas.height;
+  if (area < 500000) {
+    state.worldW = 1800; state.worldH = 1300;
+  } else if (area < 1000000) {
+    state.worldW = 2400; state.worldH = 1700;
+  } else {
+    state.worldW = 3000; state.worldH = 2200;
+  }
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// --- Draw character using real image sprite ---
+function drawCharacter(cx, cy, char, isPlayer) {
+  const s = char.size;
+  const bob = Math.sin(char.bobPhase) * (isPlayer ? 2 : 1.5);
+  
+  ctx.save();
+  
+  // Player glow
+  if (isPlayer) {
+    if (state.gratitudeMode) {
+      ctx.shadowColor = '#FFD700';
+      ctx.shadowBlur = 25 + Math.sin(Date.now() * 0.005) * 10;
+    } else {
+      ctx.shadowColor = char.accent;
+      ctx.shadowBlur = 14 + Math.sin(Date.now() * 0.004) * 4;
+    }
+    if (state.invulnTimer > 0) {
+      ctx.shadowColor = '#FFD700';
+      ctx.shadowBlur = 22 + Math.sin(Date.now() * 0.006) * 6;
+    }
+  }
+  
+  // Draw image sprite
+  const imgSize = s * 3.2; // scale up the 128px sprite
+  const img = CHAR_IMAGES[char.level];
+  if (img && img.complete && img.naturalWidth > 0) {
+    ctx.drawImage(img, cx - imgSize/2, cy - imgSize/2 + bob, imgSize, imgSize);
+  } else {
+    // Fallback: colored circle
+    ctx.fillStyle = char.color;
+    ctx.strokeStyle = char.dark;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy + bob, s * 0.9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+  
+  ctx.restore();
+  
+  // Name label
+  ctx.font = `bold ${Math.max(9, s * 0.28)}px "PingFang SC","Microsoft YaHei",sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 3;
+  ctx.fillText(char.name, cx, cy + s * 1.1 + bob);
+  ctx.shadowBlur = 0;
+  
+  // Threat indicator for AI (not followers, not in gratitude mode)
+  const isFollower = state.followers.includes(char);
+  if (!isPlayer && !isFollower && char.level > state.playerLevel && state.running && !state.gratitudeMode) {
+    ctx.fillStyle = 'rgba(255,50,50,0.2)';
+    ctx.beginPath();
+    ctx.arc(cx, cy + bob, s * 1.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// --- Draw dog head (imprisoned) ---
+function drawDogHead(dh) {
+  const bob = Math.sin(dh.bobPhase) * 2;
+  const img = CHAR_IMAGES['doghead'];
+  const imgSize = dh.size * 3.2;
+  
+  if (img && img.complete && img.naturalWidth > 0) {
+    ctx.drawImage(img, dh.x - imgSize/2, dh.y - imgSize/2 + bob, imgSize, imgSize);
+  } else {
+    // Fallback
+    ctx.fillStyle = '#8B5A2B';
+    ctx.beginPath();
+    ctx.arc(dh.x, dh.y + bob, dh.size * 0.9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(dh.x - dh.size*0.2, dh.y-dh.size*0.1+bob, 3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.arc(dh.x + dh.size*0.2, dh.y-dh.size*0.1+bob, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+  
+  // Rescue indicator
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.font = 'bold 10px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🔓解救', dh.x, dh.y - dh.size * 1.3 + bob);
+}
+
+function drawMinimap() {
+  const mmW = 100, mmH = 70, mmX = canvas.width - mmW - 12, mmY = canvas.height - mmH - 12;
+  
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(mmX, mmY, mmW, mmH, 8);
+  ctx.fill();
+  ctx.stroke();
+  
+  // View rect
+  const vx = mmX + (state.camX / state.worldW) * mmW;
+  const vy = mmY + (state.camY / state.worldH) * mmH;
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(vx - mmW * 0.05, vy - mmH * 0.05, mmW * 0.1, mmH * 0.1);
+  
+  // Player dot
+  if (player) {
+    const px = mmX + (player.x / state.worldW) * mmW;
+    const py = mmY + (player.y / state.worldH) * mmH;
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // AI dots (threats only)
+  for (const ai of aiChars) {
+    if (ai.level > state.playerLevel) {
+      const ax = mmX + (ai.x / state.worldW) * mmW;
+      const ay = mmY + (ai.y / state.worldH) * mmH;
+      ctx.fillStyle = 'rgba(255,60,60,0.8)';
+      ctx.beginPath();
+      ctx.arc(ax, ay, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
+  ctx.restore();
+}
+
+function render() {
+  const w = canvas.width, h = canvas.height;
+  
+  // Clear
+  ctx.fillStyle = SCENES.find(s => s.id === state.scene).bg;
+  ctx.fillRect(0, 0, w, h);
+  
+  if (!state.running && !state.paused) {
+    // Draw a few particles even when not running
+    for (const p of bgParticles.slice(0, 20)) {
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.alpha * 0.3;
+      ctx.beginPath();
+      ctx.arc(p.x % w, p.y % h, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(render);
+    return;
+  }
+  
+  ctx.save();
+  
+  // Camera transform
+  const camX = state.camX - w / 2;
+  const camY = state.camY - h / 2;
+  ctx.translate(-camX, -camY);
+  
+  // ===== Background particles =====
+  for (const p of bgParticles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.alpha * (0.5 + Math.sin(p.twinkle) * 0.5);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  
+  // ===== World border =====
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 0, state.worldW, state.worldH);
+  
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  const gridSize = 150;
+  for (let x = gridSize; x < state.worldW; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, state.worldH); ctx.stroke();
+  }
+  for (let y = gridSize; y < state.worldH; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(state.worldW, y); ctx.stroke();
+  }
+  
+  // ===== Danger zone visual (when near higher-level AI) =====
+  if (player) {
+    let nearestThreat = null, nearestDist = Infinity;
+    for (const ai of aiChars) {
+      if (ai.level > state.playerLevel) {
+        const dx = player.x - ai.x, dy = player.y - ai.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < nearestDist) { nearestDist = d; nearestThreat = ai; }
+      }
+    }
+    if (nearestThreat && nearestDist < 250) {
+      const alpha = Math.max(0, (1 - nearestDist / 250) * 0.25);
+      ctx.fillStyle = `rgba(255,0,0,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.size * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
+  // ===== Draw AI characters =====
+  for (const ai of aiChars) {
+    drawCharacter(ai.x, ai.y, ai, false);
+  }
+  
+  // ===== Draw dog heads =====
+  for (const dh of state.dogHeads) {
+    drawDogHead(dh);
+  }
+  
+  // ===== Draw followers (trail behind player) =====
+  for (const f of state.followers) {
+    drawCharacter(f.x, f.y, f, false);
+  }
+  
+  // ===== Draw player =====
+  if (player) {
+    drawCharacter(player.x, player.y, player, true);
+  }
+  
+  // ===== Eat particles =====
+  for (const p of state.eatParticles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.alpha;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  
+  ctx.restore();
+  
+  // ===== Minimap (on top of everything) =====
+  drawMinimap();
+  
+  // ===== Pause badge =====
+  if (state.paused) {
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 2rem "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⏸ 暂停中', w / 2, h / 2);
+  }
+  
+  requestAnimationFrame(render);
+}
+
+// ==================== GAME LOOP ====================
+let lastTime = 0;
+function gameLoop(timestamp) {
+  const dt = lastTime ? (timestamp - lastTime) / 1000 : 0.016;
+  lastTime = timestamp;
+  update(dt);
+  // render() is called via requestAnimationFrame independently
+  if (!gameLoop.running) return;
+  requestAnimationFrame(gameLoop);
+}
+
+// ==================== UI HELPERS ====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function showOverlay(id) {
+  document.getElementById(id).classList.add('show');
+}
+
+function hideOverlay(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// ==================== SCENE INIT ====================
+function initSceneSelector() {
+  const grid = document.getElementById('scene-selector');
+  grid.innerHTML = '';
+  SCENES.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'scene-btn' + (s.id === state.scene ? ' active' : '');
+    btn.textContent = s.name;
+    btn.onclick = () => {
+      state.scene = s.id;
+      document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    grid.appendChild(btn);
+  });
+}
+
+// ==================== GAME FLOW ====================
+function startGame() {
+  state.running = true;
+  state.paused = false;
+  state.won = false;
+  state.playerLevel = 0;
+  state.score = 0;
+  state.combo = 0;
+  state.comboTime = 0;
+  state.maxCombo = 0;
+  state.invulnTimer = 0;
+  state.totalEats = 0;
+  state.followers = [];
+  state.pathHistory = [];
+  state.dogHeads = [];
+  state.dogRescued = 0;
+  state.gratitudeMode = false;
+  state.gratitudeTimer = 0;
+  state.startTime = Date.now();
+  state.eatParticles = [];
+  
+  // Create player
+  player = createCharacter(state.worldW / 2, state.worldH / 2, 0, true);
+  
+  // Spawn initial AI (safe spawn: keep distance from player)
+  aiChars = [];
+  for (let i = 0; i < AI_COUNT_TARGET / 2; i++) spawnAI(true);
+  for (let i = AI_COUNT_TARGET / 2; i < AI_COUNT_TARGET; i++) spawnAI();
+  
+  // Init background
+  initBgParticles();
+  
+  // Reset camera
+  state.camX = state.worldW / 2;
+  state.camY = state.worldH / 2;
+  
+  // Hide menus
+  hideOverlay('menu-overlay');
+  hideOverlay('win-overlay');
+  hideOverlay('lose-overlay');
+  hideOverlay('pause-overlay');
+  
+  // Reset progress bar
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('progress-text').textContent = '0';
+  
+  updateHUD();
+  
+  // Start loops
+  lastTime = 0;
+  gameLoop.running = true;
+  requestAnimationFrame(gameLoop);
+  requestAnimationFrame(render);
+  
+  // Focus hint
+  showToast('🎮 方向键/WASD 移动！');
+}
+
+function restartGame() {
+  hideOverlay('win-overlay');
+  hideOverlay('lose-overlay');
+  startGame();
+}
+
+function showMenu() {
+  state.running = false;
+  state.paused = false;
+  gameLoop.running = false;
+  player = null;
+  aiChars = [];
+  hideOverlay('win-overlay');
+  hideOverlay('lose-overlay');
+  hideOverlay('pause-overlay');
+  showOverlay('menu-overlay');
+  initSceneSelector();
+}
+
+function togglePause() {
+  if (!state.running) return;
+  state.paused = !state.paused;
+  if (state.paused) showOverlay('pause-overlay');
+  else hideOverlay('pause-overlay');
+}
+
+function showHelp() {
+  showOverlay('help-overlay');
+}
+
+// ==================== LEADERBOARD ====================
+const LB_KEY = 'rhythm_box_leaderboard';
+function loadLB() {
+  try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch { return []; }
+}
+function saveToLeaderboard(won) {
+  const entry = {
+    score: state.score,
+    level: state.playerLevel,
+    levelName: LEVELS[state.playerLevel].name,
+    eats: state.totalEats,
+    combo: state.maxCombo,
+    won,
+    scene: state.scene,
+    time: ((Date.now() - state.startTime) / 1000).toFixed(1),
+    date: new Date().toLocaleDateString('zh-CN'),
+    ts: Date.now(),
+  };
+  let lb = loadLB();
+  // Score formula: won games first, then by score
+  lb.push(entry);
+  lb.sort((a, b) => {
+    if (a.won && !b.won) return -1;
+    if (!a.won && b.won) return 1;
+    return b.score - a.score;
+  });
+  lb = lb.slice(0, 10);
+  try { localStorage.setItem(LB_KEY, JSON.stringify(lb)); } catch {}
+}
+
+function showLeaderboard() {
+  const lb = loadLB();
+  const c = document.getElementById('lb-content');
+  if (lb.length === 0) {
+    c.innerHTML = '<div class="lb-empty">还没有记录哦～快去召唤平基吧！</div>';
+  } else {
+    const ranks = ['🥇','🥈','🥉','4','5','6','7','8','9','10'];
+    const rankCls = ['rank-gold','rank-silver','rank-bronze','','','','','','',''];
+    c.innerHTML = `<table class="lb-table"><thead><tr><th>#</th><th>结果</th><th>等级</th><th>得分</th><th>用时</th></tr></thead><tbody>${
+      lb.map((e, i) => `<tr>
+        <td class="${rankCls[i]}">${ranks[i]}</td>
+        <td>${e.won ? '👑通关' : '💀'}</td>
+        <td>${e.levelName}</td>
+        <td>⭐${e.score}</td>
+        <td>${e.time}s</td>
+      </tr>`).join('')
+    }</tbody></table>`;
+  }
+  showOverlay('lb-overlay');
+}
+
+function clearLeaderboard() {
+  if (confirm('确定清空排行榜？')) {
+    try { localStorage.removeItem(LB_KEY); } catch {}
+    showLeaderboard();
+  }
+}
+
+// ==================== INIT ====================
+function init() {
+  resizeCanvas();
+  setupInput();
+  initSceneSelector();
+  initBgParticles();
+  
+  // Close overlays on background click
+  document.querySelectorAll('.overlay').forEach(o => {
+    o.addEventListener('click', e => {
+      if (e.target === o && o.id !== 'menu-overlay' && o.id !== 'win-overlay' && o.id !== 'lose-overlay' && o.id !== 'pause-overlay') {
+        o.classList.remove('show');
+      }
+    });
+  });
+  
+  // Start render loop (for background)
+  requestAnimationFrame(render);
+}
+
+init();
+</script>
+</body>
+</html>
