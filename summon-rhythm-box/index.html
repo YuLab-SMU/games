@@ -519,6 +519,17 @@ function preloadImages() {
 }
 preloadImages();
 
+const BRAINROT_IMAGES = {};
+function preloadBrainrotImages() {
+  const ROLES = ['sneakerShark','bomberCroc','treeMonkey','cactusElephant','coffeeNinja','ballerinaCup','bananaChimp','bomberGoose','fridgeCamel','saturnCow','teapotMan'];
+  ROLES.forEach(role => {
+    const img = new Image();
+    img.src = 'images/brainrot/' + role + '.webp';
+    BRAINROT_IMAGES[role] = img;
+  });
+}
+preloadBrainrotImages();
+
 // ==================== POLYFILLS ====================
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -1535,7 +1546,7 @@ function playerEatChar(ai) {
 
 // Check if 3 same-level entities exist (player + followers) → merge them
 function enterBrainrotStage() {
-  state.campaignStage = 1;
+  state.campaignStage = state.campaignScenes.length;
   LEVELS = BRAINROT_LEVELS;
   state.playerLevel = 0;
   state.scene = 'brainrot';
@@ -1566,8 +1577,45 @@ function enterBrainrotStage() {
 }
 
 function completeCurrentStage() {
-  if (state.campaignStage === 0) enterBrainrotStage();
-  else winGame();
+  state.campaignStage++;
+  if (state.campaignStage < state.campaignScenes.length) {
+    enterNextPlayableScene();
+  } else {
+    enterBrainrotStage();
+  }
+}
+
+function enterNextPlayableScene() {
+  const nextSceneId = state.campaignScenes[state.campaignStage];
+  const sceneName = SCENES.find(s => s.id === nextSceneId)?.name || nextSceneId;
+  const totalStages = state.campaignScenes.length + 1; // +1 for brainrot
+
+  state.scene = nextSceneId;
+  state.playerLevel = 0;
+  LEVELS = SPRUNKI_LEVELS;
+  state.followers = [];
+  state.pathHistory = [];
+  state.eatParticles = [];
+  state.floatTexts = [];
+  state.combo = 0;
+  state.comboTime = 0;
+  state.invulnTimer = 3;
+  state._autoEatCooldown = 0;
+  state._aiSpawnTimer = 0;
+  state._huntRetargetTimer = 0;
+  state.score += 500; // bonus for completing a stage
+
+  player = createCharacter(state.worldW / 2, state.worldH / 2, 0, true);
+  aiChars = [];
+  const difficulty = DIFFICULTIES.find(d => d.id === state.difficulty) || DIFFICULTIES[1];
+  for (let i = 0; i < difficulty.aiCount; i++) spawnAI(true);
+  state.camX = player.x;
+  state.camY = player.y;
+  sceneCacheKey = '';
+  initBgParticles();
+  showToast(`🌟 ${sceneName}！(${state.campaignStage + 1}/${totalStages})`);
+  for (let i = 0; i < 8; i++) spawnEatParticles(player.x, player.y, LEVELS[0].accent);
+  updateHUD();
 }
 
 function checkFollowerMerge() {
@@ -1779,6 +1827,11 @@ function checkFollowerCollisions() {
       const dx = f.x - a.x, dy = f.y - a.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < f.size + a.size - 4 && a.level <= f.level) {
+        // Only hunt within half screen of player
+        const dpx = player.x - a.x, dpy = player.y - a.y;
+        const huntRadius = Math.max(canvas.width, canvas.height) * 0.45;
+        if (Math.sqrt(dpx * dpx + dpy * dpy) > huntRadius) continue;
+        
         // Follower eats the AI
         state.totalEats++;
         state.score += (a.level + 1) * 5;
@@ -2147,7 +2200,15 @@ function updateCamera() {
 
 function updateHUD() {
   const levelLabel = LEVELS[state.playerLevel]?.name || LEVELS[0].name;
-  document.getElementById('level-name').textContent = state.campaignStage === 1 ? `山海 · ${levelLabel}` : levelLabel;
+  if (state.campaignScenes && state.campaignScenes.length > 0) {
+    const totalStages = state.campaignScenes.length + 1; // +1 for brainrot
+    const stageLabel = state.campaignStage < state.campaignScenes.length
+      ? `${state.campaignStage + 1}/${totalStages}`
+      : `最终`;
+    document.getElementById('level-name').textContent = `${stageLabel} · ${levelLabel}`;
+  } else {
+    document.getElementById('level-name').textContent = levelLabel;
+  }
   document.getElementById('score-display').textContent = state.score;
   
   // Show follower count or dog rescue progress
@@ -2390,7 +2451,8 @@ function drawCharacter(cx, cy, char, isPlayer) {
   
   // Draw image sprite
   const imgSize = s * 3.2; // scale up the 128px sprite
-  const img = state.campaignStage === 0 ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
+  const inBrainrot = state.campaignScenes && state.campaignScenes.length > 0 && state.campaignStage >= state.campaignScenes.length;
+  const img = !inBrainrot ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
   ctx.fillStyle = 'rgba(0,0,0,0.22)';
   ctx.beginPath();
   ctx.ellipse(cx, cy + s * 0.95 + bob, s * 0.72, s * 0.26, 0, 0, Math.PI * 2);
@@ -2407,8 +2469,13 @@ function drawCharacter(cx, cy, char, isPlayer) {
     ctx.arc(cx, cy + bob, s * (isPlayer ? 1.02 : 0.98), 0, Math.PI * 2);
     ctx.fill();
   }
-  if (state.campaignStage === 1) {
-    drawBrainrotCharacter(cx, cy, char, bob);
+  if (inBrainrot) {
+    const brImg = BRAINROT_IMAGES[char.role];
+    if (brImg && brImg.complete && brImg.naturalWidth > 0) {
+      ctx.drawImage(brImg, cx - imgSize/2, cy - imgSize/2 + bob, imgSize, imgSize);
+    } else {
+      drawBrainrotCharacter(cx, cy, char, bob);
+    }
   } else if (img && img.complete && img.naturalWidth > 0) {
     ctx.drawImage(img, cx - imgSize/2, cy - imgSize/2 + bob, imgSize, imgSize);
   } else {
@@ -2801,6 +2868,14 @@ function startGame() {
   state.won = false;
   state.campaignStage = 0;
   resolveSceneChoice(true);
+  // Build campaign: chosen scene first, then remaining playable scenes in random order
+  const otherScenes = PLAYABLE_SCENES.filter(s => s.id !== state.scene).map(s => s.id);
+  for (let i = otherScenes.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [otherScenes[i], otherScenes[j]] = [otherScenes[j], otherScenes[i]];
+  }
+  state.campaignScenes = [state.scene, ...otherScenes];
+  state.campaignStage = 0;
   state.playerLevel = 0;
   state.score = 0;
   state.combo = 0;
@@ -2876,6 +2951,7 @@ function showMenu() {
   state.running = false;
   state.paused = false;
   state.campaignStage = 0;
+  state.campaignScenes = [];
   state.playerLevel = 0;
   LEVELS = SPRUNKI_LEVELS;
   resolveSceneChoice();
