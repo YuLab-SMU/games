@@ -46,6 +46,8 @@ header h1 {
   position: relative;
   width: min(90vw, 450px); aspect-ratio: 1;
   margin: 8px auto 16px;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 #board {
   position: absolute; inset: 0;
@@ -71,6 +73,7 @@ header h1 {
   transition: left 0.12s ease, top 0.12s ease;
   z-index: 1;
   overflow: hidden;
+  pointer-events: none;
 }
 .tile.new { animation: tilePop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .tile.merged { animation: tileMerge 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 2; }
@@ -457,7 +460,10 @@ function updateHUD() {
 }
 
 // ==================== INPUT ====================
-let touchStartX = 0, touchStartY = 0, swiped = false;
+let swipeStartX = 0, swipeStartY = 0;
+let activePointerId = null;
+let swiped = false;
+const SWIPE_THRESHOLD = 10;
 
 document.addEventListener('keydown', e => {
   if (gameOver) return;
@@ -469,23 +475,41 @@ document.addEventListener('keydown', e => {
   }
 });
 
-boardWrap.addEventListener('touchstart', e => {
-  if (gameOver) return;
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-  swiped = false;
-}, { passive: true });
-
-boardWrap.addEventListener('touchmove', e => {
-  if (gameOver || swiped) return;
-  const dx = e.touches[0].clientX - touchStartX;
-  const dy = e.touches[0].clientY - touchStartY;
+function trySwipe(clientX, clientY) {
+  if (gameOver || swiped) return false;
+  const dx = clientX - swipeStartX;
+  const dy = clientY - swipeStartY;
   const absDx = Math.abs(dx), absDy = Math.abs(dy);
-  if (Math.max(absDx, absDy) < 10) return;
+  if (Math.max(absDx, absDy) < SWIPE_THRESHOLD) return false;
   swiped = true;
   if (absDx > absDy) { move(dx > 0 ? 'right' : 'left'); }
   else { move(dy > 0 ? 'down' : 'up'); }
-}, { passive: true });
+  return true;
+}
+
+boardWrap.addEventListener('pointerdown', e => {
+  if (gameOver || !e.isPrimary) return;
+  activePointerId = e.pointerId;
+  swipeStartX = e.clientX;
+  swipeStartY = e.clientY;
+  swiped = false;
+  boardWrap.setPointerCapture(e.pointerId);
+});
+
+boardWrap.addEventListener('pointermove', e => {
+  if (e.pointerId !== activePointerId) return;
+  if (trySwipe(e.clientX, e.clientY)) e.preventDefault();
+});
+
+boardWrap.addEventListener('pointerup', e => {
+  if (e.pointerId !== activePointerId) return;
+  trySwipe(e.clientX, e.clientY);
+  activePointerId = null;
+});
+
+boardWrap.addEventListener('pointercancel', e => {
+  if (e.pointerId === activePointerId) activePointerId = null;
+});
 
 // ==================== D-PAD BUTTONS ====================
 function setupDPad() {
