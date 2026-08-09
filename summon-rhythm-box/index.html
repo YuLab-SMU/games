@@ -413,12 +413,10 @@ html, body {
     <p class="tagline">吃小的，躲大的，一路进化到平基！</p>
     <div style="font-size:0.8rem;color:#707090;margin-bottom:10px;">游戏模式</div>
     <div class="scene-grid" id="mode-selector" style="grid-template-columns:repeat(2, 1fr);"></div>
-    <div id="campaign-section">
     <div style="font-size:0.8rem;color:#707090;margin:12px 0 8px;">场景选择</div>
     <div class="scene-grid" id="scene-selector"></div>
     <div style="font-size:0.8rem;color:#707090;margin:12px 0 6px;">难度</div>
     <div class="scene-grid" id="difficulty-selector"></div>
-    </div>
     <div style="font-size:0.8rem;color:#707090;margin:12px 0 6px;">角色形象</div>
     <div class="skin-grid" id="skin-selector"></div>
     <button class="btn btn-primary" onclick="startGame()" style="margin-top:12px;font-size:1.1rem;padding:12px 40px;">
@@ -507,7 +505,7 @@ html, body {
 <script>
 // ==================== IMAGE LOADING ====================
 const CHAR_IMAGE_SETS = { classic: {}, refreshed: {} };
-const IMG_ROLE_MAP = ['raddy','garnold','black','gray','funbot','sky','oren','mrsun','mrtree','jevin','pinki','lime','vineria'];
+const IMG_ROLE_MAP = ['raddy','garnold','black','gray','funbot','sky','oren','mrsun','mrtree','jevin','pinki','lime','vineria','clukr','brud','durple','simon','tunner','funcomputer','wenda'];
 function preloadImages() {
   for (const skin of ['classic', 'refreshed']) {
     const base = skin === 'classic' ? 'images/classic/' : 'images/';
@@ -596,6 +594,27 @@ const SPRUNKI_LEVELS = [
   { id: 12, name: '藤蔓妹妹', color: '#66BB6A', dark: '#2E7D32', accent: '#F48FB1', size: 74,
     role: 'vineria',  // green + vine wig + flowers + beat
     vineWig: true, eyes: 'calm', mouth: 'smile', eyelashes: true },
+  { id: 13, name: '克拉克', color: '#B0BEC5', dark: '#607D8B', accent: '#FFD54F', size: 80,
+    role: 'clukr',    // silver + cymbal hat + beat
+    cymbal: true, eyes: 'robot', mouth: 'flat' },
+  { id: 14, name: '布拉德', color: '#8D6E63', dark: '#4E342E', accent: '#A1887F', size: 86,
+    role: 'brud',     // brown + bucket hat + googly eyes + effect
+    bucket: true, eyes: 'googly', mouth: 'open' },
+  { id: 15, name: '达普',   color: '#7E57C2', dark: '#4527A0', accent: '#B39DDB', size: 92,
+    role: 'durple',   // purple + melody
+    eyes: 'dot', mouth: 'simple' },
+  { id: 16, name: '西蒙',   color: '#FDD835', dark: '#F9A825', accent: '#FFF176', size: 98,
+    role: 'simon',    // yellow + melody
+    eyes: 'calm', mouth: 'smile' },
+  { id: 17, name: '坦纳',   color: '#A1887F', dark: '#5D4037', accent: '#D7CCC8', size: 104,
+    role: 'tunner',   // brown + fedora + melody
+    hat: true, eyes: 'bold', mouth: 'grin' },
+  { id: 18, name: '快乐电脑', color: '#CFD8DC', dark: '#78909C', accent: '#00E5FF', size: 110,
+    role: 'funcomputer', // silver + digital display + vocals
+    robot: true, visor: true, eyes: 'robot', mouth: 'smile' },
+  { id: 19, name: '温达',   color: '#FAFAFA', dark: '#BDBDBD', accent: '#F48FB1', size: 116,
+    role: 'wenda',    // white + cat ears + female vocals
+    ears: 'cat', eyes: 'cute', mouth: 'smile', eyelashes: true },
 ];
 
 const BRAINROT_LEVELS = [
@@ -730,7 +749,6 @@ const state = {
   difficulty: 'normal',
   skin: 'classic',
   squadMode: 'hunt',
-  campaignStage: 0,
   playerLevel: 0,
   score: 0,
   combo: 0, comboTime: 0,
@@ -781,6 +799,8 @@ const AI_COUNT_TARGET = 25;
 const MAX_FOLLOWERS = 80;
 const MAX_EAT_PARTICLES = 360;
 const HUNT_TARGET_LIMIT = 24;
+const HUNT_CHASE_RANGE = 350;   // followers only chase enemies within 350px
+const HUNT_CHASE_RANGE_SQ = HUNT_CHASE_RANGE * HUNT_CHASE_RANGE;
 
 function createCharacter(x, y, level, isPlayer = false) {
   const lv = LEVELS[level];
@@ -1555,82 +1575,6 @@ function playerEatChar(ai) {
   checkFollowerMerge();
 }
 
-// Check if 3 same-level entities exist (player + followers) → merge them
-function enterBrainrotStage() {
-  state.campaignStage = state.campaignScenes.length;
-  LEVELS = BRAINROT_LEVELS;
-  state.playerLevel = 0;
-  state.scene = 'brainrot';
-  state.followers = [];
-  state.pathHistory = [];
-  state.eatParticles = [];
-  state.floatTexts = [];
-  state.combo = 0;
-  state.comboTime = 0;
-  state.invulnTimer = 3;
-  state._autoEatCooldown = 0;
-  state._aiSpawnTimer = 0;
-  state._huntRetargetTimer = 0;
-  state.score += 1000;
-
-  player = createCharacter(state.worldW / 2, state.worldH / 2, 0, true);
-  aiChars = [];
-  const difficulty = DIFFICULTIES.find(d => d.id === state.difficulty) || DIFFICULTIES[1];
-  for (let i = 0; i < difficulty.aiCount; i++) spawnAI(true);
-  state.camX = player.x;
-  state.camY = player.y;
-  sceneCacheKey = '';
-  initBgParticles();
-  unlockAchievement('brainrotStage', '抵达山海异境');
-  showToast('🗽 平基达成！进入美国山海经');
-  for (let i = 0; i < 8; i++) spawnEatParticles(player.x, player.y, BRAINROT_LEVELS[0].accent);
-  updateHUD();
-}
-
-function completeCurrentStage() {
-  state.campaignStage++;
-  if (state.campaignStage < state.campaignScenes.length) {
-    enterNextPlayableScene();
-  } else if (state.gameMode === 'brainrot' || state.campaignStage > state.campaignScenes.length) {
-    winGame();
-  } else {
-    enterBrainrotStage();
-  }
-}
-
-function enterNextPlayableScene() {
-  const nextSceneId = state.campaignScenes[state.campaignStage];
-  const sceneName = SCENES.find(s => s.id === nextSceneId)?.name || nextSceneId;
-  const totalStages = state.campaignScenes.length + 1; // +1 for brainrot
-
-  state.scene = nextSceneId;
-  state.playerLevel = 0;
-  LEVELS = SPRUNKI_LEVELS;
-  state.followers = [];
-  state.pathHistory = [];
-  state.eatParticles = [];
-  state.floatTexts = [];
-  state.combo = 0;
-  state.comboTime = 0;
-  state.invulnTimer = 3;
-  state._autoEatCooldown = 0;
-  state._aiSpawnTimer = 0;
-  state._huntRetargetTimer = 0;
-  state.score += 500; // bonus for completing a stage
-
-  player = createCharacter(state.worldW / 2, state.worldH / 2, 0, true);
-  aiChars = [];
-  const difficulty = DIFFICULTIES.find(d => d.id === state.difficulty) || DIFFICULTIES[1];
-  for (let i = 0; i < difficulty.aiCount; i++) spawnAI(true);
-  state.camX = player.x;
-  state.camY = player.y;
-  sceneCacheKey = '';
-  initBgParticles();
-  showToast(`🌟 ${sceneName}！(${state.campaignStage + 1}/${totalStages})`);
-  for (let i = 0; i < 8; i++) spawnEatParticles(player.x, player.y, LEVELS[0].accent);
-  updateHUD();
-}
-
 function checkFollowerMerge() {
   // Count player level
   const counts = {};
@@ -1679,7 +1623,7 @@ function checkFollowerMerge() {
             bobPhase: Math.random() * Math.PI * 2,
           });
           
-          if (nextLv >= LEVELS.length - 1) { completeCurrentStage(); return; }
+          if (nextLv >= LEVELS.length - 1) { winGame(); return; }
           sfxLevelUp(nextLv);
           showToast(`🔺 合成！ ${nl.name}`);
         }
@@ -1713,7 +1657,7 @@ function evolvePlayer() {
   showToast(`🔺 进化！ ${lv.name}`);
   
   if (state.playerLevel >= LEVELS.length - 1) {
-    completeCurrentStage();
+    winGame();
     return;
   }
   updateHUD();
@@ -1780,6 +1724,8 @@ function updateFollowers(dt) {
       for (const a of aiChars) {
         if (claimed.has(a) || a.level > f.level) continue;
         const dist = (a.x - f.x) ** 2 + (a.y - f.y) ** 2;
+        // Only chase enemies within hunt range
+        if (dist > HUNT_CHASE_RANGE_SQ) continue;
         if (dist < bestDist) { best = a; bestDist = dist; }
       }
       f.huntTarget = best;
@@ -1803,7 +1749,11 @@ function updateFollowers(dt) {
         ty = player.y + Math.sin(a) * (player.size * 2.2 + i * 2);
       } else if (state.squadMode === 'hunt') {
         const target = f.huntTarget;
-        if (target && aiChars.includes(target) && target.level <= f.level) { tx = target.x; ty = target.y; }
+        if (target && aiChars.includes(target) && target.level <= f.level) {
+          const dHunt = (target.x - f.x) ** 2 + (target.y - f.y) ** 2;
+          if (dHunt <= HUNT_CHASE_RANGE_SQ) { tx = target.x; ty = target.y; }
+          else { f.huntTarget = null; }
+        }
       }
       const dx = tx - f.x;
       const dy = ty - f.y;
@@ -2213,16 +2163,7 @@ function updateCamera() {
 
 function updateHUD() {
   const levelLabel = LEVELS[state.playerLevel]?.name || LEVELS[0].name;
-  if (state.campaignScenes && state.campaignScenes.length > 0) {
-    const addBrainrot = state.gameMode === 'brainrot' ? 0 : 1;
-    const totalStages = state.campaignScenes.length + addBrainrot;
-    const stageLabel = state.campaignStage < state.campaignScenes.length
-      ? `${state.campaignStage + 1}/${totalStages}`
-      : `最终`;
-    document.getElementById('level-name').textContent = `${stageLabel} · ${levelLabel}`;
-  } else {
-    document.getElementById('level-name').textContent = levelLabel;
-  }
+  document.getElementById('level-name').textContent = levelLabel;
   document.getElementById('score-display').textContent = state.score;
   
   // Show follower count or dog rescue progress
@@ -2464,8 +2405,8 @@ function drawCharacter(cx, cy, char, isPlayer) {
   }
   
   // Draw image sprite
-  const imgSize = s * 3.2; // scale up the 128px sprite
-  const inBrainrot = state.campaignScenes && state.campaignScenes.length > 0 && state.campaignStage >= state.campaignScenes.length;
+  const imgScale = s * 3.2;
+  const inBrainrot = state.gameMode === 'brainrot';
   const img = !inBrainrot ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
   ctx.fillStyle = 'rgba(0,0,0,0.22)';
   ctx.beginPath();
@@ -2486,12 +2427,21 @@ function drawCharacter(cx, cy, char, isPlayer) {
   if (inBrainrot) {
     const brImg = BRAINROT_IMAGES[char.role];
     if (brImg && brImg.complete && brImg.naturalWidth > 0) {
-      ctx.drawImage(brImg, cx - imgSize/2, cy - imgSize/2 + bob, imgSize, imgSize);
+      const aspect = brImg.naturalWidth / brImg.naturalHeight;
+      let dw, dh;
+      if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+      else { dh = imgScale; dw = dh * aspect; }
+      ctx.drawImage(brImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
     } else {
       drawBrainrotCharacter(cx, cy, char, bob);
     }
   } else if (img && img.complete && img.naturalWidth > 0) {
-    ctx.drawImage(img, cx - imgSize/2, cy - imgSize/2 + bob, imgSize, imgSize);
+    // Maintain original aspect ratio to prevent squashing
+    const aspect = img.naturalWidth / img.naturalHeight;
+    let dw, dh;
+    if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+    else { dh = imgScale; dw = dh * aspect; }
+    ctx.drawImage(img, cx - dw/2, cy - dh/2 + bob, dw, dh);
   } else {
     // Fallback: colored circle
     ctx.fillStyle = char.color;
@@ -2823,7 +2773,7 @@ function initModeSelector() {
   const grid = document.getElementById('mode-selector');
   grid.innerHTML = '';
   const modes = [
-    { id: 'classic', name: '📦 节奏盒子', desc: '5个场景进化 → 山海经' },
+    { id: 'classic', name: '📦 节奏盒子', desc: '经典节奏盒子' },
     { id: 'brainrot', name: '🌊 直入山海经', desc: '跳过经典，直接开卷' },
   ];
   modes.forEach(m => {
@@ -2834,13 +2784,6 @@ function initModeSelector() {
     btn.onclick = () => {
       state.gameMode = m.id;
       initModeSelector();
-      // Toggle campaign section visibility
-      const campaign = document.getElementById('campaign-section');
-      if (m.id === 'brainrot') {
-        campaign.style.opacity = '0.35'; campaign.style.pointerEvents = 'none';
-      } else {
-        campaign.style.opacity = '1'; campaign.style.pointerEvents = 'auto';
-      }
     };
     grid.appendChild(btn);
   });
@@ -2939,8 +2882,6 @@ function startGame() {
   if (state.gameMode === 'brainrot') {
     // 直入山海经
     LEVELS = BRAINROT_LEVELS;
-    state.campaignScenes = ['brainrot'];
-    state.campaignStage = 0;
     state.scene = 'brainrot';
     sceneCacheKey = '';
     showToast('🌊 山海异境，开卷！');
@@ -2948,14 +2889,7 @@ function startGame() {
   } else {
     // 节奏盒子经典模式
     LEVELS = SPRUNKI_LEVELS;
-    state.campaignStage = 0;
     resolveSceneChoice(true);
-    const otherScenes = PLAYABLE_SCENES.filter(s => s.id !== state.scene).map(s => s.id);
-    for (let i = otherScenes.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [otherScenes[i], otherScenes[j]] = [otherScenes[j], otherScenes[i]];
-    }
-    state.campaignScenes = [state.scene, ...otherScenes];
     updateHUD();
   }
   
@@ -3003,8 +2937,6 @@ function restartGame() {
 function showMenu() {
   state.running = false;
   state.paused = false;
-  state.campaignStage = 0;
-  state.campaignScenes = [];
   state.playerLevel = 0;
   LEVELS = SPRUNKI_LEVELS;
   resolveSceneChoice();
