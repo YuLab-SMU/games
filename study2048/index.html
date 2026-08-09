@@ -386,10 +386,13 @@ function render(mergeInfo = []) {
       const pos = getTilePos(r, c);
       const tile = document.createElement('div');
       tile.className = 'tile';
-      tile.style.left = pos.left + 'px';
-      tile.style.top = pos.top + 'px';
-      tile.style.width = pos.w + 'px';
-      tile.style.height = pos.h + 'px';
+      const shrink = 0.9; // 90% of cell
+      const marginX = pos.w * (1 - shrink) / 2;
+      const marginY = pos.h * (1 - shrink) / 2;
+      tile.style.left = (pos.left + marginX) + 'px';
+      tile.style.top = (pos.top + marginY) + 'px';
+      tile.style.width = (pos.w * shrink) + 'px';
+      tile.style.height = (pos.h * shrink) + 'px';
       
       if (lv) {
         tile.style.background = lv.bg;
@@ -454,7 +457,7 @@ function updateHUD() {
 }
 
 // ==================== INPUT ====================
-let touchStartX = 0, touchStartY = 0;
+let touchStartX = 0, touchStartY = 0, swiped = false;
 
 document.addEventListener('keydown', e => {
   if (gameOver) return;
@@ -470,21 +473,75 @@ boardWrap.addEventListener('touchstart', e => {
   if (gameOver) return;
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
+  swiped = false;
 }, { passive: true });
 
-boardWrap.addEventListener('touchend', e => {
-  if (gameOver) return;
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  const dy = e.changedTouches[0].clientY - touchStartY;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist < 25) return; // too short
+boardWrap.addEventListener('touchmove', e => {
+  if (gameOver || swiped) return;
+  const dx = e.touches[0].clientX - touchStartX;
+  const dy = e.touches[0].clientY - touchStartY;
+  const absDx = Math.abs(dx), absDy = Math.abs(dy);
+  if (Math.max(absDx, absDy) < 10) return;
+  swiped = true;
+  if (absDx > absDy) { move(dx > 0 ? 'right' : 'left'); }
+  else { move(dy > 0 ? 'down' : 'up'); }
+}, { passive: true });
+
+// ==================== D-PAD BUTTONS ====================
+function setupDPad() {
+  const pad = document.createElement('div');
+  pad.style.cssText = `
+    display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr;
+    width: 140px; height: 140px; margin: 0 auto 20px; gap: 4px;
+  `;
   
-  const angle = Math.atan2(dy, dx);
-  if (angle > -Math.PI * 0.25 && angle <= Math.PI * 0.25) move('right');
-  else if (angle > Math.PI * 0.25 && angle <= Math.PI * 0.75) move('down');
-  else if (angle > Math.PI * 0.75 || angle <= -Math.PI * 0.75) move('left');
-  else move('up');
-});
+  const buttons = [
+    { text: '▲', dir: 'up',    row: 1, col: 2 },
+    { text: '◀', dir: 'left',  row: 2, col: 1 },
+    { text: '▶', dir: 'right', row: 2, col: 3 },
+    { text: '▼', dir: 'down',  row: 3, col: 2 },
+  ];
+  
+  buttons.forEach(({ text, dir, row, col }) => {
+    const btn = document.createElement('button');
+    btn.textContent = text;
+    btn.style.cssText = `
+      grid-row: ${row}; grid-column: ${col};
+      font-size: 1.4rem; font-weight: bold;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 44px;
+    `;
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      if (!gameOver) move(dir);
+    });
+    pad.appendChild(btn);
+  });
+  
+  // Center dot
+  const center = document.createElement('div');
+  center.style.cssText = 'grid-row:2;grid-column:2;display:flex;align-items:center;justify-content:center;';
+  const dot = document.createElement('div');
+  dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);';
+  center.appendChild(dot);
+  pad.appendChild(center);
+  
+  // Wrap in a row container
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;justify-content:center;padding:0 16px 24px;';
+  wrap.appendChild(pad);
+  
+  document.querySelector('.ctrl-row').insertAdjacentElement('afterend', wrap);
+}
+setupDPad();
 
 // ==================== GAME FLOW ====================
 function newGame() {
