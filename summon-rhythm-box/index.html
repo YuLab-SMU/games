@@ -411,10 +411,14 @@ html, body {
   <div class="overlay-panel">
     <h1>召唤节奏盒子</h1>
     <p class="tagline">吃小的，躲大的，一路进化到平基！</p>
-    <div style="font-size:0.8rem;color:#707090;margin-bottom:12px;">场景选择</div>
+    <div style="font-size:0.8rem;color:#707090;margin-bottom:10px;">游戏模式</div>
+    <div class="scene-grid" id="mode-selector" style="grid-template-columns:repeat(2, 1fr);"></div>
+    <div id="campaign-section">
+    <div style="font-size:0.8rem;color:#707090;margin:12px 0 8px;">场景选择</div>
     <div class="scene-grid" id="scene-selector"></div>
     <div style="font-size:0.8rem;color:#707090;margin:12px 0 6px;">难度</div>
     <div class="scene-grid" id="difficulty-selector"></div>
+    </div>
     <div style="font-size:0.8rem;color:#707090;margin:12px 0 6px;">角色形象</div>
     <div class="skin-grid" id="skin-selector"></div>
     <button class="btn btn-primary" onclick="startGame()" style="margin-top:12px;font-size:1.1rem;padding:12px 40px;">
@@ -503,7 +507,7 @@ html, body {
 <script>
 // ==================== IMAGE LOADING ====================
 const CHAR_IMAGE_SETS = { classic: {}, refreshed: {} };
-const IMG_ROLE_MAP = ['raddy','garnold','black','gray','funbot','sky','oren','mrsun','mrtree','jevin','pinki'];
+const IMG_ROLE_MAP = ['raddy','garnold','black','gray','funbot','sky','oren','mrsun','mrtree','jevin','pinki','lime','vineria'];
 function preloadImages() {
   for (const skin of ['classic', 'refreshed']) {
     const base = skin === 'classic' ? 'images/classic/' : 'images/';
@@ -586,6 +590,12 @@ const SPRUNKI_LEVELS = [
   { id: 10, name: '平基',   color: '#F48FB1', dark: '#C2185B', accent: '#FCE4EC', size: 63,
     role: 'pinki',    // pink + bunny ears + vocals
     ears: 'bunny', eyes: 'cute', mouth: 'smile' },
+  { id: 11, name: '莱姆',   color: '#C0CA33', dark: '#827717', accent: '#E6EE9C', size: 68,
+    role: 'lime',     // lime green + 5 hair tufts + asymmetric pupils + effect
+    hairTufts: 5, eyes: 'asymmetric', mouth: 'frown' },
+  { id: 12, name: '藤蔓妹妹', color: '#66BB6A', dark: '#2E7D32', accent: '#F48FB1', size: 74,
+    role: 'vineria',  // green + vine wig + flowers + beat
+    vineWig: true, eyes: 'calm', mouth: 'smile', eyelashes: true },
 ];
 
 const BRAINROT_LEVELS = [
@@ -700,7 +710,7 @@ function sfxEat(level) {
 function sfxLevelUp(level) {
   const notes = [523, 659, 784, 1047];
   notes.forEach((f, i) => setTimeout(() => playTone(f, 0.18, 'triangle', 0.12), i * 100));
-  if (level >= 10) {
+  if (level >= LEVELS.length - 1) {
     setTimeout(() => { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => playTone(f, 0.25, 'triangle', 0.15), i * 80)); }, 500);
   }
 }
@@ -716,6 +726,7 @@ const state = {
   running: false, paused: false, won: false,
   scene: 'space',
   sceneChoice: 'random',
+  gameMode: 'classic', // 'classic' | 'brainrot'
   difficulty: 'normal',
   skin: 'classic',
   squadMode: 'hunt',
@@ -1580,6 +1591,8 @@ function completeCurrentStage() {
   state.campaignStage++;
   if (state.campaignStage < state.campaignScenes.length) {
     enterNextPlayableScene();
+  } else if (state.gameMode === 'brainrot' || state.campaignStage > state.campaignScenes.length) {
+    winGame();
   } else {
     enterBrainrotStage();
   }
@@ -1654,7 +1667,7 @@ function checkFollowerMerge() {
       } else {
         // 3 followers → 1 follower at next level
         const nextLv = lv + 1;
-        if (nextLv <= 10) {
+        if (nextLv <= LEVELS.length - 1) {
           const nl = LEVELS[nextLv];
           const lastF = state.followers.length > 0 ? state.followers[state.followers.length - 1] : player;
           state.followers.push({
@@ -1666,7 +1679,7 @@ function checkFollowerMerge() {
             bobPhase: Math.random() * Math.PI * 2,
           });
           
-          if (nextLv >= 10) { completeCurrentStage(); return; }
+          if (nextLv >= LEVELS.length - 1) { completeCurrentStage(); return; }
           sfxLevelUp(nextLv);
           showToast(`🔺 合成！ ${nl.name}`);
         }
@@ -1680,7 +1693,7 @@ function checkFollowerMerge() {
 }
 
 function evolvePlayer() {
-  if (state.playerLevel >= 10) return;
+  if (state.playerLevel >= LEVELS.length - 1) return;
   state.playerLevel++;
   unlockAchievement('level' + state.playerLevel, '进化到 ' + LEVELS[state.playerLevel].name);
   state.invulnTimer = 1.5;
@@ -1699,7 +1712,7 @@ function evolvePlayer() {
   
   showToast(`🔺 进化！ ${lv.name}`);
   
-  if (state.playerLevel >= 10) {
+  if (state.playerLevel >= LEVELS.length - 1) {
     completeCurrentStage();
     return;
   }
@@ -2201,7 +2214,8 @@ function updateCamera() {
 function updateHUD() {
   const levelLabel = LEVELS[state.playerLevel]?.name || LEVELS[0].name;
   if (state.campaignScenes && state.campaignScenes.length > 0) {
-    const totalStages = state.campaignScenes.length + 1; // +1 for brainrot
+    const addBrainrot = state.gameMode === 'brainrot' ? 0 : 1;
+    const totalStages = state.campaignScenes.length + addBrainrot;
     const stageLabel = state.campaignStage < state.campaignScenes.length
       ? `${state.campaignStage + 1}/${totalStages}`
       : `最终`;
@@ -2224,13 +2238,13 @@ function updateHUD() {
   }
   
   const sameLevel = state.followers.filter(f => f.level === state.playerLevel).length;
-  const needed = state.playerLevel >= 10 ? 0 : 2;
+  const needed = state.playerLevel >= LEVELS.length - 1 ? 0 : 2;
   const pct = needed ? Math.min(100, (sameLevel / needed) * 100) : 100;
   document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-text').textContent = state.playerLevel >= 10 ? '完成' : `${Math.min(sameLevel, needed)}/${needed}`;
+  document.getElementById('progress-text').textContent = state.playerLevel >= LEVELS.length - 1 ? '完成' : `${Math.min(sameLevel, needed)}/${needed}`;
   
   document.getElementById('prev-emoji').textContent = '📦';
-  document.getElementById('next-emoji').textContent = state.playerLevel < 10 ? '📦' : '🏆';
+  document.getElementById('next-emoji').textContent = state.playerLevel < LEVELS.length - 1 ? '📦' : '🏆';
   
   // Gratitude glow on progress bar
   const progressWrap = document.getElementById('progress-wrap');
@@ -2805,6 +2819,33 @@ function resolveSceneChoice(reroll = false) {
   return state.scene;
 }
 
+function initModeSelector() {
+  const grid = document.getElementById('mode-selector');
+  grid.innerHTML = '';
+  const modes = [
+    { id: 'classic', name: '📦 节奏盒子', desc: '5个场景进化 → 山海经' },
+    { id: 'brainrot', name: '🌊 直入山海经', desc: '跳过经典，直接开卷' },
+  ];
+  modes.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'scene-btn' + (m.id === state.gameMode ? ' active' : '');
+    btn.title = m.desc;
+    btn.innerHTML = m.name + '<br><span style="font-size:0.6rem;opacity:0.6;">' + m.desc + '</span>';
+    btn.onclick = () => {
+      state.gameMode = m.id;
+      initModeSelector();
+      // Toggle campaign section visibility
+      const campaign = document.getElementById('campaign-section');
+      if (m.id === 'brainrot') {
+        campaign.style.opacity = '0.35'; campaign.style.pointerEvents = 'none';
+      } else {
+        campaign.style.opacity = '1'; campaign.style.pointerEvents = 'auto';
+      }
+    };
+    grid.appendChild(btn);
+  });
+}
+
 function initSceneSelector() {
   const grid = document.getElementById('scene-selector');
   grid.innerHTML = '';
@@ -2862,20 +2903,9 @@ function setSquadMode(mode) {
 
 // ==================== GAME FLOW ====================
 function startGame() {
-  LEVELS = SPRUNKI_LEVELS;
   state.running = true;
   state.paused = false;
   state.won = false;
-  state.campaignStage = 0;
-  resolveSceneChoice(true);
-  // Build campaign: chosen scene first, then remaining playable scenes in random order
-  const otherScenes = PLAYABLE_SCENES.filter(s => s.id !== state.scene).map(s => s.id);
-  for (let i = otherScenes.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [otherScenes[i], otherScenes[j]] = [otherScenes[j], otherScenes[i]];
-  }
-  state.campaignScenes = [state.scene, ...otherScenes];
-  state.campaignStage = 0;
   state.playerLevel = 0;
   state.score = 0;
   state.combo = 0;
@@ -2905,6 +2935,29 @@ function startGame() {
   input.tapTarget = null;
   Object.assign(input.joystick, { active: false, dx: 0, dy: 0, strength: 0 });
   setSquadMode('hunt');
+
+  if (state.gameMode === 'brainrot') {
+    // 直入山海经
+    LEVELS = BRAINROT_LEVELS;
+    state.campaignScenes = ['brainrot'];
+    state.campaignStage = 0;
+    state.scene = 'brainrot';
+    sceneCacheKey = '';
+    showToast('🌊 山海异境，开卷！');
+    unlockAchievement('brainrot');
+  } else {
+    // 节奏盒子经典模式
+    LEVELS = SPRUNKI_LEVELS;
+    state.campaignStage = 0;
+    resolveSceneChoice(true);
+    const otherScenes = PLAYABLE_SCENES.filter(s => s.id !== state.scene).map(s => s.id);
+    for (let i = otherScenes.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [otherScenes[i], otherScenes[j]] = [otherScenes[j], otherScenes[i]];
+    }
+    state.campaignScenes = [state.scene, ...otherScenes];
+    updateHUD();
+  }
   
   // Create player
   player = createCharacter(state.worldW / 2, state.worldH / 2, 0, true);
@@ -2962,6 +3015,7 @@ function showMenu() {
   hideOverlay('lose-overlay');
   hideOverlay('pause-overlay');
   showOverlay('menu-overlay');
+  initModeSelector();
   initSceneSelector();
   updateHUD();
 }
@@ -3040,6 +3094,7 @@ function init() {
   resizeCanvas();
   setupInput();
   loadAudioSettings();
+  initModeSelector();
   initSceneSelector();
   resolveSceneChoice();
   initBgParticles();
