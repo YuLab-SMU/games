@@ -10,7 +10,10 @@
 
 html, body {
   width: 100%; height: 100%; overflow: hidden;
-  background: #080818;
+  background:
+    radial-gradient(circle at top, rgba(108,99,255,0.18), transparent 28%),
+    radial-gradient(circle at 20% 80%, rgba(255,107,157,0.12), transparent 22%),
+    #080818;
   font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   user-select: none; -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -31,9 +34,29 @@ html, body {
   display: flex; justify-content: space-between; align-items: flex-start;
   gap: 10px;
 }
+#hud-actions { position: fixed; top: 14px; right: 18px; z-index: 25; display: flex; gap: 8px; }
+.hud-action { pointer-events: auto; width: 38px; height: 38px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2); background: rgba(20,20,50,.65); color: #fff; cursor: pointer; font-size: 1rem; box-shadow: 0 10px 24px rgba(0,0,0,.18); }
+.hud-action, .mode-btn, .scene-btn, .btn { position: relative; overflow: hidden; }
+.hud-action::before, .mode-btn::before, .scene-btn::before, .btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.16) 42%, transparent 62%);
+  transform: translateX(-130%);
+  transition: transform .6s ease;
+}
+.hud-action:hover::before, .mode-btn:hover::before, .scene-btn:hover::before, .btn:hover::before { transform: translateX(130%); }
+.hud-action.active { border-color: #FFD93D; color: #FFD93D; }
+#beat-meter { position: fixed; top: 68px; left: 50%; transform: translateX(-50%); z-index: 12; pointer-events: none; display:flex; align-items:center; gap:8px; color:rgba(255,255,255,.72); font-size:.7rem; font-weight:800; background:rgba(14,14,34,.38); border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:8px 14px; backdrop-filter:blur(10px); }
+#beat-dot { width: 12px; height: 12px; border-radius: 50%; background:#6C63FF; box-shadow:0 0 12px #6C63FF; transition:transform .08s ease, background .08s ease; }
+#beat-dot.on { transform:scale(1.8); background:#FFD93D; box-shadow:0 0 18px #FFD93D; }
+#squad-mode { position: fixed; left: 18px; bottom: 18px; z-index: 25; pointer-events:auto; display:none; }
+.mode-btn { padding:8px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.22); background:rgba(20,20,50,.7); color:#fff; cursor:pointer; font-weight:800; font-size:.72rem; box-shadow:0 10px 22px rgba(0,0,0,.18); }
+.mode-btn.active { border-color:#00D2FF; color:#00D2FF; }
+.setting-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:8px 0; color:#d8d0e8; font-size:.9rem; }
+.setting-row select, .setting-row input { accent-color:#6C63FF; }
 
 .hud-item {
-  background: rgba(20, 20, 50, 0.55);
+  background: linear-gradient(180deg, rgba(36, 34, 78, 0.74), rgba(17, 18, 46, 0.72));
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   border: 1px solid rgba(255,255,255,0.18);
@@ -45,7 +68,7 @@ html, body {
   display: flex; align-items: center; gap: 8px;
   white-space: nowrap;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 .hud-level { 
   font-size: 1.05rem; 
@@ -61,14 +84,14 @@ html, body {
   position: fixed; bottom: 85px; left: 50%;
   transform: translateX(-50%); z-index: 10; pointer-events: none;
   width: min(340px, 72vw);
-  background: rgba(20, 20, 50, 0.6);
+  background: linear-gradient(180deg, rgba(29,27,72,.84), rgba(17,17,45,.76));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255,255,255,0.15);
   border-radius: 20px;
   padding: 8px 16px;
   display: flex; align-items: center; gap: 10px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,.06);
 }
 #progress-bar {
   flex: 1; height: 10px; border-radius: 5px;
@@ -78,7 +101,7 @@ html, body {
 }
 #progress-fill {
   height: 100%; border-radius: 5px;
-  background: linear-gradient(90deg, #FF6B9D, #FFA94D, #FFD93D);
+  background: linear-gradient(90deg, #FF6B9D, #FFA94D, #FFD93D, #7F7CFF);
   background-size: 200% 100%;
   animation: progressShimmer 2s linear infinite;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -93,6 +116,11 @@ html, body {
   font-size: 0.7rem; color: rgba(255,255,255,0.7);
   white-space: nowrap; min-width: 36px; text-align: right;
   font-weight: 700;
+}
+#progress-wrap::after {
+  content:'';
+  position:absolute; left:16px; right:16px; top:0; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.34), transparent);
 }
 
 /* ============ Virtual Joystick ============ */
@@ -125,7 +153,7 @@ html, body {
 /* ============ Overlay / Modal ============ */
 .overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.65);
+  background: radial-gradient(circle at top, rgba(108,99,255,0.16), transparent 30%), rgba(0,0,0,0.7);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 100;
@@ -137,7 +165,7 @@ html, body {
 .overlay.show { display: flex; }
 
 .overlay-panel {
-  background: linear-gradient(145deg, rgba(35, 30, 70, 0.95), rgba(25, 20, 55, 0.98));
+  background: radial-gradient(circle at top, rgba(255,255,255,.08), transparent 45%), linear-gradient(145deg, rgba(42, 36, 86, 0.96), rgba(24, 20, 58, 0.98));
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(255,255,255,0.2);
@@ -145,11 +173,13 @@ html, body {
   padding: 36px 30px;
   text-align: center;
   max-width: 400px; width: 92%;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
   color: #f0e8ff;
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.05),
-    0 25px 70px rgba(0,0,0,0.5),
-    0 0 80px rgba(108,99,255,0.08);
+    0 30px 90px rgba(0,0,0,0.52),
+    0 0 90px rgba(108,99,255,0.12);
   animation: panelSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes panelSlideIn {
@@ -239,7 +269,7 @@ html, body {
 }
 .scene-btn {
   padding: 14px 8px; border-radius: 16px; border: 2px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)); color: rgba(255,255,255,0.78);
   cursor: pointer; font-size: 0.82rem; font-family: inherit;
   font-weight: 700;
   transition: all 0.25s ease;
@@ -259,6 +289,9 @@ html, body {
   box-shadow: 0 0 25px rgba(108,99,255,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
   transform: translateY(-2px);
 }
+.skin-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin:10px 0 14px; }
+.skin-btn { display:flex; align-items:center; justify-content:center; gap:10px; padding:8px 10px; }
+.skin-thumb { width:44px; height:44px; object-fit:contain; filter:drop-shadow(0 5px 8px rgba(0,0,0,.3)); }
 
 /* Leaderboard */
 .lb-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88rem; }
@@ -288,10 +321,11 @@ html, body {
   box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 40px rgba(108,99,255,0.2);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity .2s ease;
   white-space: nowrap;
+  opacity: 0;
 }
-#toast.show { transform: translate(-50%,-50%) scale(1); }
+#toast.show { transform: translate(-50%,-50%) scale(1); opacity: 1; }
 
 /* Responsive */
 @media (max-width: 900px) {
@@ -346,6 +380,12 @@ html, body {
     <span>🎯</span><span id="target-display">0/6</span>
   </div>
 </div>
+<div id="hud-actions">
+  <button class="hud-action" id="pause-btn" title="暂停" onclick="togglePause()">Ⅱ</button>
+  <button class="hud-action" title="设置" onclick="showOverlay('settings-overlay')">⚙</button>
+</div>
+<div id="beat-meter"><span id="beat-dot"></span><span id="beat-label">节拍准备中</span></div>
+<div id="squad-mode"><button class="mode-btn active" id="mode-follow" onclick="setSquadMode('follow')">跟随</button><button class="mode-btn" id="mode-hunt" onclick="setSquadMode('hunt')">狩猎</button><button class="mode-btn" id="mode-guard" onclick="setSquadMode('guard')">护卫</button></div>
 
 <!-- Progress Bar -->
 <div id="progress-wrap">
@@ -372,13 +412,30 @@ html, body {
     <p class="tagline">吃小的，躲大的，一路进化到平基！</p>
     <div style="font-size:0.8rem;color:#707090;margin-bottom:12px;">场景选择</div>
     <div class="scene-grid" id="scene-selector"></div>
+    <div style="font-size:0.8rem;color:#707090;margin:12px 0 6px;">难度</div>
+    <div class="scene-grid" id="difficulty-selector"></div>
+    <div style="font-size:0.8rem;color:#707090;margin:12px 0 6px;">角色形象</div>
+    <div class="skin-grid" id="skin-selector"></div>
     <button class="btn btn-primary" onclick="startGame()" style="margin-top:12px;font-size:1.1rem;padding:12px 40px;">
       ▶ 开始召唤
     </button>
     <div style="margin-top:12px;">
       <button class="btn btn-secondary" style="font-size:0.8rem;" onclick="showLeaderboard()">🏅 排行榜</button>
       <button class="btn btn-secondary" style="font-size:0.8rem;" onclick="showHelp()">📖 怎么玩</button>
+      <button class="btn btn-secondary" style="font-size:0.8rem;" onclick="showOverlay('settings-overlay')">⚙ 设置</button>
     </div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="settings-overlay">
+  <div class="overlay-panel" style="text-align:left;">
+    <h2 style="text-align:center;">设置</h2>
+    <div class="setting-row"><span>音乐</span><input id="music-toggle" type="checkbox" checked onchange="setAudioSetting('music', this.checked)"></div>
+    <div class="setting-row"><span>音效</span><input id="sfx-toggle" type="checkbox" checked onchange="setAudioSetting('sfx', this.checked)"></div>
+    <div class="setting-row"><span>节拍辅助</span><input id="beat-toggle" type="checkbox" checked onchange="setAudioSetting('beat', this.checked)"></div>
+    <div class="setting-row"><span>减少动画</span><input id="motion-toggle" type="checkbox" onchange="setAudioSetting('motion', this.checked)"></div>
+    <button class="btn btn-secondary" onclick="hideOverlay('settings-overlay')" style="display:block;margin:14px auto 0;">完成</button>
   </div>
 </div>
 
@@ -423,9 +480,9 @@ html, body {
     <h2 style="text-align:center;">📖 玩法说明</h2>
     <div style="font-size:0.85rem;line-height:1.7;color:#b0b0d0;">
       <p>🎮 <b style="color:#fff;">操作</b>：方向键/WASD 或触屏左下角摇杆移动</p>
-      <p>🍽 <b style="color:#fff;">吃</b>：碰到同等或更低等级的盒子会吃掉它们，涨进化槽</p>
+      <p>🍽 <b style="color:#fff;">吃</b>：碰到同等或更低等级的盒子会吃掉它们，并把它们收进队伍</p>
       <p>💀 <b style="color:#FF6B6B;">被吃</b>：碰到比你高级的盒子直接游戏结束</p>
-      <p>📈 <b style="color:#FFD93D;">进化</b>：吃够一定数量自动进化到下一级</p>
+      <p>📈 <b style="color:#FFD93D;">进化</b>：凑齐两个与你同等级的跟随者，就会三合一进化</p>
       <p>👑 <b style="color:#FFD700;">胜利</b>：进化到终极形态「平基」即通关</p>
     </div>
     <button class="btn btn-secondary" onclick="hideOverlay('help-overlay')" style="margin-top:12px;display:block;text-align:center;">知道啦</button>
@@ -444,31 +501,20 @@ html, body {
 
 <script>
 // ==================== IMAGE LOADING ====================
-const CHAR_IMAGES = {};
-const BG_IMAGES = {};
-const IMG_ROLE_MAP = ['raddy','garnold','black','gray','fun-bot','sky','oren','mr-sun','mr-tree','jevin','pinki'];
-const BG_NAMES = ['space','ocean','forest','cyber','candy'];
+const CHAR_IMAGE_SETS = { classic: {}, refreshed: {} };
+const IMG_ROLE_MAP = ['raddy','garnold','black','gray','funbot','sky','oren','mrsun','mrtree','jevin','pinki'];
 function preloadImages() {
-  let loaded = 0; const total = IMG_ROLE_MAP.length + 1;
-  IMG_ROLE_MAP.forEach((name, i) => {
-    const img = new Image();
-    img.onload = () => { loaded++; };
-    img.onerror = () => { loaded++; };
-    img.src = 'images/' + name + '.png';
-    CHAR_IMAGES[i] = img;
-  });
-  // Dog head
-  const dh = new Image();
-  dh.onload = () => { loaded++; };
-  dh.onerror = () => { loaded++; };
-  dh.src = 'images/doghead.png';
-  CHAR_IMAGES['doghead'] = dh;
-  // Scene backgrounds
-  BG_NAMES.forEach(name => {
-    const img = new Image();
-    img.src = 'images/bg-' + name + '.png';
-    BG_IMAGES[name] = img;
-  });
+  for (const skin of ['classic', 'refreshed']) {
+    const base = skin === 'classic' ? 'images/classic/' : 'images/';
+    IMG_ROLE_MAP.forEach((name, i) => {
+      const img = new Image();
+      img.src = base + name + '.png';
+      CHAR_IMAGE_SETS[skin][i] = img;
+    });
+    const dog = new Image();
+    dog.src = base + 'doghead.png';
+    CHAR_IMAGE_SETS[skin].doghead = dog;
+  }
 }
 preloadImages();
 
@@ -570,6 +616,7 @@ let audioCtx = null;
 function ensureAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
 
 function playTone(freq, dur, type = 'sine', vol = 0.08) {
+  if (!audioSettings.sfx) return;
   ensureAudio();
   const t = audioCtx.currentTime;
   const o = audioCtx.createOscillator(), g = audioCtx.createGain();
@@ -577,6 +624,41 @@ function playTone(freq, dur, type = 'sine', vol = 0.08) {
   g.gain.setValueAtTime(vol, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + dur);
   o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + dur);
+}
+
+const audioSettings = { music: true, sfx: true, beat: true, motion: false };
+const DIFFICULTIES = [
+  { id: 'calm', name: '悠闲', aiCount: 18, threatRate: 0.14, speed: 0.85 },
+  { id: 'normal', name: '标准', aiCount: 25, threatRate: 0.22, speed: 1 },
+  { id: 'rush', name: '狂热', aiCount: 34, threatRate: 0.3, speed: 1.18 },
+];
+let beatClock = { bpm: 112, elapsed: 0, step: 0, pulse: 0 };
+function beatInterval() { return 60 / beatClock.bpm; }
+function updateBeat(dt) {
+  if (!state.running || state.paused) return;
+  beatClock.elapsed += dt;
+  const interval = beatInterval();
+  if (beatClock.elapsed >= interval) {
+    beatClock.elapsed -= interval;
+    beatClock.step++;
+    beatClock.pulse = 1;
+    const dot = document.getElementById('beat-dot');
+    if (dot && audioSettings.beat) { dot.classList.add('on'); setTimeout(() => dot.classList.remove('on'), 90); }
+    if (audioSettings.music && beatClock.step % 4 === 1) playTone(196, 0.08, 'triangle', 0.025);
+  }
+  beatClock.pulse = Math.max(0, beatClock.pulse - dt * 4);
+}
+function beatBonus() {
+  const phase = beatClock.elapsed / beatInterval();
+  return (phase < 0.16 || phase > 0.84) ? 2 : 1;
+}
+function setAudioSetting(key, value) {
+  audioSettings[key] = value;
+  localStorage.setItem('rhythm_box_settings', JSON.stringify(audioSettings));
+}
+function loadAudioSettings() {
+  try { Object.assign(audioSettings, JSON.parse(localStorage.getItem('rhythm_box_settings')) || {}); } catch {}
+  ['music','sfx','beat','motion'].forEach(k => { const el = document.getElementById(k + '-toggle'); if (el) el.checked = !!audioSettings[k]; });
 }
 
 function sfxEat(level) {
@@ -602,6 +684,9 @@ function sfxCombo(lvl) {
 const state = {
   running: false, paused: false, won: false,
   scene: 'space',
+  difficulty: 'normal',
+  skin: 'classic',
+  squadMode: 'follow',
   playerLevel: 0,
   score: 0,
   combo: 0, comboTime: 0,
@@ -629,12 +714,29 @@ const state = {
   // particles
   particles: [],
   eatParticles: [],
+  _dogSpawnTimer: 0,
+  _pathCounter: 0,
+  _autoEatCooldown: 0,
+  _aiSpawnTimer: 0,
+  _huntRetargetTimer: 0,
 };
+const ACHIEVEMENT_KEY = 'rhythm_box_achievements';
+function loadAchievements() { try { return JSON.parse(localStorage.getItem(ACHIEVEMENT_KEY)) || {}; } catch { return {}; } }
+function unlockAchievement(id, label) {
+  const a = loadAchievements();
+  if (a[id]) return;
+  a[id] = { label, date: new Date().toLocaleDateString('zh-CN') };
+  try { localStorage.setItem(ACHIEVEMENT_KEY, JSON.stringify(a)); } catch {}
+  showToast('🏆 成就解锁：' + label);
+}
 
 // ==================== CHARACTERS ====================
 let player = null;
 let aiChars = [];
 const AI_COUNT_TARGET = 25;
+const MAX_FOLLOWERS = 80;
+const MAX_EAT_PARTICLES = 360;
+const HUNT_TARGET_LIMIT = 24;
 
 function createCharacter(x, y, level, isPlayer = false) {
   const lv = LEVELS[level];
@@ -661,7 +763,10 @@ function getPlayerSpeed() {
   if (state.gluttonMode) speed *= 1.4; // 暴食加速
   return speed;
 }
-function getAISpeed(level) { return 80 + level * 12; }
+function getAISpeed(level) {
+  const d = DIFFICULTIES.find(x => x.id === state.difficulty) || DIFFICULTIES[1];
+  return (80 + level * 12) * d.speed;
+}
 
 // ==================== SCENE BACKGROUND ====================
 const bgData = {};
@@ -796,25 +901,132 @@ function updateBgParticles(dt) {
   for (const s of bgData.sparkles || []) { s.twinkle += dt * 3; s.alpha = 0.3 + Math.sin(s.twinkle) * 0.4; }
 }
 
+let sceneCache = null;
+let sceneCacheKey = '';
+
+function seededRandom(seed) {
+  let value = seed >>> 0;
+  return () => {
+    value = (value * 1664525 + 1013904223) >>> 0;
+    return value / 4294967296;
+  };
+}
+
+function fillVerticalGradient(g, top, bottom) {
+  const gradient = g.createLinearGradient(0, 0, 0, state.worldH);
+  gradient.addColorStop(0, top);
+  gradient.addColorStop(1, bottom);
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, state.worldW, state.worldH);
+}
+
+function drawStaticScene(sc) {
+  const cache = document.createElement('canvas');
+  cache.width = state.worldW;
+  cache.height = state.worldH;
+  const g = cache.getContext('2d');
+  const rand = seededRandom(41 + SCENES.findIndex(s => s.id === sc.id) * 997);
+  const W = state.worldW, H = state.worldH;
+
+  if (sc.id === 'space') {
+    fillVerticalGradient(g, '#08091f', '#1e174c');
+    for (const [x, y, r, color] of [[W*.18,H*.18,420,'rgba(104,83,255,.2)'],[W*.78,H*.2,360,'rgba(255,91,166,.16)'],[W*.5,H*.78,500,'rgba(38,153,255,.14)']]) {
+      const glow = g.createRadialGradient(x,y,0,x,y,r);
+      glow.addColorStop(0,color); glow.addColorStop(1,'transparent');
+      g.fillStyle=glow; g.fillRect(x-r,y-r,r*2,r*2);
+    }
+    for (let i=0;i<420;i++) {
+      const x=rand()*W,y=rand()*H,r=rand()<.85?1:2;
+      g.fillStyle=['#fff','#bed8ff','#ffd6a6','#ffb9de'][Math.floor(rand()*4)];
+      g.globalAlpha=.35+rand()*.65; g.fillRect(x,y,r,r);
+    }
+    g.globalAlpha=1;
+    g.fillStyle='#5779d8'; g.beginPath(); g.arc(W*.78,H*.22,105,0,Math.PI*2); g.fill();
+    const planetGlow=g.createRadialGradient(W*.75,H*.18,4,W*.78,H*.22,105);
+    planetGlow.addColorStop(0,'rgba(255,255,255,.38)'); planetGlow.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=planetGlow; g.beginPath(); g.arc(W*.78,H*.22,105,0,Math.PI*2); g.fill();
+    g.strokeStyle='rgba(255,214,145,.8)'; g.lineWidth=8; g.beginPath(); g.ellipse(W*.78,H*.22,165,38,-.18,0,Math.PI*2); g.stroke();
+  } else if (sc.id === 'ocean') {
+    fillVerticalGradient(g, '#071b35', '#07576a');
+    for (let i=0;i<7;i++) {
+      const x=(i+.35)*W/7, sway=(rand()-.5)*70;
+      const ray=g.createLinearGradient(x,0,x+sway,H);
+      ray.addColorStop(0,'rgba(164,234,255,.16)'); ray.addColorStop(1,'rgba(164,234,255,0)');
+      g.fillStyle=ray; g.beginPath(); g.moveTo(x-45,0); g.lineTo(x+45,0); g.lineTo(x+sway+210,H); g.lineTo(x+sway-210,H); g.fill();
+    }
+    g.fillStyle='#0c6759'; g.fillRect(0,H-110,W,110);
+    for(let i=0;i<28;i++){
+      const x=rand()*W,h=110+rand()*250;
+      g.strokeStyle='rgba(59,196,139,.65)'; g.lineWidth=10+rand()*12;
+      g.beginPath(); g.moveTo(x,H); g.quadraticCurveTo(x+45,H-h*.55,x+(rand()-.5)*70,H-h); g.stroke();
+    }
+  } else if (sc.id === 'forest') {
+    fillVerticalGradient(g, '#0b2624', '#356b38');
+    for(let layer=0;layer<3;layer++){
+      const base=H-(110+layer*105);
+      for(let i=0;i<18;i++){
+        const x=(i+.2)*W/18+(rand()-.5)*70, h=190+rand()*260+layer*60;
+        g.fillStyle=['#183f2c','#24593a','#2e7041'][layer];
+        g.fillRect(x-18,base-h*.45,36,H-(base-h*.45));
+        g.beginPath(); g.arc(x,base-h*.55,80+rand()*85,0,Math.PI*2); g.fill();
+      }
+    }
+    const mist=g.createLinearGradient(0,H*.64,0,H);
+    mist.addColorStop(0,'rgba(190,235,196,0)'); mist.addColorStop(.7,'rgba(190,235,196,.09)'); mist.addColorStop(1,'rgba(190,235,196,.02)');
+    g.fillStyle=mist; g.fillRect(0,H*.55,W,H*.45);
+    g.fillStyle='#193c25'; g.fillRect(0,H-45,W,45);
+  } else if (sc.id === 'cyber') {
+    fillVerticalGradient(g, '#080a1c', '#231544');
+    const horizon=H*.64;
+    g.strokeStyle='rgba(0,220,255,.18)'; g.lineWidth=2;
+    for(let x=-W;x<W*2;x+=95){ g.beginPath(); g.moveTo(W/2,horizon); g.lineTo(x,H); g.stroke(); }
+    for(let i=0;i<15;i++){ const y=horizon+(H-horizon)*(i/14)**1.8; g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); }
+    for(let i=0;i<18;i++){
+      const x=rand()*W,w=70+rand()*150,h=150+rand()*420,y=horizon-h;
+      const color=rand()<.5?'#16d8ff':'#c05dff';
+      g.strokeStyle=color; g.globalAlpha=.25+rand()*.35; g.lineWidth=3;
+      g.strokeRect(x,y,w,h);
+      for(let wy=y+26;wy<y+h;wy+=34){ g.fillStyle=color; g.fillRect(x+12,wy,w-24,2); }
+    }
+    g.globalAlpha=1;
+  } else {
+    fillVerticalGradient(g, '#f49ac3', '#91d8ee');
+    const bands=['rgba(255,206,119,.72)','rgba(194,133,240,.46)','rgba(255,150,192,.48)','rgba(145,220,238,.48)'];
+    for(let i=0;i<7;i++){ g.fillStyle=bands[i%bands.length]; g.fillRect(0,i*H/7,W,H/7+2); }
+    for(let i=0;i<24;i++){
+      const x=rand()*W,y=rand()*H,r=24+rand()*58,color=['#ff78ad','#ffd06a','#72d5f3','#ba78ed'][Math.floor(rand()*4)];
+      g.strokeStyle='rgba(255,255,255,.75)'; g.lineWidth=6; g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.stroke();
+      g.strokeStyle=color; g.lineWidth=5; for(let a=0;a<Math.PI*2;a+=.55){g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a+.5)*r*.82,y+Math.sin(a+.5)*r*.82);g.stroke();}
+      g.strokeStyle='rgba(255,255,255,.65)'; g.lineWidth=7; g.beginPath();g.moveTo(x,y+r);g.lineTo(x,y+r+100);g.stroke();
+    }
+  }
+  return cache;
+}
+
+function ensureSceneCache(sc) {
+  const key = `${sc.id}:${state.worldW}x${state.worldH}`;
+  if (!sceneCache || sceneCacheKey !== key) {
+    sceneCache = drawStaticScene(sc);
+    sceneCacheKey = key;
+  }
+}
+
 function drawSceneBg(sc, camX, camY, w, h) {
   // View bounds in world coords
   const vl = camX - w/2, vt = camY - h/2, vr = camX + w/2, vb = camY + h/2;
   
-  // === Draw background image (tiled across the world) ===
-  const bgImg = BG_IMAGES[sc.id];
-  if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
-    const iw = bgImg.naturalWidth, ih = bgImg.naturalHeight;
-    // Slow parallax offset
-    const px = -(camX * 0.3) % iw;
-    const py = -(camY * 0.3) % ih;
-    for (let tx = px; tx < w + iw; tx += iw) {
-      for (let ty = py; ty < h + ih; ty += ih) {
-        ctx.drawImage(bgImg, tx, ty, iw, ih);
-      }
-    }
-    // Light overlay for gameplay clarity
-     ctx.fillStyle = 'rgba(0,0,0,0.06)';
-     ctx.fillRect(vl, vt, w, h);
+  ensureSceneCache(sc);
+  ctx.drawImage(sceneCache, 0, 0);
+  if (beatClock.pulse > 0) {
+    const pulseColors = {
+      space: '125,116,255',
+      ocean: '92,214,255',
+      forest: '255,224,111',
+      cyber: '0,224,255',
+      candy: '255,160,210',
+    };
+    ctx.fillStyle = `rgba(${pulseColors[sc.id]},${beatClock.pulse * 0.035})`;
+    ctx.fillRect(vl, vt, w, h);
   }
   
   if (sc.stars) {
@@ -862,7 +1074,7 @@ function drawSceneBg(sc, camX, camY, w, h) {
     // Light rays
     for (let i = 0; i < (sc.lightRays || 0); i++) {
       const rx = (i / sc.lightRays) * state.worldW + 100;
-      ctx.fillStyle = `rgba(100,180,255,${0.02 + Math.sin(Date.now()*0.0003 + i)*0.01})`;
+      ctx.fillStyle = `rgba(100,180,255,${0.025 + Math.sin(Date.now()*0.0003 + i)*0.012 + beatClock.pulse*.012})`;
       ctx.beginPath(); ctx.moveTo(rx - 40, vt); ctx.lineTo(rx + 40, vt);
       ctx.lineTo(rx + 200, vb); ctx.lineTo(rx - 200, vb); ctx.fill();
     }
@@ -912,7 +1124,7 @@ function drawSceneBg(sc, camX, camY, w, h) {
     // Fireflies
     for (const f of bgData.fireflies || []) {
       if (f.x > vl - 30 && f.x < vr + 30 && f.y > vt - 30 && f.y < vb + 30) {
-        f.alpha = 0.3 + Math.sin(Date.now() * 0.003 + f.phase) * 0.3;
+        f.alpha = 0.3 + Math.sin(Date.now() * 0.003 + f.phase) * 0.3 + beatClock.pulse * .35;
         ctx.fillStyle = sc.fireflies.glow;
         ctx.globalAlpha = f.alpha;
         ctx.shadowColor = sc.fireflies.glow; ctx.shadowBlur = 8 + Math.sin(Date.now() * 0.004 + f.phase) * 4;
@@ -944,7 +1156,7 @@ function drawSceneBg(sc, camX, camY, w, h) {
     }
     // Data streams
     for (const d of bgData.dataStreams || []) {
-      ctx.strokeStyle = `rgba(0,210,255,${d.alpha})`; ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(0,210,255,${d.alpha + beatClock.pulse*.18})`; ctx.lineWidth = 1 + beatClock.pulse;
       ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x, d.y + d.length); ctx.stroke();
       // Some "characters" on the stream
       if (Math.random() < 0.3) {
@@ -1017,14 +1229,14 @@ function spawnAI(safeSpawn = false) {
   let x, y;
   
   // Safe spawn: keep distance from player
-  if (safeSpawn && player) {
-    const safeDist = 400;
+  if (player) {
+    const safeDist = safeSpawn ? 400 : 260;
     let attempts = 0;
     do {
       x = margin + Math.random() * (state.worldW - margin * 2);
       y = margin + Math.random() * (state.worldH - margin * 2);
       attempts++;
-    } while (attempts < 50 && Math.hypot(x - player.x, y - player.y) < safeDist);
+    } while (attempts < 80 && Math.hypot(x - player.x, y - player.y) < safeDist);
   } else {
     x = margin + Math.random() * (state.worldW - margin * 2);
     y = margin + Math.random() * (state.worldH - margin * 2);
@@ -1033,6 +1245,7 @@ function spawnAI(safeSpawn = false) {
   // Level distribution: mostly near player level, some higher threats
   let level;
   const r = Math.random();
+  const difficulty = DIFFICULTIES.find(d => d.id === state.difficulty) || DIFFICULTIES[1];
   if (r < 0.30) {
     // Easy food: level 0 to playerLevel-1
     level = Math.floor(Math.random() * Math.max(1, state.playerLevel));
@@ -1041,7 +1254,7 @@ function spawnAI(safeSpawn = false) {
     const lo = Math.max(0, state.playerLevel - 1);
     const hi = Math.min(9, state.playerLevel + 1);
     level = lo + Math.floor(Math.random() * (hi - lo + 1));
-  } else if (r < 0.88) {
+  } else if (r < 0.66 + difficulty.threatRate) {
     // Higher threat (above player, 1-3 levels higher)
     level = Math.min(9, state.playerLevel + 1 + Math.floor(Math.random() * 3));
   } else {
@@ -1056,8 +1269,13 @@ function spawnAI(safeSpawn = false) {
   aiChars.push(c);
 }
 
-function maintainAIPopulation() {
-  while (aiChars.length < AI_COUNT_TARGET) spawnAI();
+function maintainAIPopulation(dt) {
+  const difficulty = DIFFICULTIES.find(d => d.id === state.difficulty) || DIFFICULTIES[1];
+  state._aiSpawnTimer -= dt;
+  if (aiChars.length < difficulty.aiCount && state._aiSpawnTimer <= 0) {
+    spawnAI();
+    state._aiSpawnTimer = 0.12;
+  }
 }
 
 // ==================== DOG HEAD RESCUE ====================
@@ -1084,11 +1302,13 @@ function checkDogHeadRescue() {
       // Rescued!
       state.dogHeads.splice(i, 1);
       state.dogRescued++;
+      state.score += 25;
       sfxLevelUp(Math.min(state.dogRescued, 10));
       spawnEatParticles(dh.x, dh.y, '#F5A623');
       showToast(`🐕 解救狗头！${state.dogRescued}/${DOG_RESCUE_TARGET}`);
       
       if (state.dogRescued >= DOG_RESCUE_TARGET) {
+        unlockAchievement('dogRescue', '狗头救援队');
         activateGratitude();
       }
     }
@@ -1100,6 +1320,7 @@ function activateGratitude() {
   state.gratitudeTimer = GRATITUDE_DURATION;
   state.dogRescued = 0;
   state.invulnTimer = 3; // brief invulnerability
+  state.score += 500;
   
   // Fanfare
   [523, 659, 784, 1047, 1319].forEach((f, i) => {
@@ -1148,6 +1369,8 @@ function updateGratitude(dt) {
 
 // ==================== PARTICLES (eat fx) ====================
 function spawnEatParticles(x, y, color) {
+  const overflow = state.eatParticles.length + 12 - MAX_EAT_PARTICLES;
+  if (overflow > 0) state.eatParticles.splice(0, overflow);
   for (let i = 0; i < 12; i++) {
     const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.5;
     const speed = 2 + Math.random() * 4;
@@ -1181,14 +1404,15 @@ function updateEatParticles(dt) {
 function playerEatChar(ai) {
   const level = ai.level;
   state.totalEats++;
-  state.score += (ai.level + 1) * 10;
+  const multiplier = beatBonus();
+  state.score += (ai.level + 1) * 10 * multiplier;
   
   // Screen shake
-  state.shakeAmount = Math.max(state.shakeAmount, 3 + level * 0.8);
+  state.shakeAmount = audioSettings.motion ? 0 : Math.max(state.shakeAmount, 3 + level * 0.8);
   
   // Float text
   state.floatTexts.push({
-    x: ai.x, y: ai.y, text: '+' + ((level + 1) * 10),
+    x: ai.x, y: ai.y, text: '+' + ((level + 1) * 10 * multiplier) + (multiplier > 1 ? ' 节拍!' : ''),
     life: 0.9, maxLife: 0.9, color: LEVELS[level]?.accent || '#fff', vy: -60,
   });
   
@@ -1202,6 +1426,8 @@ function playerEatChar(ai) {
     });
   }
   if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+  if (multiplier > 1) unlockAchievement('onBeat', '节拍猎手');
+  if (state.maxCombo >= 10) unlockAchievement('combo10', '连击大师');
   
   // Glutton mode (暴食): 3 eats in 3 seconds
   const now = Date.now();
@@ -1234,18 +1460,20 @@ function playerEatChar(ai) {
   
   // AI becomes follower
   const lv = LEVELS[level];
-  state.followers.push({
-    level,
-    x: ai.x, y: ai.y,
-    targetX: player.x, targetY: player.y,
-    size: lv.size,
-    color: lv.color,
-    dark: lv.dark,
-    accent: lv.accent,
-    role: lv.role,
-    name: lv.name,
-    bobPhase: Math.random() * Math.PI * 2,
-  });
+  if (state.followers.length < MAX_FOLLOWERS) {
+    state.followers.push({
+      level,
+      x: ai.x, y: ai.y,
+      targetX: player.x, targetY: player.y,
+      size: lv.size,
+      color: lv.color,
+      dark: lv.dark,
+      accent: lv.accent,
+      role: lv.role,
+      name: lv.name,
+      bobPhase: Math.random() * Math.PI * 2,
+    });
+  }
   
   // Remove AI
   const idx = aiChars.indexOf(ai);
@@ -1320,6 +1548,7 @@ function checkFollowerMerge() {
 function evolvePlayer() {
   if (state.playerLevel >= 10) return;
   state.playerLevel++;
+  unlockAchievement('level' + state.playerLevel, '进化到 ' + LEVELS[state.playerLevel].name);
   state.invulnTimer = 1.5;
   
   const lv = LEVELS[state.playerLevel];
@@ -1344,6 +1573,7 @@ function evolvePlayer() {
 
 function playerDies(ai) {
   state.running = false;
+  updateHUD();
   sfxDie();
   saveToLeaderboard(false);
   
@@ -1361,6 +1591,7 @@ function playerDies(ai) {
 function winGame() {
   state.running = false;
   state.won = true;
+  updateHUD();
   saveToLeaderboard(true);
   
   const elapsed = ((Date.now() - state.startTime) / 1000).toFixed(1);
@@ -1390,6 +1621,25 @@ function updateFollowers(dt) {
     const maxHistory = state.followers.length * PATH_INTERVAL + 30;
     while (state.pathHistory.length > maxHistory) state.pathHistory.shift();
   }
+
+  state._huntRetargetTimer -= dt;
+  if (state.squadMode === 'hunt' && state._huntRetargetTimer <= 0) {
+    const claimed = new Set();
+    const activeHunters = Math.min(HUNT_TARGET_LIMIT, state.followers.length);
+    for (let i = 0; i < activeHunters; i++) {
+      const f = state.followers[i];
+      let best = null, bestDist = Infinity;
+      for (const a of aiChars) {
+        if (claimed.has(a) || a.level > f.level) continue;
+        const dist = (a.x - f.x) ** 2 + (a.y - f.y) ** 2;
+        if (dist < bestDist) { best = a; bestDist = dist; }
+      }
+      f.huntTarget = best;
+      if (best) claimed.add(best);
+    }
+    for (let i = activeHunters; i < state.followers.length; i++) state.followers[i].huntTarget = null;
+    state._huntRetargetTimer = 0.25;
+  }
   
   // Each follower follows 12 steps behind the previous
   const FOLLOW_DIST = 5; // in history points (was 12, tighter follow)
@@ -1398,8 +1648,17 @@ function updateFollowers(dt) {
     const histIdx = state.pathHistory.length - 1 - ((i + 1) * FOLLOW_DIST);
     if (histIdx >= 0) {
       const target = state.pathHistory[Math.max(0, histIdx)];
-      const dx = target.x - f.x;
-      const dy = target.y - f.y;
+      let tx = target.x, ty = target.y;
+      if (state.squadMode === 'guard') {
+        const a = (i / Math.max(1, state.followers.length)) * Math.PI * 2;
+        tx = player.x + Math.cos(a) * (player.size * 2.2 + i * 2);
+        ty = player.y + Math.sin(a) * (player.size * 2.2 + i * 2);
+      } else if (state.squadMode === 'hunt') {
+        const target = f.huntTarget;
+        if (target && aiChars.includes(target) && target.level <= f.level) { tx = target.x; ty = target.y; }
+      }
+      const dx = tx - f.x;
+      const dy = ty - f.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist > 2) {
         const speed = Math.min(400, dist * 5);
@@ -1413,10 +1672,23 @@ function updateFollowers(dt) {
 
 // Also let followers eat AI they touch
 function checkFollowerCollisions() {
+  if (state._autoEatCooldown > 0) return;
+  const cellSize = 140;
+  const buckets = new Map();
+  for (const a of aiChars) {
+    const key = `${Math.floor(a.x / cellSize)},${Math.floor(a.y / cellSize)}`;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(a);
+  }
+  followerLoop:
   for (let fi = state.followers.length - 1; fi >= 0; fi--) {
     const f = state.followers[fi];
-    for (let ai = aiChars.length - 1; ai >= 0; ai--) {
-      const a = aiChars[ai];
+    const cx = Math.floor(f.x / cellSize), cy = Math.floor(f.y / cellSize);
+    const nearby = [];
+    for (let ox = -1; ox <= 1; ox++) for (let oy = -1; oy <= 1; oy++) nearby.push(...(buckets.get(`${cx + ox},${cy + oy}`) || []));
+    for (const a of nearby) {
+      const ai = aiChars.indexOf(a);
+      if (ai < 0) continue;
       const dx = f.x - a.x, dy = f.y - a.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < f.size + a.size - 4 && a.level <= f.level) {
@@ -1427,18 +1699,21 @@ function checkFollowerCollisions() {
         
         // Eaten AI joins as new follower
         const nl = LEVELS[a.level];
-        state.followers.push({
-          level: a.level,
-          x: a.x, y: a.y,
-          targetX: f.x, targetY: f.y,
-          size: nl.size, color: nl.color, dark: nl.dark, accent: nl.accent,
-          role: nl.role, name: nl.name,
-          bobPhase: Math.random() * Math.PI * 2,
-        });
+        if (state.followers.length < MAX_FOLLOWERS) {
+          state.followers.push({
+            level: a.level,
+            x: a.x, y: a.y,
+            targetX: f.x, targetY: f.y,
+            size: nl.size, color: nl.color, dark: nl.dark, accent: nl.accent,
+            role: nl.role, name: nl.name,
+            bobPhase: Math.random() * Math.PI * 2,
+          });
+        }
         aiChars.splice(ai, 1);
         sfxEat(f.level);
         checkFollowerMerge();
-        break; // one eat per follower per frame
+        state._autoEatCooldown = state.squadMode === 'guard' ? 0.18 : state.squadMode === 'hunt' ? 0.1 : 0.14;
+        break followerLoop;
       }
     }
   }
@@ -1472,10 +1747,20 @@ function checkCollisions() {
   // Dog head rescue
   checkDogHeadRescue();
   
-  // AI vs AI bounce
-  for (let i = 0; i < aiChars.length; i++) {
-    for (let j = i + 1; j < aiChars.length; j++) {
-      const a = aiChars[i], b = aiChars[j];
+  // AI vs AI bounce, limited to nearby spatial buckets
+  const cellSize = 140;
+  const aiBuckets = new Map();
+  for (const a of aiChars) {
+    const key = `${Math.floor(a.x / cellSize)},${Math.floor(a.y / cellSize)}`;
+    if (!aiBuckets.has(key)) aiBuckets.set(key, []);
+    aiBuckets.get(key).push(a);
+  }
+  for (const a of aiChars) {
+    const cx = Math.floor(a.x / cellSize), cy = Math.floor(a.y / cellSize);
+    const nearby = [];
+    for (let ox = -1; ox <= 1; ox++) for (let oy = -1; oy <= 1; oy++) nearby.push(...(aiBuckets.get(`${cx + ox},${cy + oy}`) || []));
+    for (const b of nearby) {
+      if (a === b || aiChars.indexOf(a) > aiChars.indexOf(b)) continue;
       const dx = a.x - b.x, dy = a.y - b.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       const minDist = a.size + b.size;
@@ -1573,6 +1858,7 @@ function setupInput() {
       case 'ArrowLeft': case 'a': case 'A': input.left = true; e.preventDefault(); break;
       case 'ArrowRight': case 'd': case 'D': input.right = true; e.preventDefault(); break;
       case 'Escape': case 'p': case 'P': togglePause(); e.preventDefault(); break;
+      case 'f': case 'F': setSquadMode(state.squadMode === 'follow' ? 'hunt' : state.squadMode === 'hunt' ? 'guard' : 'follow'); e.preventDefault(); break;
     }
   });
   document.addEventListener('keyup', e => {
@@ -1774,9 +2060,11 @@ function updateHUD() {
     document.getElementById('target-display').style.color = '';
   }
   
-  const pct = Math.min(100, state.followers.length * 5);
+  const sameLevel = state.followers.filter(f => f.level === state.playerLevel).length;
+  const needed = state.playerLevel >= 10 ? 0 : 2;
+  const pct = needed ? Math.min(100, (sameLevel / needed) * 100) : 100;
   document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-text').textContent = `${state.followers.length}`;
+  document.getElementById('progress-text').textContent = state.playerLevel >= 10 ? '完成' : `${Math.min(sameLevel, needed)}/${needed}`;
   
   document.getElementById('prev-emoji').textContent = '📦';
   document.getElementById('next-emoji').textContent = state.playerLevel < 10 ? '📦' : '🏆';
@@ -1801,12 +2089,22 @@ function updateHUD() {
   } else {
     comboEl.style.display = 'none';
   }
+  const beatLabel = document.getElementById('beat-label');
+  if (beatLabel) beatLabel.textContent = audioSettings.beat ? `BPM ${beatClock.bpm}` : '节拍辅助关闭';
+  const squad = document.getElementById('squad-mode');
+  if (squad) squad.style.display = state.running ? 'block' : 'none';
+  const actions = document.getElementById('hud-actions');
+  if (actions) actions.style.display = state.running ? 'flex' : 'none';
+  const pause = document.getElementById('pause-btn');
+  if (pause) pause.classList.toggle('active', state.paused);
 }
 
 function update(dt) {
   if (!state.running || state.paused) return;
   
   dt = Math.min(dt, 0.1); // Cap dt
+  updateBeat(dt);
+  state._autoEatCooldown = Math.max(0, state._autoEatCooldown - dt);
   
   // Combo timer
   if (state.comboTime > 0) {
@@ -1839,7 +2137,7 @@ function update(dt) {
   updateFollowers(dt);
   updateGratitude(dt);
   checkCollisions();
-  maintainAIPopulation();
+  maintainAIPopulation(dt);
   updateCamera();
   updateBgParticles(dt);
   updateEatParticles(dt);
@@ -1870,6 +2168,7 @@ resizeCanvas();
 function drawCharacter(cx, cy, char, isPlayer) {
   const s = char.size;
   const bob = Math.sin(char.bobPhase) * (isPlayer ? 2 : 1.5);
+  const isFollower = state.followers.includes(char);
   
   ctx.save();
   
@@ -1893,7 +2192,23 @@ function drawCharacter(cx, cy, char, isPlayer) {
   
   // Draw image sprite
   const imgSize = s * 3.2; // scale up the 128px sprite
-  const img = CHAR_IMAGES[char.level];
+  const img = CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level];
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + s * 0.95 + bob, s * 0.72, s * 0.26, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (isPlayer || isFollower) {
+    const ringAlpha = isPlayer ? 0.2 + Math.max(0, state.invulnTimer) * 0.12 : 0.12;
+    ctx.strokeStyle = isPlayer ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = isPlayer ? 3 : 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy + bob, s * (isPlayer ? 1.08 : 1.02), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = isPlayer ? `rgba(255,255,255,${ringAlpha})` : 'rgba(255,255,255,0.06)';
+    ctx.beginPath();
+    ctx.arc(cx, cy + bob, s * (isPlayer ? 1.02 : 0.98), 0, Math.PI * 2);
+    ctx.fill();
+  }
   if (img && img.complete && img.naturalWidth > 0) {
     ctx.drawImage(img, cx - imgSize/2, cy - imgSize/2 + bob, imgSize, imgSize);
   } else {
@@ -1910,28 +2225,37 @@ function drawCharacter(cx, cy, char, isPlayer) {
   ctx.restore();
   
   // Name label
+  const labelY = cy + s * 1.12 + bob;
+  const labelText = char.name;
   ctx.font = `bold ${Math.max(9, s * 0.28)}px "PingFang SC","Microsoft YaHei",sans-serif`;
   ctx.textAlign = 'center';
+  const labelW = Math.max(30, ctx.measureText(labelText).width + 14);
+  ctx.fillStyle = 'rgba(10,10,24,0.52)';
+  ctx.beginPath();
+  ctx.roundRect(cx - labelW / 2, labelY - 11, labelW, 18, 9);
+  ctx.fill();
   ctx.fillStyle = '#fff';
   ctx.shadowColor = 'rgba(0,0,0,0.6)';
   ctx.shadowBlur = 3;
-  ctx.fillText(char.name, cx, cy + s * 1.1 + bob);
+  ctx.fillText(labelText, cx, labelY + 3);
   ctx.shadowBlur = 0;
   
   // Threat indicator for AI (not followers, not in gratitude mode)
-  const isFollower = state.followers.includes(char);
   if (!isPlayer && !isFollower && char.level > state.playerLevel && state.running && !state.gratitudeMode) {
-    ctx.fillStyle = 'rgba(255,50,50,0.2)';
+    ctx.strokeStyle = 'rgba(255,90,90,0.55)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 5]);
     ctx.beginPath();
-    ctx.arc(cx, cy + bob, s * 1.1, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(cx, cy + bob, s * 1.16, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 }
 
 // --- Draw dog head (imprisoned) ---
 function drawDogHead(dh) {
   const bob = Math.sin(dh.bobPhase) * 2;
-  const img = CHAR_IMAGES['doghead'];
+  const img = CHAR_IMAGE_SETS[state.skin]?.doghead || CHAR_IMAGE_SETS.classic.doghead;
   const imgSize = dh.size * 3.2;
   
   if (img && img.complete && img.naturalWidth > 0) {
@@ -1961,13 +2285,20 @@ function drawMinimap() {
   const mmW = 100, mmH = 70, mmX = canvas.width - mmW - 12, mmY = canvas.height - mmH - 12;
   
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillStyle = 'rgba(12,12,28,0.58)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(mmX, mmY, mmW, mmH, 8);
   ctx.fill();
   ctx.stroke();
+  const mmGrad = ctx.createLinearGradient(mmX, mmY, mmX, mmY + mmH);
+  mmGrad.addColorStop(0, 'rgba(255,255,255,0.06)');
+  mmGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = mmGrad;
+  ctx.beginPath();
+  ctx.roundRect(mmX, mmY, mmW, mmH, 8);
+  ctx.fill();
   
   // View rect
   const vx = mmX + (state.camX / state.worldW) * mmW;
@@ -1991,11 +2322,19 @@ function drawMinimap() {
     if (ai.level > state.playerLevel) {
       const ax = mmX + (ai.x / state.worldW) * mmW;
       const ay = mmY + (ai.y / state.worldH) * mmH;
-      ctx.fillStyle = 'rgba(255,60,60,0.8)';
+      ctx.fillStyle = 'rgba(255,90,90,0.85)';
       ctx.beginPath();
       ctx.arc(ax, ay, 1.5, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
+  for (const dh of state.dogHeads) {
+    const dx = mmX + (dh.x / state.worldW) * mmW;
+    const dy = mmY + (dh.y / state.worldH) * mmH;
+    ctx.fillStyle = '#F5A623';
+    ctx.beginPath();
+    ctx.arc(dx, dy, 1.6, 0, Math.PI * 2);
+    ctx.fill();
   }
   
   ctx.restore();
@@ -2010,13 +2349,16 @@ function render() {
   ctx.fillRect(0, 0, w, h);
   
   if (!state.running && !state.paused) {
-    // Draw a simple idle starry background
+    const idleGrad = ctx.createRadialGradient(w * 0.5, h * 0.22, 20, w * 0.5, h * 0.35, Math.max(w, h) * 0.7);
+    idleGrad.addColorStop(0, 'rgba(108,99,255,0.16)');
+    idleGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = idleGrad;
+    ctx.fillRect(0, 0, w, h);
     for (let i = 0; i < 30; i++) {
       const sx = (i * 137 + 50) % w, sy = (i * 73 + 30 + Date.now() * 0.01) % h;
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
       ctx.beginPath(); ctx.arc(sx, sy, 1, 0, Math.PI * 2); ctx.fill();
     }
-    requestAnimationFrame(render);
     return;
   }
   
@@ -2047,6 +2389,11 @@ function render() {
   for (let y = gridSize; y < state.worldH; y += gridSize) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(state.worldW, y); ctx.stroke();
   }
+  const centerGlow = ctx.createRadialGradient(state.camX, state.camY, 0, state.camX, state.camY, Math.max(w, h) * 0.6);
+  centerGlow.addColorStop(0, 'rgba(255,255,255,0.05)');
+  centerGlow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = centerGlow;
+  ctx.fillRect(camX, camY, w, h);
   
   // ===== Danger zone visual (when near higher-level AI) =====
   if (player) {
@@ -2078,6 +2425,14 @@ function render() {
   }
   
   // ===== Draw followers (trail behind player) =====
+  if (state.followers.length > 0 && player) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    for (const f of state.followers) ctx.lineTo(f.x, f.y);
+    ctx.stroke();
+  }
   for (const f of state.followers) {
     drawCharacter(f.x, f.y, f, false);
   }
@@ -2089,13 +2444,21 @@ function render() {
   
   // ===== Eat particles =====
   for (const p of state.eatParticles) {
-    ctx.fillStyle = p.color;
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+    g.addColorStop(0, p.color);
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
     ctx.globalAlpha = p.alpha;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, p.size * 1.6, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
+  const vignette = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.22, w / 2, h / 2, Math.max(w, h) * 0.72);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(3,4,14,0.34)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, w, h);
   
   ctx.restore();
   
@@ -2109,8 +2472,11 @@ function render() {
     ctx.font = 'bold 18px system-ui, "PingFang SC", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = ft.color;
+    ctx.strokeStyle = 'rgba(10,10,20,0.36)';
+    ctx.lineWidth = 6;
+    ctx.strokeText(ft.text, sx, sy);
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 4;
+    ctx.shadowBlur = 10;
     ctx.fillText(ft.text, sx, sy);
     ctx.restore();
   }
@@ -2128,7 +2494,6 @@ function render() {
     ctx.fillText('⏸ 暂停中', w / 2, h / 2);
   }
   
-  requestAnimationFrame(render);
 }
 
 // ==================== GAME LOOP ====================
@@ -2137,8 +2502,7 @@ function gameLoop(timestamp) {
   const dt = lastTime ? (timestamp - lastTime) / 1000 : 0.016;
   lastTime = timestamp;
   update(dt);
-  // render() is called via requestAnimationFrame independently
-  if (!gameLoop.running) return;
+  render();
   requestAnimationFrame(gameLoop);
 }
 
@@ -2168,11 +2532,47 @@ function initSceneSelector() {
     btn.textContent = s.name;
     btn.onclick = () => {
       state.scene = s.id;
-      document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+      grid.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     };
     grid.appendChild(btn);
   });
+  const dg = document.getElementById('difficulty-selector');
+  if (dg) {
+    dg.innerHTML = '';
+    DIFFICULTIES.forEach(d => {
+      const btn = document.createElement('button');
+      btn.className = 'scene-btn' + (d.id === state.difficulty ? ' active' : '');
+      btn.textContent = d.name;
+      btn.onclick = () => { state.difficulty = d.id; dg.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); };
+      dg.appendChild(btn);
+    });
+  }
+  const sg = document.getElementById('skin-selector');
+  if (sg) {
+    sg.innerHTML = '';
+    [
+      { id: 'classic', name: '经典', src: 'images/classic/raddy.png' },
+      { id: 'refreshed', name: '焕新', src: 'images/raddy.png' },
+    ].forEach(skin => {
+      const btn = document.createElement('button');
+      btn.className = 'scene-btn skin-btn' + (skin.id === state.skin ? ' active' : '');
+      btn.innerHTML = `<img class="skin-thumb" src="${skin.src}" alt=""><span>${skin.name}</span>`;
+      btn.onclick = () => {
+        state.skin = skin.id;
+        sg.querySelectorAll('.skin-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        showToast(skin.id === 'classic' ? '已切换为经典形象' : '已切换为焕新形象');
+      };
+      sg.appendChild(btn);
+    });
+  }
+}
+
+function setSquadMode(mode) {
+  state.squadMode = mode;
+  ['follow','hunt','guard'].forEach(id => document.getElementById('mode-' + id)?.classList.toggle('active', id === mode));
+  showToast(mode === 'hunt' ? '队伍进入狩猎模式' : mode === 'guard' ? '队伍进入护卫模式' : '队伍恢复跟随');
 }
 
 // ==================== GAME FLOW ====================
@@ -2200,14 +2600,23 @@ function startGame() {
   state.gluttonTimer = 0;
   state.startTime = Date.now();
   state.eatParticles = [];
+  state._dogSpawnTimer = 0;
+  state._pathCounter = 0;
+  state._autoEatCooldown = 0;
+  state._aiSpawnTimer = 0;
+  state._huntRetargetTimer = 0;
+  beatClock.elapsed = 0; beatClock.step = 0; beatClock.pulse = 0;
+  input.tapTarget = null; input.joystick.active = false;
+  setSquadMode('follow');
   
   // Create player
   player = createCharacter(state.worldW / 2, state.worldH / 2, 0, true);
   
   // Spawn initial AI (safe spawn: keep distance from player)
   aiChars = [];
-  for (let i = 0; i < AI_COUNT_TARGET / 2; i++) spawnAI(true);
-  for (let i = AI_COUNT_TARGET / 2; i < AI_COUNT_TARGET; i++) spawnAI();
+  const difficulty = DIFFICULTIES.find(d => d.id === state.difficulty) || DIFFICULTIES[1];
+  for (let i = 0; i < difficulty.aiCount / 2; i++) spawnAI(true);
+  for (let i = Math.floor(difficulty.aiCount / 2); i < difficulty.aiCount; i++) spawnAI(true);
   
   // Init background
   initBgParticles();
@@ -2228,14 +2637,11 @@ function startGame() {
   
   updateHUD();
   
-  // Start loops
+  // The single global animation loop is started once in init().
   lastTime = 0;
-  gameLoop.running = true;
-  requestAnimationFrame(gameLoop);
-  requestAnimationFrame(render);
   
   // Focus hint
-  showToast('🎮 方向键/WASD 移动！');
+  showToast('🎮 方向键/WASD 移动，F 切换队伍模式');
 }
 
 function restartGame() {
@@ -2247,7 +2653,6 @@ function restartGame() {
 function showMenu() {
   state.running = false;
   state.paused = false;
-  gameLoop.running = false;
   player = null;
   aiChars = [];
   hideOverlay('win-overlay');
@@ -2255,6 +2660,7 @@ function showMenu() {
   hideOverlay('pause-overlay');
   showOverlay('menu-overlay');
   initSceneSelector();
+  updateHUD();
 }
 
 function togglePause() {
@@ -2330,8 +2736,10 @@ function clearLeaderboard() {
 function init() {
   resizeCanvas();
   setupInput();
+  loadAudioSettings();
   initSceneSelector();
   initBgParticles();
+  updateHUD();
   
   // Close overlays on background click
   document.querySelectorAll('.overlay').forEach(o => {
@@ -2342,8 +2750,8 @@ function init() {
     });
   });
   
-  // Start render loop (for background)
-  requestAnimationFrame(render);
+  // One loop drives both updates and rendering for the lifetime of the page.
+  requestAnimationFrame(gameLoop);
 }
 
 init();

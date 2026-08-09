@@ -1,224 +1,310 @@
-"""Regenerate brighter scene background images."""
-from PIL import Image, ImageDraw
-import random, math, os
+"""Generate richer scene background images for Summon Rhythm Box."""
+from PIL import Image, ImageDraw, ImageFilter
+import argparse
+import math
+import os
+import random
 
 os.makedirs("images", exist_ok=True)
-W, H = 1600, 1200
+W, H = 1200, 900
+
+
+def vertical_gradient(top, bottom):
+    img = Image.new("RGB", (W, H), top)
+    draw = ImageDraw.Draw(img)
+    for y in range(H):
+        t = y / (H - 1)
+        color = tuple(int(top[i] * (1 - t) + bottom[i] * t) for i in range(3))
+        draw.line([(0, y), (W, y)], fill=color)
+    return img
+
+
+def add_glow(base, center, radius, color, alpha):
+    overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    x, y = center
+    for step in range(7, 0, -1):
+        r = radius * step / 7
+        a = int(alpha * (step / 7) ** 2)
+        draw.ellipse([x - r, y - r, x + r, y + r], fill=(*color, a))
+    return Image.alpha_composite(base.convert("RGBA"), overlay)
+
+
+def add_film_grain(img, rng, amount=10):
+    px = img.load()
+    for y in range(H):
+        for x in range(W):
+            n = rng.randint(-amount, amount)
+            r, g, b = px[x, y]
+            px[x, y] = tuple(max(0, min(255, c + n)) for c in (r, g, b))
+    return img
+
 
 def make_space():
-    img = Image.new("RGB", (W, H), (15, 12, 50))
-    draw = ImageDraw.Draw(img)
+    img = vertical_gradient((8, 8, 27), (22, 21, 69)).convert("RGBA")
     rng = random.Random(42)
-    
-    for y in range(H):
-        t = y / H
-        r = int(15 + t * 15)
-        g = int(12 + t * 18)
-        b = int(50 + t * 15)
-        draw.line([(0, y), (W, y)], fill=(r, g, b))
-    
-    for _ in range(6):
-        cx, cy = rng.randint(100, W-100), rng.randint(100, H-100)
-        color = rng.choice([(80,70,150), (100,50,100), (50,80,140), (80,40,90)])
-        for _ in range(25):
-            x, y = cx + rng.randint(-200, 200), cy + rng.randint(-150, 150)
-            r = rng.randint(60, 180)
-            overlay = Image.new("RGBA", (W, H), (0,0,0,0))
-            od = ImageDraw.Draw(overlay)
-            od.ellipse([x-r, y-r, x+r, y+r], fill=(*color, rng.randint(8, 25)))
-            img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
-            draw = ImageDraw.Draw(img)
-    
-    for _ in range(600):
-        x, y = rng.randint(0, W), rng.randint(0, H)
-        r = rng.randint(1, 3)
-        brite = rng.randint(150, 255)
-        c = (brite, brite, brite)
-        if rng.random() < 0.12: c = rng.choice([(200,220,255), (255,240,200), (255,200,220)])
-        draw.ellipse([x-r, y-r, x+r, y+r], fill=c)
+
+    for center, radius, color, alpha in [
+        ((260, 250), 320, (120, 85, 255), 62),
+        ((1250, 210), 280, (255, 90, 166), 58),
+        ((820, 860), 360, (27, 168, 255), 44),
+    ]:
+        img = add_glow(img, center, radius, color, alpha)
+
+    draw = ImageDraw.Draw(img)
+    # Distant ribbon nebulae give the world a clear depth direction.
+    for offset, color in [(0, (122, 98, 255, 72)), (88, (76, 193, 255, 48)), (184, (255, 114, 184, 40))]:
+        points = []
+        for x in range(-80, W + 100, 40):
+            y = 710 + offset + math.sin(x * 0.006 + offset) * 70
+            points.append((x, y))
+        draw.line(points, fill=color, width=34)
+    for _ in range(900):
+        x, y = rng.randint(0, W - 1), rng.randint(0, H - 1)
+        r = rng.choice([1, 1, 1, 2, 2, 3])
+        c = rng.choice([(255, 255, 255), (194, 220, 255), (255, 224, 190), (255, 182, 224)])
+        draw.ellipse([x - r, y - r, x + r, y + r], fill=c + (255,))
         if r >= 2:
-            draw.line([(x-r*2, y), (x+r*2, y)], fill=c, width=1)
-            draw.line([(x, y-r*2), (x, y+r*2)], fill=c, width=1)
-    
-    px, py, pr = 280, 900, 80
-    for a in range(360):
-        shade = int(180 + 60 * abs(math.cos(math.radians(a))))
-        draw.arc([px-pr, py-pr, px+pr, py+pr], a, a+1, fill=(shade, int(shade*0.85), int(shade*0.65)), width=2)
-    for _ in range(40):
-        a, d = rng.random()*math.pi*2, rng.randint(pr+10, pr+40)
-        draw.point((px + math.cos(a)*d, py + math.sin(a)*d*0.25), fill=(220,220,240))
-    
-    mx, my = 1300, 300
-    draw.ellipse([mx-35, my-35, mx+35, my+35], fill=(220, 220, 230))
-    draw.ellipse([mx-10, my-15, mx+5, my+5], fill=(190, 190, 200))
-    draw.ellipse([mx+8, my-5, mx+18, my+8], fill=(190, 190, 200))
-    
-    img.save("images/bg-space.png")
-    print("  Space ✓")
+            draw.line([(x - r * 2, y), (x + r * 2, y)], fill=c + (150,), width=1)
+            draw.line([(x, y - r * 2), (x, y + r * 2)], fill=c + (150,), width=1)
+
+    # Ringed planet and a small moon form a recognisable landmark.
+    draw.ellipse([1060, 130, 1280, 350], fill=(42, 65, 146, 255))
+    draw.ellipse([1088, 158, 1252, 322], fill=(114, 152, 255, 255))
+    draw.ellipse([1120, 175, 1195, 250], fill=(144, 176, 255, 100))
+    draw.arc([1000, 170, 1340, 380], 20, 330, fill=(255, 211, 136, 220), width=8)
+    draw.ellipse([280, 760, 354, 834], fill=(230, 191, 141, 255))
+    draw.ellipse([301, 775, 327, 801], fill=(176, 139, 104, 255))
+    for x in range(70, W, 180):
+        y = 105 + int(math.sin(x * .013) * 24)
+        draw.line([(x, y), (x + 70, y + 22)], fill=(222, 244, 255, 160), width=2)
+        draw.line([(x + 40, y - 10), (x + 110, y + 12)], fill=(222, 244, 255, 55), width=1)
+
+    img = img.convert("RGB")
+    img.save("images/bg-space-v2.png", quality=92)
+    print("Created images/bg-space-v2.png")
+
 
 def make_ocean():
-    img = Image.new("RGB", (W, H), (15, 40, 75))
-    draw = ImageDraw.Draw(img)
+    img = vertical_gradient((8, 25, 52), (3, 85, 108)).convert("RGBA")
     rng = random.Random(99)
-    
-    for y in range(H):
-        t = y / H
-        draw.line([(0, y), (W, y)], fill=(int(15+t*10), int(40+t*35), int(75-t*25)))
-    
-    for i in range(6):
-        rx, alpha = 100 + i * 280, 25 + rng.randint(8, 20)
-        for _ in range(12):
-            x, y = rx + rng.randint(-40, 40), rng.randint(0, H)
-            overlay = Image.new("RGBA", (W, H), (0,0,0,0))
-            od = ImageDraw.Draw(overlay)
-            od.polygon([(x-20, 0), (x+20, 0), (x+80, y+100), (x-80, y+100)], fill=(120, 200, 255, alpha))
-            img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
-            draw = ImageDraw.Draw(img)
-    
-    for _ in range(150):
-        x, y, r = rng.randint(0, W), rng.randint(H//3, H), rng.randint(3, 8)
-        draw.ellipse([x-r, y-r*0.3, x+r, y+r*0.3], fill=(60, 120, 170))
-    
-    for _ in range(80):
-        x, y, r = rng.randint(0, W), rng.randint(50, H), rng.randint(3, 12)
-        draw.ellipse([x-r, y-r, x+r, y+r], outline=(180, 230, 255), width=1)
-        draw.ellipse([x-r*0.4, y-r*0.5, x+r*0.2, y-r*0.1], fill=(230, 245, 255))
-    
-    for x in range(0, W, 4):
-        h = H - 60 + int(math.sin(x*0.02)*20 + math.sin(x*0.05)*10)
-        draw.line([(x, h), (x, H)], fill=(30, 75, 50))
-    
-    for _ in range(15):
-        kx, kh = rng.randint(50, W-50), 100 + rng.randint(50, 200)
-        for i in range(5):
-            x_off = int(math.sin(i*0.8)*15)
-            draw.line([(kx+x_off, H-60-i*kh//5), (kx+x_off, H-60-(i+1)*kh//5)], fill=(40, 110, 60), width=4)
-    
-    img.save("images/bg-ocean.png")
-    print("  Ocean ✓")
+
+    for center, radius, color, alpha in [
+        ((280, -60), 460, (119, 238, 255), 70),
+        ((1200, 90), 340, (94, 182, 255), 48),
+        ((1360, 700), 380, (28, 126, 164), 42),
+    ]:
+        img = add_glow(img, center, radius, color, alpha)
+
+    overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    for x in [150, 420, 680, 970, 1250]:
+        od.polygon([(x - 140, 0), (x - 35, 0), (x + 160, H), (x - 40, H)], fill=(155, 230, 255, 24))
+    img = Image.alpha_composite(img, overlay.filter(ImageFilter.GaussianBlur(14)))
+
+    draw = ImageDraw.Draw(img)
+    floor_y = H - 165
+    for y in range(floor_y, H):
+        t = (y - floor_y) / (H - floor_y)
+        draw.line([(0, y), (W, y)], fill=(12, int(88 + 30 * t), int(74 + 20 * t), 255))
+
+    for i in range(18):
+        base_x = 50 + i * 92 + rng.randint(-15, 15)
+        height = rng.randint(180, 360)
+        width = rng.randint(16, 28)
+        points = []
+        for step in range(8):
+            t = step / 7
+            sway = math.sin(t * math.pi * 1.4 + i) * 30
+            points.append((base_x + sway, floor_y - height * t))
+        draw.line(points, fill=(34, 132, 112, 220), width=width)
+        draw.line(points, fill=(83, 214, 162, 70), width=max(1, width // 4))
+
+    for _ in range(14):
+        fx = rng.randint(80, W - 120)
+        fy = rng.randint(240, floor_y - 120)
+        size = rng.randint(34, 78)
+        body = rng.choice([(255, 170, 92), (115, 195, 255), (255, 214, 103), (255, 118, 146)])
+        draw.ellipse([fx - size, fy - size * 0.48, fx + size, fy + size * 0.48], fill=body + (220,))
+        tail = [(fx + size * 0.55, fy), (fx + size * 1.15, fy - size * 0.45), (fx + size * 1.05, fy + size * 0.45)]
+        draw.polygon(tail, fill=body + (220,))
+        draw.ellipse([fx - size * 0.55, fy - size * 0.12, fx - size * 0.4, fy + size * 0.03], fill=(255, 255, 255, 240))
+
+    for _ in range(95):
+        x, y = rng.randint(0, W), rng.randint(100, floor_y)
+        r = rng.randint(5, 16)
+        draw.ellipse([x - r, y - r, x + r, y + r], outline=(198, 241, 255, 160), width=2)
+        draw.ellipse([x - r * 0.35, y - r * 0.5, x, y - r * 0.1], fill=(245, 255, 255, 180))
+
+    img = img.convert("RGB")
+    img.save("images/bg-ocean.png", quality=95)
+    print("Created images/bg-ocean.png")
+
 
 def make_forest():
-    img = Image.new("RGB", (W, H), (25, 55, 30))
-    draw = ImageDraw.Draw(img)
+    img = vertical_gradient((13, 39, 34), (55, 105, 54)).convert("RGBA")
     rng = random.Random(77)
-    
-    for y in range(H):
-        t = y / H
-        draw.line([(0, y), (W, y)], fill=(int(25+t*30), int(55+t*40), int(30+t*20)))
-    
-    for _ in range(30):
-        fx, fy, fr = rng.randint(0, W), rng.randint(H-200, H), rng.randint(80, 200)
-        overlay = Image.new("RGBA", (W, H), (0,0,0,0))
+    draw = ImageDraw.Draw(img)
+
+    for _ in range(40):
+        x = rng.randint(0, W)
+        y = rng.randint(H - 240, H)
+        r = rng.randint(80, 190)
+        overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         od = ImageDraw.Draw(overlay)
-        od.ellipse([fx-fr, fy-fr*0.5, fx+fr, fy+fr*0.5], fill=(200, 220, 190, 10))
-        img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
-        draw = ImageDraw.Draw(img)
-    
-    for _ in range(12):
-        tx, th, tw = rng.randint(50, W-50), 200+rng.randint(100,400), 30+rng.randint(10,40)
-        draw.rectangle([tx-tw//2, H-th//2, tx+tw//2, H], fill=(50, 35, 20))
-        for i in range(3):
-            fy, fr = H - th//2 - i*60 - 30, tw + rng.randint(20,50) - i*5
-            shade = rng.randint(35, 70)
-            draw.ellipse([tx-fr, fy-fr*0.7, tx+fr, fy+fr*0.7], fill=(shade, shade+40, shade+15))
-    
-    for _ in range(100):
-        dx, dy, dr = rng.randint(0, W), rng.randint(50, H-300), rng.randint(5, 25)
-        draw.ellipse([dx-dr, dy-dr*0.7, dx+dr, dy+dr*0.7], fill=(90, 140, 70))
-    
-    for _ in range(100):
-        fx, fy, fr = rng.randint(0, W), rng.randint(30, H-50), rng.randint(2, 5)
-        draw.ellipse([fx-fr, fy-fr, fx+fr, fy+fr], fill=(255, 240, 90))
-    
-    draw.rectangle([0, H-30, W, H], fill=(30, 50, 25))
-    img.save("images/bg-forest.png")
-    print("  Forest ✓")
+        od.ellipse([x - r, y - r * 0.48, x + r, y + r * 0.48], fill=(215, 231, 188, 11))
+        img = Image.alpha_composite(img, overlay)
+
+    draw = ImageDraw.Draw(img)
+    # A far tree line starts the parallax-like depth stack.
+    for x in range(-40, W + 80, 70):
+        h = rng.randint(180, 320)
+        draw.rectangle([x + 25, H - h, x + 43, H], fill=(30, 69, 44, 230))
+        draw.polygon([(x - 15, H - h + 60), (x + 34, H - h - 80), (x + 86, H - h + 60)], fill=(37, 91, 51, 230))
+    for _ in range(16):
+        tx = rng.randint(70, W - 70)
+        th = 410 + rng.randint(0, 260)
+        tw = 34 + rng.randint(0, 42)
+        draw.rounded_rectangle([tx - tw // 2, H - th, tx + tw // 2, H], radius=10, fill=(66, 44, 24, 255))
+        draw.line([(tx, H - th + 80), (tx - tw * 3, H - th + 20)], fill=(66, 44, 24, 255), width=10)
+        draw.line([(tx, H - th + 125), (tx + tw * 3, H - th + 60)], fill=(66, 44, 24, 255), width=9)
+        for layer in range(3):
+            fr = tw * 3 + rng.randint(28, 80) - layer * 14
+            fy = H - th + 45 + layer * 62
+            draw.ellipse([tx - fr, fy - fr * 0.62, tx + fr, fy + fr * 0.62], fill=(45 + layer * 12, 102 + layer * 23, 55, 255))
+
+    for _ in range(115):
+        x, y = rng.randint(0, W), rng.randint(70, H - 100)
+        r = rng.randint(2, 5)
+        draw.ellipse([x - r, y - r, x + r, y + r], fill=(255, 229, 116, 220))
+    for _ in range(55):
+        x, y = rng.randint(0, W), rng.randint(H - 260, H - 45)
+        draw.line([(x, y), (x + rng.randint(-10, 10), y - rng.randint(12, 34))], fill=(129, 191, 92, 170), width=2)
+        draw.ellipse([x - 4, y - 30, x + 4, y - 22], fill=rng.choice([(255, 173, 198, 220), (167, 214, 255, 220), (255, 230, 130, 220)]))
+    mist = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    md = ImageDraw.Draw(mist)
+    for _ in range(14):
+        x, y = rng.randint(-100, W), rng.randint(H - 230, H - 40)
+        md.ellipse([x - 180, y - 36, x + 180, y + 36], fill=(191, 238, 198, 22))
+    img = Image.alpha_composite(img, mist.filter(ImageFilter.GaussianBlur(18)))
+
+    img = img.convert("RGB")
+    img.save("images/bg-forest-v2.png", quality=92)
+    print("Created images/bg-forest-v2.png")
+
 
 def make_cyber():
-    img = Image.new("RGB", (W, H), (15, 12, 35))
-    draw = ImageDraw.Draw(img)
+    img = vertical_gradient((10, 11, 28), (23, 17, 56)).convert("RGBA")
     rng = random.Random(33)
-    
-    for y in range(H):
-        t = y / H
-        draw.line([(0, y), (W, y)], fill=(int(15+t*10), int(12+t*8), int(35+t*20)))
-    
-    for x in range(0, W, 40):
-        fy, ty = H - 250, H
-        sx = (x - W//2) * (fy / ty) + W//2
-        draw.line([(sx, fy), (x, ty)], fill=(0, 200, 240, 20), width=1)
-    for y in range(H-250, H, 30):
-        draw.line([(0, y), (W, y)], fill=(0, 200, 240, 15), width=1)
-    
-    for _ in range(5):
-        cx, cy, cr = rng.randint(100, W-100), rng.randint(80, H-300), rng.randint(60, 150)
-        color = rng.choice([(255,100,100), (0,230,255), (180,90,200), (0,250,130)])
-        draw.ellipse([cx-cr, cy-cr, cx+cr, cy+cr], outline=color, width=2)
-        draw.ellipse([cx-cr-3, cy-cr-3, cx+cr+3, cy+cr+3], outline=color, width=1)
-    
-    for x in range(20, W, 40):
-        for y in range(20, H-300, 40):
-            draw.point((x, y), fill=(50, 50, 90))
-    
-    for _ in range(25):
-        dx, dy, dh = rng.randint(0, W), rng.randint(0, H), rng.randint(30, 150)
-        draw.line([(dx, dy), (dx, min(dy+dh, H))], fill=(0, 230, 255, rng.randint(60, 150)), width=1)
-    
+
+    for center, radius, color, alpha in [
+        ((240, 240), 300, (0, 208, 255), 58),
+        ((1120, 280), 300, (177, 85, 255), 64),
+        ((1330, 760), 260, (255, 88, 160), 44),
+    ]:
+        img = add_glow(img, center, radius, color, alpha)
+
+    draw = ImageDraw.Draw(img)
+    horizon = H - 300
+    for x in range(-80, W + 80, 40):
+        sx = W / 2 + (x - W / 2) * 0.18
+        draw.line([(sx, horizon), (x, H)], fill=(0, 229, 255, 70), width=2)
+    for i in range(13):
+        y = horizon + i * 26
+        draw.line([(0, y), (W, y)], fill=(0, 229, 255, max(18, 90 - i * 6)), width=2)
+
     for _ in range(8):
-        gx, gy, gw, gh = rng.randint(0, W-100), rng.randint(0, H-20), rng.randint(40, 120), rng.randint(2, 6)
-        draw.rectangle([gx, gy, gx+gw, gy+gh], fill=(0, 230, 255, 50))
-    
-    for y in range(H-5, H):
-        draw.line([(0, y), (W, y)], fill=(0, 230, 255, int((y-(H-5))/5*80)), width=1)
-    
-    img.save("images/bg-cyber.png")
-    print("  Cyber ✓")
+        cx, cy = rng.randint(120, W - 120), rng.randint(120, horizon - 40)
+        w = rng.randint(80, 180)
+        h = rng.randint(140, 320)
+        body = rng.choice([(20, 184, 255), (255, 95, 164), (170, 88, 255)])
+        draw.rounded_rectangle([cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2], radius=16, outline=body + (200,), width=4)
+        draw.line([(cx - w // 2, cy), (cx + w // 2, cy)], fill=body + (90,), width=2)
+        draw.line([(cx, cy - h // 2), (cx, cy + h // 2)], fill=body + (90,), width=2)
+
+    for _ in range(180):
+        x = rng.randint(0, W - 20)
+        y = rng.randint(0, H - 1)
+        length = rng.randint(14, 60)
+        color = rng.choice([(0, 229, 255, 70), (154, 98, 255, 55), (255, 88, 160, 45)])
+        draw.line([(x, y), (x + length, y)], fill=color, width=1)
+
+    img = img.filter(ImageFilter.GaussianBlur(0.35)).convert("RGB")
+    img.save("images/bg-cyber.png", quality=95)
+    print("Created images/bg-cyber.png")
+
 
 def make_candy():
-    img = Image.new("RGB", (W, H), (50, 25, 60))
-    draw = ImageDraw.Draw(img)
+    img = vertical_gradient((65, 28, 76), (136, 74, 128)).convert("RGBA")
     rng = random.Random(55)
-    
-    for y in range(H):
-        t = y / H
-        draw.line([(0, y), (W, y)], fill=(int(50+t*30), int(25+t*15), int(60+t*25)))
-    
-    for _ in range(12):
-        cx, cy, cr = rng.randint(0, W), rng.randint(0, H), rng.randint(80, 200)
-        c = rng.choice([(255,220,240,12), (220,235,255,10), (255,245,220,10), (235,200,250,12)])
-        overlay = Image.new("RGBA", (W, H), (0,0,0,0))
-        od = ImageDraw.Draw(overlay)
-        od.ellipse([cx-cr, cy-cr*0.7, cx+cr, cy+cr*0.7], fill=c)
-        img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
-        draw = ImageDraw.Draw(img)
-    
-    for _ in range(250):
-        sx, sy, sr = rng.randint(0, W), rng.randint(0, H), rng.randint(1, 3)
-        sc = rng.choice([(255,255,255), (255,225,130), (255,180,225), (160,235,255)])
-        draw.ellipse([sx-sr, sy-sr, sx+sr, sy+sr], fill=sc)
-    
-    for i in range(8):
-        y1, y2 = i*H//8, (i+1)*H//8
-        colors = [(255,180,225,10), (255,220,160,8), (180,220,255,8), (235,180,255,8), (255,200,200,8), (220,255,240,8)]
-        draw.rectangle([0, y1, W, y2], fill=colors[i%len(colors)])
-    
-    for _ in range(8):
-        lx, ly, lr = rng.randint(50, W-50), rng.randint(100, H-100), rng.randint(30, 60)
-        lc = rng.choice([(255,180,220), (255,225,100), (255,140,140), (110,220,255)])
-        draw.line([(lx, ly+lr), (lx, min(ly+lr*3, H-20))], fill=(220,220,220), width=4)
-        draw.ellipse([lx-lr, ly-lr, lx+lr, ly+lr], fill=lc)
-        draw.ellipse([lx-lr+4, ly-lr+4, lx+lr-4, ly+lr-4], fill=(255,255,255))
-        for a in range(0, 360, 30):
-            rad = math.radians(a)
-            draw.point((lx+math.cos(rad)*lr*0.4, ly+math.sin(rad)*lr*0.4), fill=lc)
-    
-    img.save("images/bg-candy.png")
-    print("  Candy ✓")
 
-print("Generating brighter backgrounds...")
-make_space()
-make_ocean()
-make_forest()
-make_cyber()
-make_candy()
-print("Done!")
+    for center, radius, color, alpha in [
+        ((240, 180), 320, (255, 178, 215), 66),
+        ((1180, 240), 280, (146, 208, 255), 50),
+        ((910, 840), 320, (255, 211, 124), 44),
+    ]:
+        img = add_glow(img, center, radius, color, alpha)
+
+    draw = ImageDraw.Draw(img)
+    stripe_colors = [(255, 173, 206, 42), (255, 217, 142, 36), (169, 228, 255, 34), (222, 179, 255, 34)]
+    for i in range(9):
+        y0 = i * H // 9
+        y1 = (i + 1) * H // 9
+        draw.rectangle([0, y0, W, y1], fill=stripe_colors[i % len(stripe_colors)])
+
+    for _ in range(12):
+        lx = rng.randint(90, W - 90)
+        ly = rng.randint(180, H - 220)
+        r = rng.randint(48, 92)
+        stick_h = rng.randint(120, 220)
+        base = rng.choice([(255, 126, 180), (255, 208, 112), (121, 218, 255), (193, 132, 255)])
+        draw.rounded_rectangle([lx - 7, ly + r * 0.75, lx + 7, ly + r * 0.75 + stick_h], radius=7, fill=(237, 237, 245, 220))
+        draw.ellipse([lx - r, ly - r, lx + r, ly + r], fill=base + (235,))
+        draw.ellipse([lx - r + 10, ly - r + 10, lx + r - 10, ly + r - 10], outline=(255, 255, 255, 185), width=6)
+        for angle in range(0, 360, 25):
+            rad = math.radians(angle)
+            x1 = lx + math.cos(rad) * r * 0.18
+            y1 = ly + math.sin(rad) * r * 0.18
+            x2 = lx + math.cos(rad + 0.75) * r * 0.78
+            y2 = ly + math.sin(rad + 0.75) * r * 0.78
+            draw.line([(x1, y1), (x2, y2)], fill=(255, 255, 255, 145), width=4)
+
+    for _ in range(260):
+        x, y = rng.randint(0, W), rng.randint(0, H)
+        r = rng.choice([1, 1, 2, 2, 3])
+        c = rng.choice([(255, 255, 255), (255, 228, 130), (255, 180, 221), (173, 228, 255)])
+        draw.ellipse([x - r, y - r, x + r, y + r], fill=c + (255,))
+
+    img = img.convert("RGB")
+    img.save("images/bg-candy.png", quality=95)
+    print("Created images/bg-candy.png")
+
+
+SCENE_GENERATORS = {
+    "space": make_space,
+    "ocean": make_ocean,
+    "forest": make_forest,
+    "cyber": make_cyber,
+    "candy": make_candy,
+}
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate one or all game backgrounds.")
+    parser.add_argument(
+        "scene",
+        nargs="?",
+        choices=[*SCENE_GENERATORS, "all"],
+        default="all",
+        help="Scene to generate. Defaults to all.",
+    )
+    args = parser.parse_args()
+    selected = SCENE_GENERATORS.items() if args.scene == "all" else [(args.scene, SCENE_GENERATORS[args.scene])]
+    for name, generator in selected:
+        print(f"Generating {name} background...")
+        generator()
+    print("Done.")
+
+
+if __name__ == "__main__":
+    main()
