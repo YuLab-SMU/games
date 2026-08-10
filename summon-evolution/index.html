@@ -575,34 +575,12 @@ function preloadBrainrotImages() {
 preloadBrainrotImages();
 
 const MINECRAFT_IMAGE_SETS = { classic: {}, refreshed: {} };
-// 经典大图背景为纯色浅蓝，加载后用 JS 去掉背景（容差内像素变透明）
-function stripBg(img, bg) {
-  const c = document.createElement('canvas');
-  c.width = img.naturalWidth; c.height = img.naturalHeight;
-  const g = c.getContext('2d');
-  g.drawImage(img, 0, 0);
-  const id = g.getImageData(0, 0, c.width, c.height);
-  const d = id.data;
-  const [br, bg_, bb] = bg;
-  for (let i = 0; i < d.length; i += 4) {
-    const diff = Math.abs(d[i] - br) + Math.abs(d[i+1] - bg_) + Math.abs(d[i+2] - bb);
-    if (diff < 35) d[i+3] = 0;
-    else if (diff < 70) d[i+3] = Math.round(255 * (diff - 35) / 35);
-  }
-  g.putImageData(id, 0, 0);
-  return c;
-}
+// 经典 PNG 已在切片时置透明，直接加载使用（无需 JS 去背景）
 function preloadMinecraftImages() {
   const ROLES = ['chicken','pig','sheep','rabbit','fox','villager','wolf','zombie','skeleton','creeper','steve','alex','witch','ironGolem','witherSkeleton','warden','enderDragon'];
-  // 焕新皮肤为程序化手绘，无需预加载图片；经典皮肤用 gpt 生成的像素大图
+  // 焕新皮肤为程序化手绘，无需预加载图片；经典皮肤用 gpt 生成的像素图
   ROLES.forEach(role => {
     const img = new Image();
-    img.onload = () => {
-      try {
-        const clean = stripBg(img, [181, 226, 252]);
-        MINECRAFT_IMAGE_SETS.classic[role]._clean = clean;
-      } catch (e) { /* 保持原图 */ }
-    };
     img.src = 'images/minecraft/classic/' + role + '.png';
     MINECRAFT_IMAGE_SETS.classic[role] = img;
   });
@@ -3069,15 +3047,12 @@ function drawCharacter(cx, cy, char, isPlayer) {
       drawMinecraftCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
     } else {
       const mcImg = MINECRAFT_IMAGE_SETS.classic[char.role];
-      const mcSrc = mcImg && (mcImg._clean || (mcImg.complete && mcImg.naturalWidth > 0 && mcImg));
-      if (mcSrc) {
-        const sw = mcSrc._clean ? mcSrc.width : mcSrc.naturalWidth;
-        const sh = mcSrc._clean ? mcSrc.height : mcSrc.naturalHeight;
-        const aspect = sw / sh;
+      if (mcImg && mcImg.complete && mcImg.naturalWidth > 0) {
+        const aspect = mcImg.naturalWidth / mcImg.naturalHeight;
         let dw, dh;
         if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
         else { dh = imgScale; dw = dh * aspect; }
-        ctx.drawImage(mcSrc, cx - dw/2, cy - dh/2 + bob, dw, dh);
+        ctx.drawImage(mcImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
       } else {
         drawMinecraftCharacter(cx, cy, char, bob);
       }
