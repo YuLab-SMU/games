@@ -293,6 +293,20 @@ html, body {
 .skin-btn { display:flex; align-items:center; justify-content:center; gap:10px; padding:8px 10px; }
 .skin-thumb { width:44px; height:44px; object-fit:contain; filter:drop-shadow(0 5px 8px rgba(0,0,0,.3)); }
 
+/* Foldable menu sections */
+.fold-block { margin-bottom: 4px; }
+.fold-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 0.82rem; color: #9a92d8; margin: 12px 0 8px; cursor: pointer;
+  user-select: none; padding: 4px 2px; border-radius: 10px;
+  transition: background 0.2s ease;
+}
+.fold-head:hover { background: rgba(255,255,255,0.05); color: #c3bcff; }
+.fold-arrow { display: inline-block; transition: transform 0.25s ease; color: #6C63FF; font-size: 0.7rem; }
+.fold-block.collapsed .fold-arrow { transform: rotate(-90deg); }
+.fold-body { overflow: hidden; }
+.fold-block.collapsed .fold-body { display: none; }
+
 /* Leaderboard */
 .lb-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88rem; }
 .lb-table th { 
@@ -408,17 +422,41 @@ html, body {
 
 <!-- Start Menu -->
 <div class="overlay show" id="menu-overlay">
-  <div class="overlay-panel">
+  <div class="overlay-panel menu-panel">
     <h1 id="game-title">召唤进化 · 节奏盒子</h1>
     <p class="tagline" id="game-tagline">吃小的，躲大的，一路进化到平基！</p>
-    <div style="font-size:0.8rem;color:#707090;margin-bottom:10px;">游戏模式</div>
-    <div class="scene-grid" id="mode-selector" style="grid-template-columns:repeat(2, 1fr);"></div>
-    <div style="font-size:0.8rem;color:#707090;margin:12px 0 8px;">场景选择</div>
-    <div class="scene-grid" id="scene-selector"></div>
-    <div style="font-size:0.8rem;color:#707090;margin:12px 0 6px;">难度</div>
-    <div class="scene-grid" id="difficulty-selector"></div>
-    <div style="font-size:0.8rem;color:#707090;margin:12px 0 6px;">角色形象</div>
-    <div class="skin-grid" id="skin-selector"></div>
+    <div class="fold-block" id="fold-mode">
+      <div class="fold-head" onclick="toggleFold('fold-mode')">
+        <span>🎮 游戏模式</span><span class="fold-arrow">▸</span>
+      </div>
+      <div class="fold-body">
+        <div class="scene-grid" id="mode-selector" style="grid-template-columns:repeat(2, 1fr);"></div>
+      </div>
+    </div>
+    <div class="fold-block" id="fold-scene">
+      <div class="fold-head" onclick="toggleFold('fold-scene')">
+        <span>🎬 场景选择</span><span class="fold-arrow">▸</span>
+      </div>
+      <div class="fold-body">
+        <div class="scene-grid" id="scene-selector"></div>
+      </div>
+    </div>
+    <div class="fold-block" id="fold-difficulty">
+      <div class="fold-head" onclick="toggleFold('fold-difficulty')">
+        <span>⚖️ 难度</span><span class="fold-arrow">▸</span>
+      </div>
+      <div class="fold-body">
+        <div class="scene-grid" id="difficulty-selector"></div>
+      </div>
+    </div>
+    <div class="fold-block" id="fold-skin">
+      <div class="fold-head" onclick="toggleFold('fold-skin')">
+        <span>🎨 角色形象</span><span class="fold-arrow">▸</span>
+      </div>
+      <div class="fold-body">
+        <div class="skin-grid" id="skin-selector"></div>
+      </div>
+    </div>
     <button class="btn btn-primary" onclick="startGame()" style="margin-top:12px;font-size:1.1rem;padding:12px 40px;">
       ▶ 开始召唤
     </button>
@@ -537,11 +575,34 @@ function preloadBrainrotImages() {
 preloadBrainrotImages();
 
 const MINECRAFT_IMAGE_SETS = { classic: {}, refreshed: {} };
+// 经典大图背景为纯色浅蓝，加载后用 JS 去掉背景（容差内像素变透明）
+function stripBg(img, bg) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0);
+  const id = g.getImageData(0, 0, c.width, c.height);
+  const d = id.data;
+  const [br, bg_, bb] = bg;
+  for (let i = 0; i < d.length; i += 4) {
+    const diff = Math.abs(d[i] - br) + Math.abs(d[i+1] - bg_) + Math.abs(d[i+2] - bb);
+    if (diff < 35) d[i+3] = 0;
+    else if (diff < 70) d[i+3] = Math.round(255 * (diff - 35) / 35);
+  }
+  g.putImageData(id, 0, 0);
+  return c;
+}
 function preloadMinecraftImages() {
   const ROLES = ['chicken','pig','sheep','rabbit','fox','villager','wolf','zombie','skeleton','creeper','steve','alex','witch','ironGolem','witherSkeleton','warden','enderDragon'];
   // 焕新皮肤为程序化手绘，无需预加载图片；经典皮肤用 gpt 生成的像素大图
   ROLES.forEach(role => {
     const img = new Image();
+    img.onload = () => {
+      try {
+        const clean = stripBg(img, [181, 226, 252]);
+        MINECRAFT_IMAGE_SETS.classic[role]._clean = clean;
+      } catch (e) { /* 保持原图 */ }
+    };
     img.src = 'images/minecraft/classic/' + role + '.png';
     MINECRAFT_IMAGE_SETS.classic[role] = img;
   });
@@ -3008,12 +3069,15 @@ function drawCharacter(cx, cy, char, isPlayer) {
       drawMinecraftCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
     } else {
       const mcImg = MINECRAFT_IMAGE_SETS.classic[char.role];
-      if (mcImg && mcImg.complete && mcImg.naturalWidth > 0) {
-        const aspect = mcImg.naturalWidth / mcImg.naturalHeight;
+      const mcSrc = mcImg && (mcImg._clean || (mcImg.complete && mcImg.naturalWidth > 0 && mcImg));
+      if (mcSrc) {
+        const sw = mcSrc._clean ? mcSrc.width : mcSrc.naturalWidth;
+        const sh = mcSrc._clean ? mcSrc.height : mcSrc.naturalHeight;
+        const aspect = sw / sh;
         let dw, dh;
         if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
         else { dh = imgScale; dw = dh * aspect; }
-        ctx.drawImage(mcImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+        ctx.drawImage(mcSrc, cx - dw/2, cy - dh/2 + bob, dw, dh);
       } else {
         drawMinecraftCharacter(cx, cy, char, bob);
       }
@@ -3328,6 +3392,23 @@ function showOverlay(id) {
 
 function hideOverlay(id) {
   document.getElementById(id).classList.remove('show');
+}
+
+// ==================== MENU FOLD ====================
+function toggleFold(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('collapsed');
+}
+// 桌面端全部展开；手机/平板上默认折叠"场景选择"（按钮最多，最占空间）
+function initMenuFolds() {
+  const compact = window.innerWidth <= 900;
+  const defaultCollapse = compact ? ['fold-scene'] : [];
+  ['fold-mode', 'fold-scene', 'fold-difficulty', 'fold-skin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('collapsed', defaultCollapse.includes(id));
+  });
 }
 
 // ==================== SCENE INIT ====================
@@ -3656,6 +3737,7 @@ function init() {
   loadAudioSettings();
   initModeSelector();
   initSceneSelector();
+  initMenuFolds();
   resolveSceneChoice();
   initBgParticles();
   updateHUD();
