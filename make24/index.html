@@ -490,6 +490,8 @@ const state = {
   survivalScore: 0, survivalQuestions: 0,
   // hint
   hintTargetIdx: null,
+  // leaderboard: 一个会话只记一次，避免每答对一题就刷屏
+  sessionSaved: false,
 };
 
 // ==================== SOLVER ====================
@@ -503,7 +505,10 @@ function solve24(nums) {
         ...(Math.abs(b) > 0.0001 ? [a / b] : []),
         ...(Math.abs(a) > 0.0001 ? [b / a] : [])];
       for (const r of ops) {
-        if (Number.isFinite(r) && solve24([...rest, r])) return true;
+        if (!Number.isFinite(r)) continue;
+        // 游戏规则：中间结果必须是整数（与 doCalculate 一致），否则该题在玩法上无解
+        if (rest.length > 0 && Math.abs(r - Math.round(r)) > 0.0001) continue;
+        if (solve24([...rest, Math.round(r * 10000) / 10000])) return true;
       }
     }
   }
@@ -710,9 +715,6 @@ function onWin() {
   const comboStr = state.combo >= 2 ? ` 🔥${state.combo}连击` : '';
   showToast('🎉', '太棒了！', `获得 ${state.stars} 颗星星！${comboStr}`);
   spawnConfetti(); animateResultCard();
-
-  // Save leaderboard
-  saveToLeaderboard();
 }
 
 function showComboText(lvl) {
@@ -737,8 +739,10 @@ function showHint() {
   const h = findHintMove(state.cards);
   if (!h) { showFloatText('这题有点难，换个题试试？', '#ff9800'); return; }
   // Highlight first card + operator + second card, let user click through
+  // 提示返回的是显示符号（×/÷），doCalculate 需要内部符号（*/÷）
+  const opInternal = { '+': '+', '-': '-', '×': '*', '÷': '/' }[h.op] || h.op;
   state.firstIdx = h.i;
-  state.selectedOp = h.op;
+  state.selectedOp = opInternal;
   state.phase = 'pick-second';
   state.hintTargetIdx = h.j;
   render();
@@ -752,21 +756,24 @@ function showHint() {
   const b = document.getElementById(m[h.op]);
   if (b) { b.style.transform = 'scale(1.3)'; b.style.boxShadow = '0 0 24px rgba(255,200,0,0.6)'; setTimeout(() => { b.style.transform = ''; b.style.boxShadow = ''; }, 800); }
 }
-function newProblem() {
+function newProblem(resetCombo = true) {
   state.cards = generateProblem(); state.history = []; state.steps = [];
   state.solved = false; state.stars = 0; state.problemIndex++;
-  state.combo = 0; // reset combo on skip
+  if (resetCombo) state.combo = 0; // 换题惩罚：清连击
   resetPhase();
   if (state.gameMode === 'survival') {
-    state.survivalTimeLeft = Math.max(0, state.survivalTimeLeft - 5); // 5s penalty
+    state.survivalTimeLeft = Math.max(0, state.survivalTimeLeft - (resetCombo ? 5 : 0)); // 换题扣5s，答对续题不扣
     updateSurvivalDisplay();
-    if (state.survivalTimeLeft <= 0) endSurvival();
+    if (state.survivalTimeLeft <= 0) { endSurvival(); return; }
+    startSurvivalTimer(); // onWin 会停掉计时器，这里必须重启
   }
   resetTimer();
   render();
   document.getElementById('step-display').innerHTML = '新题目来啦～加油！';
 }
 function resetGame() {
+  saveToLeaderboard(); // 保存上一局成绩（普通模式一局只记一次）
+  state.sessionSaved = false; // 开始新会话
   state.cards = generateProblem(); state.history = []; state.steps = [];
   state.solved = false; state.stars = 0; state.totalStars = 0; state.problemIndex = 0;
   state.combo = 0; state.maxCombo = 0;
@@ -869,6 +876,9 @@ function loadLeaderboard() {
   try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch { return []; }
 }
 function saveToLeaderboard() {
+  if (state.sessionSaved) return; // 每局会话只记一次
+  if (state.totalStars === 0 && state.survivalScore === 0) return; // 空会话不记
+  state.sessionSaved = true;
   const entry = {
     stars: state.gameMode === 'survival' ? state.survivalScore : state.totalStars,
     mode: state.gameMode,
@@ -918,7 +928,7 @@ function showToast(emoji, title, subtitle) {
 }
 function hideToast() {
   document.getElementById('toast').classList.remove('show');
-  newProblem();
+  newProblem(false); // 继续答题：保留连击，不扣生存时间
 }
 
 // ==================== FLOAT TEXT ====================
@@ -968,6 +978,7 @@ function animateResultCard() {
 // ==================== INIT ====================
 function init() {
   resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('beforeunload', saveToLeaderboard); // 关页面前保存会话成绩
   document.querySelectorAll('.op-btn').forEach(b => b.addEventListener('click', () => onOperator(b.dataset.op)));
   document.querySelector('[data-setting="theme"][data-value="fruit"]').classList.add('active');
   state.cards = generateProblem(); startTimer(); render();

@@ -353,16 +353,21 @@ function undoMove() {
 }
 
 // ==================== RENDER ====================
+// 方块与浮字都挂在 boardWrap 下（它是 position:relative 的定位基准），
+// 坐标相对 boardWrap 计算，页面滚动后依然对齐
 function getTilePos(r, c) {
-  const rect = board.getBoundingClientRect();
   const wrapRect = boardWrap.getBoundingClientRect();
-  const cellW = rect.width / SIZE;
-  const cellH = rect.height / SIZE;
-  const gapX = (rect.width - cellW * SIZE) / (SIZE + 1);
-  const gapY = (rect.height - cellH * SIZE) / (SIZE + 1);
+  const cells = board.children;
+  const first = cells[0].getBoundingClientRect();
+  const second = cells[1].getBoundingClientRect();
+  const below = cells[SIZE].getBoundingClientRect();
+  const cellW = first.width;
+  const cellH = first.height;
+  const gapX = second.left - first.right;
+  const gapY = below.top - first.bottom;
   return {
-    left: wrapRect.left + gapX + (cellW + gapX) * c,
-    top: wrapRect.top + gapY + (cellH + gapY) * r,
+    left: (first.left - wrapRect.left) + c * (cellW + gapX),
+    top: (first.top - wrapRect.top) + r * (cellH + gapY),
     w: cellW,
     h: cellH,
   };
@@ -430,7 +435,7 @@ function render(mergeInfo = []) {
       // Actually, we can't easily track new vs merged here without more state.
       // Let's skip the 'new' class for simplicity since merge is the key effect.
       
-      document.body.appendChild(tile);
+      boardWrap.appendChild(tile);
       tileEls.push(tile);
       
       // Float tagline for merged tiles
@@ -441,7 +446,7 @@ function render(mergeInfo = []) {
         ft.style.top = (pos.top) + 'px';
         ft.textContent = lv.tagline;
         ft.addEventListener('animationend', () => ft.remove());
-        document.body.appendChild(ft);
+        boardWrap.appendChild(ft);
       }
     }
   }
@@ -575,12 +580,10 @@ function newGame() {
   won = false;
   history = [];
   addRandom(); addRandom();
+  // render() 内部已负责清掉旧方块和旧浮字，这里不能再清，否则刚生成的方块会被删掉（棋盘空白）
   render();
   updateHUD();
   document.getElementById('gameover').classList.remove('show');
-  tileEls.forEach(el => el.remove());
-  tileEls = [];
-  document.querySelectorAll('.float-tagline').forEach(el => el.remove());
 }
 
 // ==================== INIT ====================
