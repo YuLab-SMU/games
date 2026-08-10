@@ -538,15 +538,13 @@ preloadBrainrotImages();
 
 const MINECRAFT_IMAGE_SETS = { classic: {}, refreshed: {} };
 function preloadMinecraftImages() {
-  const ROLES = ['chicken','pig','sheep','villager','zombie','skeleton','creeper','witch','ironGolem','witherSkeleton','warden','enderDragon'];
-  for (const skin of ['classic', 'refreshed']) {
-    const base = 'images/minecraft/' + skin + '/';
-    ROLES.forEach(role => {
-      const img = new Image();
-      img.src = base + role + '.png';
-      MINECRAFT_IMAGE_SETS[skin][role] = img;
-    });
-  }
+  const ROLES = ['chicken','pig','sheep','rabbit','fox','villager','wolf','zombie','skeleton','creeper','steve','alex','witch','ironGolem','witherSkeleton','warden','enderDragon'];
+  // 焕新皮肤为程序化手绘，无需预加载图片；经典皮肤用 gpt 生成的像素大图
+  ROLES.forEach(role => {
+    const img = new Image();
+    img.src = 'images/minecraft/classic/' + role + '.png';
+    MINECRAFT_IMAGE_SETS.classic[role] = img;
+  });
 }
 preloadMinecraftImages();
 
@@ -657,16 +655,21 @@ const BRAINROT_LEVELS = [
 const MINECRAFT_LEVELS = [
   { id: 0,  name: '鸡',     color: '#F5F5F5', dark: '#C0C0C0', accent: '#E53935', size: 28, role: 'chicken' },
   { id: 1,  name: '猪',     color: '#F2A0B5', dark: '#C4768F', accent: '#FF7FA8', size: 31, role: 'pig' },
-  { id: 2,  name: '绵羊',   color: '#EDEDE6', dark: '#B8B9AF', accent: '#7CBD4B', size: 34, role: 'sheep' },
-  { id: 3,  name: '村民',   color: '#A8724F', dark: '#6E4526', accent: '#E8B36A', size: 37, role: 'villager' },
-  { id: 4,  name: '僵尸',   color: '#54A63E', dark: '#2E6B26', accent: '#12380F', size: 40, role: 'zombie' },
-  { id: 5,  name: '骷髅',   color: '#E8E8E0', dark: '#9A9A8A', accent: '#2E2E2E', size: 43, role: 'skeleton' },
-  { id: 6,  name: '苦力怕', color: '#7CBD4B', dark: '#3E6D2E', accent: '#17380F', size: 47, role: 'creeper' },
-  { id: 7,  name: '女巫',   color: '#7E5AA8', dark: '#4A3370', accent: '#B08AE0', size: 51, role: 'witch' },
-  { id: 8,  name: '铁傀儡', color: '#A8A8A8', dark: '#5E5E5E', accent: '#C0392B', size: 55, role: 'ironGolem' },
-  { id: 9,  name: '凋灵骷髅', color: '#2B2B2B', dark: '#101010', accent: '#6E6E6E', size: 59, role: 'witherSkeleton' },
-  { id: 10, name: '循声守卫', color: '#2F6B63', dark: '#143D37', accent: '#78E8D0', size: 65, role: 'warden' },
-  { id: 11, name: '末影龙', color: '#3A2E5E', dark: '#1D1630', accent: '#B388FF', size: 72, role: 'enderDragon' },
+  { id: 2,  name: '羊',     color: '#EDEDE6', dark: '#B8B9AF', accent: '#7CBD4B', size: 34, role: 'sheep' },
+  { id: 3,  name: '兔子',   color: '#D8BFA0', dark: '#8A6F52', accent: '#F3D9C0', size: 38, role: 'rabbit' },
+  { id: 4,  name: '狐狸',   color: '#E8834A', dark: '#A85A2E', accent: '#FFF3E0', size: 42, role: 'fox' },
+  { id: 5,  name: '村民',   color: '#A8724F', dark: '#6E4526', accent: '#E8B36A', size: 46, role: 'villager' },
+  { id: 6,  name: '狼',     color: '#B9B9B9', dark: '#5F5F5F', accent: '#F0F0F0', size: 50, role: 'wolf' },
+  { id: 7,  name: '僵尸',   color: '#54A63E', dark: '#2E6B26', accent: '#12380F', size: 54, role: 'zombie' },
+  { id: 8,  name: '骷髅',   color: '#E8E8E0', dark: '#9A9A8A', accent: '#2E2E2E', size: 58, role: 'skeleton' },
+  { id: 9,  name: '苦力怕', color: '#7CBD4B', dark: '#3E6D2E', accent: '#17380F', size: 62, role: 'creeper' },
+  { id: 10, name: '史蒂夫', color: '#37B7F0', dark: '#2B5F9E', accent: '#E8B36A', size: 66, role: 'steve' },
+  { id: 11, name: '艾利克斯', color: '#5EA948', dark: '#8E9AA8', accent: '#D8A05E', size: 70, role: 'alex' },
+  { id: 12, name: '女巫',   color: '#7E5AA8', dark: '#4A3370', accent: '#B08AE0', size: 74, role: 'witch' },
+  { id: 13, name: '铁傀儡', color: '#A8A8A8', dark: '#5E5E5E', accent: '#C0392B', size: 78, role: 'ironGolem' },
+  { id: 14, name: '凋灵骷髅', color: '#2B2B2B', dark: '#101010', accent: '#6E6E6E', size: 82, role: 'witherSkeleton' },
+  { id: 15, name: '监守者', color: '#2F6B63', dark: '#143D37', accent: '#78E8D0', size: 88, role: 'warden' },
+  { id: 16, name: '末影龙', color: '#3A2E5E', dark: '#1D1630', accent: '#B388FF', size: 92, role: 'enderDragon' },
 ];
 
 let LEVELS = SPRUNKI_LEVELS;
@@ -2860,6 +2863,72 @@ function drawMinecraftCharacter(cx, cy, char, bob) {
         block(52 + i * 14, -6 + i * 10, 16 + i * 6, 9, '#4A3A78');
       }
       block(-50, 6, 12, 26, '#3A2E5E'); block(38, 6, 12, 26, '#3A2E5E'); // 龙翼骨
+      break;
+    case 'rabbit':
+      baseMob('#D8BFA0', '#D8BFA0');
+      // 长耳朵
+      ctx.fillStyle = '#D8BFA0';
+      ctx.fillRect(-16, -74, 9, 24); ctx.fillRect(7, -74, 9, 24);
+      ctx.fillStyle = '#F3D9C0';
+      ctx.fillRect(-13, -70, 4, 18); ctx.fillRect(10, -70, 4, 18);
+      // 白肚
+      block(-12, 2, 24, 16, '#FBF3E8');
+      block(-3, -30, 6, 4, '#8A6F52'); // 嘴线
+      eyeB(-10, -38); eyeB(10, -38);
+      break;
+    case 'fox':
+      baseMob('#E8834A', '#E8834A');
+      // 尖耳
+      ctx.fillStyle = '#E8834A';
+      ctx.fillRect(-20, -62, 8, 14); ctx.fillRect(12, -62, 8, 14);
+      ctx.fillStyle = '#FFE9D6';
+      ctx.fillRect(-19, -60, 4, 10); ctx.fillRect(13, -60, 4, 10);
+      // 白肚 + 白嘴
+      block(-12, 4, 24, 14, '#FFF3E0');
+      block(-9, -18, 18, 12, '#FFF3E0');
+      // 大尾巴
+      ctx.fillStyle = '#E8834A';
+      ctx.fillRect(18, -14, 12, 26);
+      ctx.fillStyle = '#FFF3E0'; ctx.fillRect(18, 10, 12, 6);
+      eyeB(-10, -36); eyeB(10, -36);
+      break;
+    case 'wolf':
+      baseMob('#B9B9B9', '#B9B9B9');
+      // 尖耳
+      ctx.fillStyle = '#B9B9B9';
+      ctx.fillRect(-19, -64, 9, 14); ctx.fillRect(10, -64, 9, 14);
+      ctx.fillStyle = '#5F5F5F';
+      ctx.fillRect(-17, -60, 4, 9); ctx.fillRect(13, -60, 4, 9);
+      // 白肚 + 嘴线
+      block(-11, 4, 22, 14, '#F0F0F0');
+      block(-3, -29, 6, 4, '#5F5F5F');
+      // 尾巴
+      ctx.fillStyle = '#B9B9B9'; ctx.fillRect(-28, 24, 10, 14);
+      ctx.fillStyle = '#5F5F5F'; ctx.fillRect(-28, 36, 10, 5);
+      eyeB(-10, -38, '#3A2E1E'); eyeB(10, -38, '#3A2E1E');
+      break;
+    case 'steve':
+      baseMob('#37B7F0', '#E8B36A'); // 青绿上衣 + 肤色头
+      // 深棕头发（MC 史蒂夫发块）
+      block(-24, -52, 48, 12, '#5A3825');
+      block(-24, -44, 12, 6, '#5A3825');
+      block(12, -44, 12, 6, '#5A3825');
+      // 蓝裤
+      block(-15, 32, 13, 20, '#2B5F9E'); block(2, 32, 13, 20, '#2B5F9E');
+      // 方块胡子 + 蓝眼睛
+      block(-9, -28, 18, 6, '#5A3825');
+      block(-11, -40, 7, 6, '#37B7F0'); block(4, -40, 7, 6, '#37B7F0');
+      break;
+    case 'alex':
+      baseMob('#5EA948', '#D8A05E'); // 绿上衣 + 肤色头
+      // 红色长直发（MC 艾利克斯）
+      block(-24, -52, 48, 10, '#B33A2E');
+      block(-26, -46, 8, 22, '#B33A2E'); block(18, -46, 8, 22, '#B33A2E');
+      block(-24, -44, 6, 14, '#B33A2E'); block(18, -44, 6, 14, '#B33A2E');
+      // 灰裤
+      block(-15, 32, 13, 20, '#8E9AA8'); block(2, 32, 13, 20, '#8E9AA8');
+      // 绿眼睛
+      block(-11, -40, 7, 6, '#4A7C3A'); block(4, -40, 7, 6, '#4A7C3A');
       break;
     default:
       baseMob(char.color, char.color);
