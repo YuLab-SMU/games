@@ -521,14 +521,17 @@ function preloadImages() {
 }
 preloadImages();
 
-const BRAINROT_IMAGES = {};
+const BRAINROT_IMAGE_SETS = { classic: {}, refreshed: {} };
 function preloadBrainrotImages() {
   const ROLES = ['sneakerShark','bomberCroc','treeMonkey','cactusElephant','coffeeNinja','ballerinaCup','bananaChimp','bomberGoose','fridgeCamel','saturnCow','teapotMan'];
-  ROLES.forEach(role => {
-    const img = new Image();
-    img.src = 'images/brainrot/' + role + '.webp';
-    BRAINROT_IMAGES[role] = img;
-  });
+  for (const skin of ['classic', 'refreshed']) {
+    const base = 'images/brainrot/' + skin + '/';
+    ROLES.forEach(role => {
+      const img = new Image();
+      img.src = base + role + '.png';
+      BRAINROT_IMAGE_SETS[skin][role] = img;
+    });
+  }
 }
 preloadBrainrotImages();
 
@@ -2425,7 +2428,7 @@ function drawCharacter(cx, cy, char, isPlayer) {
     ctx.fill();
   }
   if (inBrainrot) {
-    const brImg = BRAINROT_IMAGES[char.role];
+    const brImg = BRAINROT_IMAGE_SETS[state.skin]?.[char.role] || BRAINROT_IMAGE_SETS.classic[char.role];
     if (brImg && brImg.complete && brImg.naturalWidth > 0) {
       const aspect = brImg.naturalWidth / brImg.naturalHeight;
       let dw, dh;
@@ -2773,14 +2776,13 @@ function initModeSelector() {
   const grid = document.getElementById('mode-selector');
   grid.innerHTML = '';
   const modes = [
-    { id: 'classic', name: '📦 节奏盒子', desc: '经典节奏盒子' },
-    { id: 'brainrot', name: '🌊 直入山海经', desc: '跳过经典，直接开卷' },
+    { id: 'classic', name: '📦 节奏盒子' },
+    { id: 'brainrot', name: '🌊 山海经' },
   ];
   modes.forEach(m => {
     const btn = document.createElement('button');
     btn.className = 'scene-btn' + (m.id === state.gameMode ? ' active' : '');
-    btn.title = m.desc;
-    btn.innerHTML = m.name + '<br><span style="font-size:0.6rem;opacity:0.6;">' + m.desc + '</span>';
+    btn.textContent = m.name;
     btn.onclick = () => {
       state.gameMode = m.id;
       initModeSelector();
