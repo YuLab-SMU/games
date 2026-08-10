@@ -802,8 +802,10 @@ const AI_COUNT_TARGET = 25;
 const MAX_FOLLOWERS = 80;
 const MAX_EAT_PARTICLES = 360;
 const HUNT_TARGET_LIMIT = 24;
-const HUNT_CHASE_RANGE = 350;   // followers only chase enemies within 350px
+const HUNT_CHASE_RANGE = 200;   // followers only chase enemies within a short range
 const HUNT_CHASE_RANGE_SQ = HUNT_CHASE_RANGE * HUNT_CHASE_RANGE;
+const HUNT_ABANDON_RANGE = 300; // give up chase & return if follower drifts too far from player
+const HUNT_ABANDON_RANGE_SQ = HUNT_ABANDON_RANGE * HUNT_ABANDON_RANGE;
 
 function createCharacter(x, y, level, isPlayer = false) {
   const lv = LEVELS[level];
@@ -1753,9 +1755,15 @@ function updateFollowers(dt) {
         ty = player.y + Math.sin(a) * (player.size * 2.2 + i * 2);
       } else if (state.squadMode === 'hunt') {
         const target = f.huntTarget;
-        if (target && aiChars.includes(target) && target.level <= f.level) {
-          const dHunt = (target.x - f.x) ** 2 + (target.y - f.y) ** 2;
-          if (dHunt <= HUNT_CHASE_RANGE_SQ) { tx = target.x; ty = target.y; }
+        // If target no longer exists (eaten) or can't be eaten, clear it and return to following
+        if (target && (!aiChars.includes(target) || target.level > f.level)) {
+          f.huntTarget = null;
+        }
+        if (f.huntTarget) {
+          const dHunt = (f.huntTarget.x - f.x) ** 2 + (f.huntTarget.y - f.y) ** 2;
+          // Distance to player too far -> abandon chase, return to following
+          const dPlayer = (player.x - f.x) ** 2 + (player.y - f.y) ** 2;
+          if (dHunt <= HUNT_CHASE_RANGE_SQ && dPlayer <= HUNT_ABANDON_RANGE_SQ) { tx = f.huntTarget.x; ty = f.huntTarget.y; }
           else { f.huntTarget = null; }
         }
       }
@@ -1817,6 +1825,8 @@ function checkFollowerCollisions() {
           });
         }
         aiChars.splice(ai, 1);
+        // Clear any follower references to the eaten AI so they return to following
+        for (const fl of state.followers) { if (fl.huntTarget === a) fl.huntTarget = null; }
         sfxEat(f.level);
         checkFollowerMerge();
         state._autoEatCooldown = state.squadMode === 'guard' ? 0.18 : state.squadMode === 'hunt' ? 0.1 : 0.14;
