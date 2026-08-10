@@ -751,6 +751,7 @@ const state = {
   gameMode: 'classic', // 'classic' | 'brainrot'
   difficulty: 'normal',
   skin: 'classic',
+  skinByMode: { classic: 'classic', brainrot: 'classic' }, // 每个主题独立记忆皮肤
   squadMode: 'hunt', // 默认狩猎模式
   playerLevel: 0,
   score: 0,
@@ -2403,6 +2404,172 @@ function drawBrainrotCharacter(cx, cy, char, bob) {
   ctx.restore();
 }
 
+// --- Procedural fallback for Sprunki roster (used only when sprite image is unavailable) ---
+function drawSprunkiCharacter(cx, cy, char, bob) {
+  const scale = char.size / 50;
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(scale, scale);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = char.dark;
+
+  const eye = (x, y, r = 4) => {
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#171722'; ctx.beginPath(); ctx.arc(x + 1, y, r * .55, 0, Math.PI * 2); ctx.fill();
+  };
+  const limb = (x1, y1, x2, y2, width = 7) => {
+    ctx.strokeStyle = char.dark; ctx.lineWidth = width;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  };
+
+  // 头顶装饰（先画，主体会盖住衔接处）
+  if (char.tree) {
+    ctx.fillStyle = '#66BB6A';
+    for (const [x, y, r] of [[0, -48, 22], [-18, -30, 14], [18, -30, 14]]) {
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+  if (char.sun) {
+    ctx.strokeStyle = char.accent; ctx.lineWidth = 4;
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * 34, Math.sin(a) * 34); ctx.lineTo(Math.cos(a) * 47, Math.sin(a) * 47); ctx.stroke();
+    }
+    ctx.strokeStyle = char.dark;
+  }
+  if (char.hood) {
+    ctx.fillStyle = char.dark;
+    ctx.beginPath(); ctx.arc(0, -24, 25, Math.PI, 0); ctx.fill();
+  }
+  if (char.ears === 'cat' || char.ears === 'bear' || char.ears === 'bunny') {
+    ctx.fillStyle = char.color;
+    if (char.ears === 'cat') {
+      for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(s * 20, -28); ctx.lineTo(s * 31, -50); ctx.lineTo(s * 41, -25); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    } else if (char.ears === 'bear') {
+      for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(s * 30, -28, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    } else {
+      for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * 25, -48, 8, 21, s * .22, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    }
+  }
+  if (char.horns) {
+    for (let i = 0; i < char.horns; i++) {
+      const a = Math.PI * 1.15 + (i - (char.horns - 1) / 2) * 0.45;
+      const x0 = Math.cos(a) * 24, y0 = Math.sin(a) * 20;
+      ctx.beginPath(); ctx.moveTo(x0, y0 - 20); ctx.quadraticCurveTo(x0 * 1.3, y0 - 44, x0 * 1.5, y0 - 34); ctx.stroke();
+    }
+  }
+  if (char.antennae) {
+    ctx.strokeStyle = char.dark;
+    for (let i = 0; i < char.antennae; i++) {
+      const x0 = -8 + i * 16;
+      ctx.beginPath(); ctx.moveTo(x0, -34); ctx.lineTo(x0, -54); ctx.stroke();
+      ctx.fillStyle = char.accent; ctx.beginPath(); ctx.arc(x0, -57, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+  if (char.headphone) {
+    ctx.lineWidth = 6; ctx.strokeStyle = char.dark;
+    ctx.beginPath(); ctx.arc(0, -6, 34, Math.PI * .72, Math.PI * 1.28); ctx.stroke();
+    ctx.fillStyle = char.accent; ctx.beginPath(); ctx.arc(-34, -6, 6, 0, Math.PI * 2); ctx.arc(34, -6, 6, 0, Math.PI * 2); ctx.fill();
+  }
+  if (char.hairTufts) {
+    ctx.strokeStyle = char.dark; ctx.lineWidth = 4;
+    for (let i = 0; i < char.hairTufts; i++) {
+      const x0 = -22 + i * 11;
+      ctx.beginPath(); ctx.moveTo(x0, -34); ctx.lineTo(x0 + 4, -52); ctx.stroke();
+    }
+  }
+  if (char.vineWig) {
+    ctx.strokeStyle = '#2E7D32'; ctx.lineWidth = 5;
+    for (const [x, y] of [[-24, -12], [-16, -26], [0, -33], [16, -26], [24, -12]]) {
+      ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.strokeStyle = char.dark;
+  }
+
+  // 主体
+  ctx.fillStyle = char.color;
+  ctx.beginPath(); ctx.ellipse(0, 2, 30, 34, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  // 帽类 / 机器人顶饰
+  if (char.hat) {
+    ctx.fillStyle = char.dark;
+    ctx.fillRect(-27, -50, 54, 9);
+    ctx.fillRect(-17, -68, 34, 20);
+    ctx.fillStyle = char.accent; ctx.fillRect(-17, -68, 34, 5);
+    if (char.tie) { ctx.fillStyle = '#fff'; ctx.fillRect(-4, 18, 8, 18); }
+  } else if (char.robot) {
+    ctx.fillStyle = '#78909C'; ctx.fillRect(-31, -44, 62, 10);
+    ctx.fillStyle = char.accent; ctx.fillRect(-13, -42, 26, 5);
+  } else if (char.cymbal) {
+    ctx.fillStyle = '#FFD54F'; ctx.beginPath(); ctx.ellipse(0, -47, 24, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-6, -47); ctx.lineTo(-12, -60); ctx.moveTo(6, -47); ctx.lineTo(12, -60); ctx.stroke();
+  } else if (char.bucket) {
+    ctx.fillStyle = '#A1887F'; ctx.fillRect(-23, -50, 46, 11);
+    ctx.strokeStyle = char.dark; ctx.beginPath(); ctx.moveTo(-23, -50); ctx.lineTo(-27, -58); ctx.moveTo(23, -50); ctx.lineTo(27, -58); ctx.stroke();
+  }
+
+  // 脸
+  if (char.visor || char.robot) {
+    ctx.fillStyle = '#0b0f1a'; ctx.fillRect(-21, -15, 42, 14);
+    ctx.fillStyle = '#6CE5FF'; ctx.fillRect(-17, -12, 34, 4);
+    ctx.strokeStyle = char.dark; ctx.lineWidth = 4; ctx.strokeRect(-21, -15, 42, 14);
+  } else {
+    if (char.eyes === 'hidden') {
+      ctx.fillStyle = '#fff'; ctx.fillRect(-24, -13, 13, 4); ctx.fillRect(11, -13, 13, 4);
+    } else if (char.eyes === 'tired') {
+      eye(-10, -7, 3); eye(10, -7, 3);
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-17, -4); ctx.lineTo(-5, -7); ctx.moveTo(17, -4); ctx.lineTo(5, -7); ctx.stroke();
+    } else if (char.eyes === 'worried') {
+      eye(-10, -8); eye(10, -8);
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-17, -13); ctx.quadraticCurveTo(-10, -19, -4, -13); ctx.moveTo(17, -13); ctx.quadraticCurveTo(10, -19, 4, -13); ctx.stroke();
+    } else if (char.eyes === 'angry') {
+      eye(-10, -8); eye(10, -8);
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-17, -15); ctx.lineTo(-4, -11); ctx.moveTo(17, -15); ctx.lineTo(4, -11); ctx.stroke();
+    } else if (char.eyes === 'asymmetric') {
+      eye(-11, -9, 3); eye(9, -6, 5);
+    } else if (char.eyes === 'googly') {
+      eye(-10, -8, 3); eye(10, -8, 3);
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.arc(-7, -6, 4, 0, Math.PI * 2); ctx.arc(13, -6, 4, 0, Math.PI * 2); ctx.fill();
+    } else if (char.eyes === 'ominous') {
+      ctx.fillStyle = '#171722'; ctx.beginPath(); ctx.arc(-10, -8, 5, 0, Math.PI * 2); ctx.arc(10, -8, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = char.accent; ctx.beginPath(); ctx.arc(-9, -9, 2, 0, Math.PI * 2); ctx.arc(11, -9, 2, 0, Math.PI * 2); ctx.fill();
+    } else {
+      eye(-10, -8); eye(10, -8);
+    }
+    if (char.eyelashes) {
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 2.5;
+      for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(s * 14, -12); ctx.lineTo(s * 18, -16); ctx.moveTo(s * 9, -13); ctx.lineTo(s * 11, -18); ctx.stroke();
+      }
+    }
+  }
+
+  // 嘴
+  if (char.mouth === 'frown') {
+    ctx.beginPath(); ctx.arc(0, 13, 7, Math.PI * 1.2, Math.PI * 1.8); ctx.stroke();
+  } else if (char.mouth === 'flat') {
+    ctx.beginPath(); ctx.moveTo(-8, 12); ctx.lineTo(8, 12); ctx.stroke();
+  } else if (char.mouth === 'droop') {
+    ctx.beginPath(); ctx.moveTo(-7, 12); ctx.quadraticCurveTo(0, 18, 8, 12); ctx.stroke();
+  } else if (char.mouth === 'open') {
+    ctx.fillStyle = '#171722'; ctx.beginPath(); ctx.ellipse(0, 14, 7, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  } else if (char.mouth === 'grin') {
+    ctx.fillStyle = '#171722'; ctx.beginPath(); ctx.arc(0, 11, 8, 0, Math.PI); ctx.fill(); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.arc(0, 9, 7, 0, Math.PI); ctx.stroke();
+  }
+
+  // 手
+  limb(-24, 6, -37, 22); limb(24, 6, 37, 22);
+  ctx.restore();
+}
+
 // --- Draw character using real image sprite or the procedural second-stage roster ---
 function drawCharacter(cx, cy, char, isPlayer) {
   const s = char.size;
@@ -2450,15 +2617,21 @@ function drawCharacter(cx, cy, char, isPlayer) {
     ctx.fill();
   }
   if (inBrainrot) {
-    const brImg = BRAINROT_IMAGE_SETS[state.skin]?.[char.role] || BRAINROT_IMAGE_SETS.classic[char.role];
-    if (brImg && brImg.complete && brImg.naturalWidth > 0) {
-      const aspect = brImg.naturalWidth / brImg.naturalHeight;
-      let dw, dh;
-      if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
-      else { dh = imgScale; dw = dh * aspect; }
-      ctx.drawImage(brImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+    if (state.skin === 'refreshed') {
+      // 焕新：直接用程序化手绘版本，与经典精致大图形成明显风格区分
+      // 手绘内容比大图小约 40%，放大绘制以匹配视觉尺寸
+      drawBrainrotCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
     } else {
-      drawBrainrotCharacter(cx, cy, char, bob);
+      const brImg = BRAINROT_IMAGE_SETS.classic[char.role];
+      if (brImg && brImg.complete && brImg.naturalWidth > 0) {
+        const aspect = brImg.naturalWidth / brImg.naturalHeight;
+        let dw, dh;
+        if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+        else { dh = imgScale; dw = dh * aspect; }
+        ctx.drawImage(brImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+      } else {
+        drawBrainrotCharacter(cx, cy, char, bob);
+      }
     }
   } else if (img && img.complete && img.naturalWidth > 0) {
     // Maintain original aspect ratio to prevent squashing
@@ -2468,14 +2641,8 @@ function drawCharacter(cx, cy, char, isPlayer) {
     else { dh = imgScale; dw = dh * aspect; }
     ctx.drawImage(img, cx - dw/2, cy - dh/2 + bob, dw, dh);
   } else {
-    // Fallback: colored circle
-    ctx.fillStyle = char.color;
-    ctx.strokeStyle = char.dark;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.arc(cx, cy + bob, s * 0.9, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    // Fallback: procedurally drawn sprite instead of a plain colored circle
+    drawSprunkiCharacter(cx, cy, char, bob);
   }
   
   ctx.restore();
@@ -2822,8 +2989,10 @@ function initModeSelector() {
     btn.textContent = m.name;
     btn.onclick = () => {
       state.gameMode = m.id;
+      state.skin = state.skinByMode[m.id] || 'classic'; // 切主题时恢复该主题记忆的皮肤
       updateTitle();
       initModeSelector();
+      renderSkinSelector();
     };
     grid.appendChild(btn);
   });
@@ -2858,25 +3027,31 @@ function initSceneSelector() {
       dg.appendChild(btn);
     });
   }
+  renderSkinSelector();
+}
+
+function renderSkinSelector() {
   const sg = document.getElementById('skin-selector');
-  if (sg) {
-    sg.innerHTML = '';
-    [
-      { id: 'classic', name: '经典', src: 'images/classic/raddy.png' },
-      { id: 'refreshed', name: '焕新', src: 'images/raddy.png' },
-    ].forEach(skin => {
-      const btn = document.createElement('button');
-      btn.className = 'scene-btn skin-btn' + (skin.id === state.skin ? ' active' : '');
-      btn.innerHTML = `<img class="skin-thumb" src="${skin.src}" alt=""><span>${skin.name}</span>`;
-      btn.onclick = () => {
-        state.skin = skin.id;
-        sg.querySelectorAll('.skin-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        showToast(skin.id === 'classic' ? '已切换为经典形象' : '已切换为焕新形象');
-      };
-      sg.appendChild(btn);
-    });
-  }
+  if (!sg) return;
+  sg.innerHTML = '';
+  const isBrainrot = state.gameMode === 'brainrot';
+  const first = isBrainrot ? 'sneakerShark' : 'raddy';
+  [
+    { id: 'classic', name: '经典', src: `images/${isBrainrot ? 'brainrot/classic/' : 'classic/'}${first}.png` },
+    { id: 'refreshed', name: '焕新', src: `images/${isBrainrot ? 'brainrot/refreshed/' : ''}${first}.png` },
+  ].forEach(skin => {
+    const btn = document.createElement('button');
+    btn.className = 'scene-btn skin-btn' + (skin.id === state.skin ? ' active' : '');
+    btn.innerHTML = `<img class="skin-thumb" src="${skin.src}" alt=""><span>${skin.name}</span>`;
+    btn.onclick = () => {
+      state.skin = skin.id;
+      state.skinByMode[state.gameMode] = skin.id; // 记住当前主题的皮肤偏好
+      sg.querySelectorAll('.skin-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      showToast(skin.id === 'classic' ? '已切换为经典形象' : '已切换为焕新形象');
+    };
+    sg.appendChild(btn);
+  });
 }
 
 function setSquadMode(mode) {
