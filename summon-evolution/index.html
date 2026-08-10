@@ -506,7 +506,7 @@ html, body {
 <script>
 // ==================== IMAGE LOADING ====================
 const CHAR_IMAGE_SETS = { classic: {}, refreshed: {} };
-const IMG_ROLE_MAP = ['raddy','garnold','black','gray','funbot','sky','oren','mrsun','mrtree','jevin','lime','vineria','clukr','brud','durple','simon','tunner','funcomputer','wenda','pinki'];
+const IMG_ROLE_MAP = ['raddy','garnold','black','gray','funbot','sky','oren','mrsun','mrtree','jevin','lime','vineria','clukr','brud','durple','simon','tunner','funcomputer','ice','wenda','pinki'];
 function preloadImages() {
   for (const skin of ['classic', 'refreshed']) {
     const base = skin === 'classic' ? 'images/classic/' : 'images/';
@@ -535,6 +535,20 @@ function preloadBrainrotImages() {
   }
 }
 preloadBrainrotImages();
+
+const MINECRAFT_IMAGE_SETS = { classic: {}, refreshed: {} };
+function preloadMinecraftImages() {
+  const ROLES = ['chicken','pig','sheep','villager','zombie','skeleton','creeper','witch','ironGolem','witherSkeleton','warden','enderDragon'];
+  for (const skin of ['classic', 'refreshed']) {
+    const base = 'images/minecraft/' + skin + '/';
+    ROLES.forEach(role => {
+      const img = new Image();
+      img.src = base + role + '.png';
+      MINECRAFT_IMAGE_SETS[skin][role] = img;
+    });
+  }
+}
+preloadMinecraftImages();
 
 // ==================== POLYFILLS ====================
 if (!CanvasRenderingContext2D.prototype.roundRect) {
@@ -613,10 +627,13 @@ const SPRUNKI_LEVELS = [
   { id: 17, name: '快乐电脑', color: '#CFD8DC', dark: '#78909C', accent: '#00E5FF', size: 110,
     role: 'funcomputer', // silver + digital display + vocals
     robot: true, visor: true, eyes: 'robot', mouth: 'smile' },
-  { id: 18, name: '温达',   color: '#FAFAFA', dark: '#BDBDBD', accent: '#F48FB1', size: 116,
+  { id: 18, name: '冰块妹妹', color: '#7ED4F7', dark: '#2B7FB8', accent: '#E1F7FF', size: 113,
+    role: 'ice',      // ice-blue + frozen crystal + female vocals（冰雪MOD新角色）
+    ice: true, crystal: true, ears: 'none', eyes: 'cute', mouth: 'smile' },
+  { id: 19, name: '温达',   color: '#FAFAFA', dark: '#BDBDBD', accent: '#F48FB1', size: 116,
     role: 'wenda',    // white + cat ears + female vocals
     ears: 'cat', eyes: 'cute', mouth: 'smile', eyelashes: true },
-  { id: 19, name: '平基',   color: '#F48FB1', dark: '#C2185B', accent: '#FCE4EC', size: 122,
+  { id: 20, name: '平基',   color: '#F48FB1', dark: '#C2185B', accent: '#FCE4EC', size: 122,
     role: 'pinki',    // pink + bunny ears + vocals - ultimate form
     ears: 'bunny', eyes: 'cute', mouth: 'smile' },
 ];
@@ -633,6 +650,23 @@ const BRAINROT_LEVELS = [
   { id: 8, name: '冰箱骆驼', color: '#B8D8E8', dark: '#506B78', accent: '#FFB347', size: 55, role: 'fridgeCamel' },
   { id: 9, name: '土星奶牛', color: '#F2F0E6', dark: '#443C46', accent: '#8B7CFF', size: 59, role: 'saturnCow' },
   { id: 10, name: '茶壶人', color: '#F4F0E5', dark: '#4B5563', accent: '#FFD166', size: 65, role: 'teapotMan' },
+];
+
+// Minecraft 角色定义 - 方块进化链，从友好生物一路吃到末影龙
+// color: 主体色, dark: 深色/阴影色, accent: 强调色
+const MINECRAFT_LEVELS = [
+  { id: 0,  name: '鸡',     color: '#F5F5F5', dark: '#C0C0C0', accent: '#E53935', size: 28, role: 'chicken' },
+  { id: 1,  name: '猪',     color: '#F2A0B5', dark: '#C4768F', accent: '#FF7FA8', size: 31, role: 'pig' },
+  { id: 2,  name: '绵羊',   color: '#EDEDE6', dark: '#B8B9AF', accent: '#7CBD4B', size: 34, role: 'sheep' },
+  { id: 3,  name: '村民',   color: '#A8724F', dark: '#6E4526', accent: '#E8B36A', size: 37, role: 'villager' },
+  { id: 4,  name: '僵尸',   color: '#54A63E', dark: '#2E6B26', accent: '#12380F', size: 40, role: 'zombie' },
+  { id: 5,  name: '骷髅',   color: '#E8E8E0', dark: '#9A9A8A', accent: '#2E2E2E', size: 43, role: 'skeleton' },
+  { id: 6,  name: '苦力怕', color: '#7CBD4B', dark: '#3E6D2E', accent: '#17380F', size: 47, role: 'creeper' },
+  { id: 7,  name: '女巫',   color: '#7E5AA8', dark: '#4A3370', accent: '#B08AE0', size: 51, role: 'witch' },
+  { id: 8,  name: '铁傀儡', color: '#A8A8A8', dark: '#5E5E5E', accent: '#C0392B', size: 55, role: 'ironGolem' },
+  { id: 9,  name: '凋灵骷髅', color: '#2B2B2B', dark: '#101010', accent: '#6E6E6E', size: 59, role: 'witherSkeleton' },
+  { id: 10, name: '循声守卫', color: '#2F6B63', dark: '#143D37', accent: '#78E8D0', size: 65, role: 'warden' },
+  { id: 11, name: '末影龙', color: '#3A2E5E', dark: '#1D1630', accent: '#B388FF', size: 72, role: 'enderDragon' },
 ];
 
 let LEVELS = SPRUNKI_LEVELS;
@@ -670,6 +704,7 @@ const SCENES = [
     particles: { count: 30, colors: ['#ff9ff3','#feca57','#ff6b6b','#48dbfb'], size: 2 },
   },
   { id: 'brainrot', name: '🗽 山海异境', bg: '#111827', stageOnly: true, brainrotCity: true },
+  { id: 'minecraft', name: '⛏️ 我的世界', bg: '#87CEEB', stageOnly: true, minecraft: true },
 ];
 
 const PLAYABLE_SCENES = SCENES.filter(scene => !scene.stageOnly);
@@ -752,7 +787,7 @@ const state = {
   gameMode: 'classic', // 'classic' | 'brainrot'
   difficulty: 'normal',
   skin: 'classic',
-  skinByMode: { classic: 'classic', brainrot: 'classic' }, // 每个主题独立记忆皮肤
+  skinByMode: { classic: 'classic', brainrot: 'classic', minecraft: 'classic' }, // 每个主题独立记忆皮肤
   squadMode: 'hunt', // 默认狩猎模式
   playerLevel: 0,
   score: 0,
@@ -1089,6 +1124,60 @@ function drawStaticScene(sc) {
     }
     g.fillStyle = 'rgba(255,255,255,.8)';
     for (let i = 0; i < 80; i++) g.fillRect(rand() * W, rand() * horizon, 1 + rand() * 2, 1 + rand() * 2);
+  } else if (sc.id === 'minecraft') {
+    // 我的世界：方块天空 + 草方块地面
+    fillVerticalGradient(g, '#79C6F0', '#A7DFFF');
+    const horizon = H * 0.72;
+    // 方块太阳
+    g.fillStyle = '#F5E24A'; g.fillRect(W * 0.16 - 34, H * 0.12 - 34, 68, 68);
+    g.fillStyle = 'rgba(245,226,74,.35)';
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      g.fillRect(W * 0.16 - 34 + Math.cos(a) * 44, H * 0.12 - 34 + Math.sin(a) * 44, 16, 16);
+    }
+    // 方块云（白色圆角矩形堆叠）
+    for (let i = 0; i < 7; i++) {
+      const cx = rand() * W, cy = H * (0.06 + rand() * 0.3), cw = 90 + rand() * 110;
+      g.fillStyle = 'rgba(255,255,255,.92)';
+      g.fillRect(cx - cw / 2, cy - 18, cw, 36);
+      g.fillRect(cx - cw * 0.28, cy - 40, cw * 0.56, 22);
+      g.fillRect(cx - cw * 0.42, cy - 4, cw * 0.26, 16);
+      g.fillRect(cx + cw * 0.16, cy - 8, cw * 0.26, 16);
+    }
+    // 远处方块山
+    for (let i = 0; i < 5; i++) {
+      const mw = 260 + rand() * 260, mx = rand() * W, mh = 90 + rand() * 150;
+      g.fillStyle = ['#7FB86B','#6AA85A','#8FC47C'][Math.floor(rand() * 3)];
+      for (let wy = 0; wy < mh; wy += 36) {
+        for (let wx = mx; wx < mx + mw; wx += 36) {
+          const hgt = mh * (1 - Math.abs((wx + 18 - (mx + mw / 2)) / (mw / 2)));
+          if (wy < hgt) g.fillRect(wx, horizon - hgt + wy, 36, 36);
+        }
+      }
+    }
+    // 草方块地面（绿顶 + 泥土）
+    const grassTop = horizon - 24;
+    g.fillStyle = '#6DBE45'; g.fillRect(0, grassTop, W, 24);
+    g.fillStyle = '#8B5A2B';
+    for (let wy = grassTop + 24; wy < H; wy += 36) g.fillRect(0, wy, W, 36);
+    // 地面细节：草丛 / 小花
+    for (let i = 0; i < 120; i++) {
+      const gx = rand() * W, gy = grassTop + rand() * 8;
+      if (rand() < 0.6) {
+        g.fillStyle = ['#58A639','#4C9430','#7CC455'][Math.floor(rand() * 3)];
+        g.fillRect(gx, gy - 10, 6, 12);
+        g.fillRect(gx - 6, gy - 5, 6, 8);
+        g.fillRect(gx + 6, gy - 5, 6, 8);
+      } else {
+        g.fillStyle = ['#F4E24E','#E85A4A','#F2F2F2'][Math.floor(rand() * 3)];
+        g.fillRect(gx, gy - 8, 6, 8);
+        g.fillRect(gx - 4, gy - 12, 6, 6);
+        g.fillRect(gx + 4, gy - 12, 6, 6);
+      }
+    }
+    // 泥土块纹理
+    g.fillStyle = 'rgba(0,0,0,0.08)';
+    for (let i = 0; i < 70; i++) g.fillRect(rand() * W, grassTop + 26 + rand() * (H - grassTop - 30), 8 + rand() * 10, 8 + rand() * 10);
   } else {
     fillVerticalGradient(g, '#f49ac3', '#91d8ee');
     const bands=['rgba(255,206,119,.72)','rgba(194,133,240,.46)','rgba(255,150,192,.48)','rgba(145,220,238,.48)'];
@@ -1125,6 +1214,7 @@ function drawSceneBg(sc, camX, camY, w, h) {
       cyber: '0,224,255',
       candy: '255,160,210',
       brainrot: '255,209,102',
+      minecraft: '255,224,130',
     };
     ctx.fillStyle = `rgba(${pulseColors[sc.id]},${beatClock.pulse * 0.035})`;
     ctx.fillRect(vl, vt, w, h);
@@ -2439,6 +2529,38 @@ function drawSprunkiCharacter(cx, cy, char, bob) {
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
   };
 
+  // 冰块妹妹：冰蓝少女 + 冰晶皇冠 + 冰裂纹 + 悬浮冰晶（冰雪MOD新角色）
+  if (char.ice) {
+    // 冰晶皇冠
+    ctx.fillStyle = '#BDEBFF';
+    ctx.beginPath(); ctx.moveTo(-13, -46); ctx.lineTo(-7, -60); ctx.lineTo(-1, -46); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-1, -48); ctx.lineTo(6, -64); ctx.lineTo(13, -48); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10, -46); ctx.lineTo(16, -58); ctx.lineTo(22, -46); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // 主体（半透明冰蓝）
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = char.color;
+    ctx.beginPath(); ctx.ellipse(0, 2, 30, 34, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.globalAlpha = 1;
+    // 冰裂纹
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-9, 18); ctx.lineTo(-2, 24); ctx.lineTo(4, 20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(11, 4); ctx.lineTo(18, 10); ctx.moveTo(15, 14); ctx.lineTo(20, 20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-17, 2); ctx.lineTo(-23, 8); ctx.stroke();
+    // 脸：大眼 + 微笑 + 脸颊红晕
+    eye(-12, -20, 5); eye(12, -20, 5);
+    ctx.strokeStyle = char.dark; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, -4, 8, 0.2, Math.PI - 0.2); ctx.stroke();
+    ctx.fillStyle = 'rgba(244,143,177,0.35)';
+    ctx.beginPath(); ctx.arc(-18, -8, 5, 0, Math.PI * 2); ctx.arc(18, -8, 5, 0, Math.PI * 2); ctx.fill();
+    // 悬浮小冰晶
+    ctx.fillStyle = char.accent;
+    for (const [sx, sy, sr] of [[-36, -10, 5], [36, -4, 6], [-32, 24, 4], [32, 26, 5], [0, -42, 4]]) {
+      ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    return;
+  }
+
   // 头顶装饰（先画，主体会盖住衔接处）
   if (char.tree) {
     ctx.fillStyle = '#66BB6A';
@@ -2585,6 +2707,168 @@ function drawSprunkiCharacter(cx, cy, char, bob) {
   ctx.restore();
 }
 
+// --- Minecraft 方块人手绘（焕新模式 + 经典缺图兜底） ---
+function drawMinecraftCharacter(cx, cy, char, bob) {
+  const scale = char.size / 50;
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(scale, scale);
+  ctx.lineJoin = 'miter';
+  ctx.lineCap = 'square';
+
+  // 像素方块：填充 + 右侧/底部硬边阴影，做出 MC 方块立体感
+  const block = (x, y, w, h, fill) => {
+    ctx.fillStyle = fill;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = 'rgba(0,0,0,0.20)';
+    ctx.fillRect(x + w - 3, y + 1, 3, h - 1);
+    ctx.fillRect(x + 1, y + h - 3, w - 1, 3);
+  };
+  const eyeB = (x, y, color = '#171722', s = 6) => block(x - s / 2, y - s / 2, s, s, color);
+
+  // 标准方块人身：身体 + 双腿 + 双臂 + 方块头
+  const baseMob = (bodyColor, headColor) => {
+    block(-19, -6, 38, 38, bodyColor);   // 身体
+    block(-15, 32, 13, 20, bodyColor);   // 左腿
+    block(2, 32, 13, 20, bodyColor);     // 右腿
+    block(-28, 0, 11, 30, bodyColor);    // 左手
+    block(17, 0, 11, 30, bodyColor);     // 右手
+    block(-24, -52, 48, 44, headColor);  // 头
+  };
+
+  switch (char.role) {
+    case 'chicken':
+      baseMob('#F5F5F5', '#F5F5F5');
+      block(-8, -56, 6, 7, char.accent); block(-1, -60, 6, 8, char.accent); block(6, -56, 6, 7, char.accent); // 红冠
+      block(-7, -26, 14, 10, '#F2A33C'); // 橙嘴
+      eyeB(-12, -38); eyeB(12, -38);
+      break;
+    case 'pig':
+      baseMob('#F2A0B5', '#F2A0B5');
+      block(-15, -26, 30, 20, '#EF8BA8'); // 前突鼻子
+      block(-9, -19, 6, 5, char.dark); block(3, -19, 6, 5, char.dark); // 鼻孔
+      eyeB(-10, -36); eyeB(10, -36);
+      break;
+    case 'sheep':
+      baseMob('#EDEDE6', '#EDEDE6');
+      // 羊毛团：身体外一圈白方块
+      block(-24, -10, 8, 14, '#F7F7F2'); block(16, -10, 8, 14, '#F7F7F2');
+      block(-21, -12, 8, 8, '#F7F7F2'); block(13, -12, 8, 8, '#F7F7F2');
+      block(-20, 24, 8, 8, '#F7F7F2'); block(12, 24, 8, 8, '#F7F7F2');
+      // 头上一撮毛
+      block(-8, -58, 6, 6, '#F7F7F2'); block(-1, -61, 6, 9, '#F7F7F2'); block(6, -58, 6, 6, '#F7F7F2');
+      eyeB(-12, -38); eyeB(12, -38);
+      block(-7, -27, 14, 6, '#E8E4D6'); // 方块嘴
+      break;
+    case 'villager':
+      baseMob('#8B6B4F', '#D9A066');
+      block(-14, -24, 28, 22, '#E3B57E'); // 长鼻（村民标志大鼻）
+      eyeB(-11, -38, '#3C8C40', 7); eyeB(11, -38, '#3C8C40', 7); // 绿眼睛
+      break;
+    case 'zombie':
+      baseMob('#54A63E', '#4C9636');
+      block(-9, -33, 5, 5, '#1D3D12'); block(4, -33, 5, 5, '#1D3D12'); // 深绿眼
+      block(-9, -20, 18, 7, '#2E6B26'); // 烂嘴
+      block(-13, -26, 5, 3, '#12380F'); block(8, -26, 5, 3, '#12380F'); // 破眉
+      break;
+    case 'skeleton':
+      baseMob('#D8D8CC', '#E8E8E0');
+      block(-11, -40, 7, 7, '#202020'); block(4, -40, 7, 7, '#202020'); // 黑眼窝
+      block(-3, -27, 6, 5, '#202020'); // 鼻洞
+      // 肋骨纹
+      block(-19, 2, 38, 3, '#A8A89A'); block(-19, 12, 38, 3, '#A8A89A');
+      // 弓（左手）
+      ctx.strokeStyle = '#5E4B2F'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(-38, 26); ctx.lineTo(-30, -8); ctx.stroke();
+      ctx.strokeStyle = '#C8C8B8'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-38, 26); ctx.lineTo(-30, -8); ctx.stroke();
+      break;
+    case 'creeper':
+      // 苦力怕：无手臂，四只短脚 + 经典脸
+      block(-24, -52, 48, 44, '#7CBD4B');
+      block(-19, -6, 38, 34, '#7CBD4B');
+      block(-15, 28, 12, 24, '#7CBD4B'); block(3, 28, 12, 24, '#7CBD4B');
+      block(-23, 28, 10, 16, '#7CBD4B'); block(13, 28, 10, 16, '#7CBD4B');
+      // 苦力怕脸
+      block(-10, -40, 7, 7, '#17380F'); block(3, -40, 7, 7, '#17380F'); // 眼
+      block(-10, -30, 7, 7, '#17380F'); block(3, -30, 7, 7, '#17380F'); // 嘴下块
+      block(-10, -35, 7, 5, '#17380F'); block(3, -35, 7, 5, '#17380F'); // 嘴竖
+      block(-3, -40, 6, 5, '#17380F'); block(-3, -30, 6, 5, '#17380F'); // 鼻子上下
+      block(-3, -36, 6, 6, '#5E9638'); // 鼻中缝亮
+      break;
+    case 'witch':
+      block(-24, -52, 48, 44, '#8FB47A'); // 绿脸
+      block(-19, -6, 38, 38, '#6E4FA3'); // 紫袍
+      block(-15, 32, 13, 20, '#6E4FA3'); block(2, 32, 13, 20, '#6E4FA3');
+      block(-28, 0, 11, 30, '#6E4FA3'); block(17, 0, 11, 30, '#6E4FA3');
+      block(-14, -28, 28, 14, '#6E8B5E'); // 鼻梁
+      block(-4, -20, 8, 8, '#8FB47A'); // 鼻疣
+      eyeB(-11, -38, '#171722', 7); eyeB(11, -38, '#171722', 7);
+      // 女巫尖帽
+      block(-30, -56, 60, 8, '#1C1626');
+      block(-16, -88, 32, 32, '#1C1626');
+      block(-10, -82, 6, 8, '#B08AE0'); block(-2, -74, 6, 8, '#B08AE0'); block(6, -82, 6, 8, '#B08AE0');
+      break;
+    case 'ironGolem':
+      // 铁傀儡：大块头
+      block(-26, -58, 52, 48, '#A8A8A8');
+      block(-22, -10, 44, 44, '#A8A8A8');
+      block(-18, 34, 16, 22, '#A8A8A8'); block(2, 34, 16, 22, '#A8A8A8');
+      block(-36, 0, 14, 34, '#8E8E8E'); block(22, 0, 14, 34, '#8E8E8E'); // 大拳头
+      block(-20, -52, 40, 34, '#B4B4B4'); // 脸
+      block(-12, -40, 7, 7, '#C0392B'); block(5, -40, 7, 7, '#C0392B'); // 红眼
+      block(-4, -16, 8, 8, '#C0392B'); // 胸前红花
+      block(-8, -14, 6, 6, '#8E8E8E'); block(2, -14, 6, 6, '#8E8E8E');
+      break;
+    case 'witherSkeleton':
+      baseMob('#2B2B2B', '#232323');
+      block(-11, -40, 7, 7, '#101010'); block(4, -40, 7, 7, '#101010'); // 黑眼窝
+      block(-9, -31, 5, 4, '#F0E6D0'); block(4, -31, 5, 4, '#F0E6D0'); // 白牙
+      block(-3, -26, 6, 5, '#101010');
+      // 石剑
+      block(20, -34, 8, 40, '#8E8E8E');
+      block(17, 2, 14, 7, '#5E4B2F');
+      break;
+    case 'warden':
+      baseMob('#2F6B63', '#24534C');
+      // 胸口发光核心
+      ctx.shadowColor = '#78E8D0'; ctx.shadowBlur = 14;
+      block(-8, 0, 16, 16, '#78E8D0');
+      ctx.shadowBlur = 0;
+      // 触角（头顶两个方块）
+      block(-12, -64, 7, 14, '#143D37'); block(5, -64, 7, 14, '#143D37');
+      block(-12, -72, 7, 8, '#78E8D0'); block(5, -72, 7, 8, '#78E8D0');
+      // 发光眼洞
+      ctx.shadowColor = '#78E8D0'; ctx.shadowBlur = 10;
+      block(-12, -40, 8, 6, '#BFFFF2'); block(4, -40, 8, 6, '#BFFFF2');
+      ctx.shadowBlur = 0;
+      block(-3, -28, 6, 4, '#78E8D0'); // 鼻线
+      break;
+    case 'enderDragon':
+      // 末影龙终极形态：黑紫 + 紫光 + 翅膀
+      ctx.shadowColor = char.accent; ctx.shadowBlur = 18;
+      baseMob('#3A2E5E', '#44346E');
+      ctx.shadowBlur = 0;
+      // 紫光眼
+      ctx.shadowColor = '#B388FF'; ctx.shadowBlur = 12;
+      block(-13, -40, 9, 7, '#E6D8FF'); block(4, -40, 9, 7, '#E6D8FF');
+      ctx.shadowBlur = 0;
+      block(-4, -27, 8, 5, '#1D1630'); // 龙嘴线
+      // 方块翅膀
+      for (let i = 0; i < 4; i++) {
+        block(-52 - i * 14, -6 + i * 10, 16 + i * 6, 9, '#4A3A78');
+        block(52 + i * 14, -6 + i * 10, 16 + i * 6, 9, '#4A3A78');
+      }
+      block(-50, 6, 12, 26, '#3A2E5E'); block(38, 6, 12, 26, '#3A2E5E'); // 龙翼骨
+      break;
+    default:
+      baseMob(char.color, char.color);
+      eyeB(-10, -38, char.dark); eyeB(10, -38, char.dark);
+      break;
+  }
+  ctx.restore();
+}
+
 // --- Draw character using real image sprite or the procedural second-stage roster ---
 function drawCharacter(cx, cy, char, isPlayer) {
   const s = char.size;
@@ -2614,7 +2898,8 @@ function drawCharacter(cx, cy, char, isPlayer) {
   // Draw image sprite
   const imgScale = s * 3.2;
   const inBrainrot = state.gameMode === 'brainrot';
-  const img = !inBrainrot ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
+  const inMinecraft = state.gameMode === 'minecraft';
+  const img = (!inBrainrot && !inMinecraft) ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
   ctx.fillStyle = 'rgba(0,0,0,0.22)';
   ctx.beginPath();
   ctx.ellipse(cx, cy + s * 0.95 + bob, s * 0.72, s * 0.26, 0, 0, Math.PI * 2);
@@ -2646,6 +2931,22 @@ function drawCharacter(cx, cy, char, isPlayer) {
         ctx.drawImage(brImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
       } else {
         drawBrainrotCharacter(cx, cy, char, bob);
+      }
+    }
+  } else if (inMinecraft) {
+    if (state.skin === 'refreshed') {
+      // 焕新：方块手绘版（经典大图与手绘方块风格差异明显）
+      drawMinecraftCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
+    } else {
+      const mcImg = MINECRAFT_IMAGE_SETS.classic[char.role];
+      if (mcImg && mcImg.complete && mcImg.naturalWidth > 0) {
+        const aspect = mcImg.naturalWidth / mcImg.naturalHeight;
+        let dw, dh;
+        if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+        else { dh = imgScale; dw = dh * aspect; }
+        ctx.drawImage(mcImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+      } else {
+        drawMinecraftCharacter(cx, cy, char, bob);
       }
     }
   } else if (img && img.complete && img.naturalWidth > 0) {
@@ -2977,8 +3278,8 @@ function resolveSceneChoice(reroll = false) {
 }
 
 const GAME_TITLE = '召唤进化'; // 统一主名，后续加主题只需扩展 MODE_NAMES
-const MODE_NAMES = { classic: '节奏盒子', brainrot: '山海经' };
-const MODE_TAGLINES = { classic: '吃小的，躲大的，一路进化到平基！', brainrot: '吃小的，躲大的，一路进化到茶壶人！' };
+const MODE_NAMES = { classic: '节奏盒子', brainrot: '山海经', minecraft: '我的世界' };
+const MODE_TAGLINES = { classic: '吃小的，躲大的，一路进化到平基！', brainrot: '吃小的，躲大的，一路进化到茶壶人！', minecraft: '吃小的，躲大的，一路进化到末影龙！' };
 
 function updateTitle() {
   const modeName = MODE_NAMES[state.gameMode] || MODE_NAMES.classic;
@@ -2991,12 +3292,15 @@ function updateTitle() {
 }
 
 function initModeSelector() {
-  LEVELS = state.gameMode === 'brainrot' ? BRAINROT_LEVELS : SPRUNKI_LEVELS; // 主题与进化链同步
+  if (state.gameMode === 'brainrot') LEVELS = BRAINROT_LEVELS;
+  else if (state.gameMode === 'minecraft') LEVELS = MINECRAFT_LEVELS;
+  else LEVELS = SPRUNKI_LEVELS; // 主题与进化链同步
   const grid = document.getElementById('mode-selector');
   grid.innerHTML = '';
   const modes = [
     { id: 'classic', name: '📦 节奏盒子' },
     { id: 'brainrot', name: '🌊 山海经' },
+    { id: 'minecraft', name: '⛏️ 我的世界' },
   ];
   modes.forEach(m => {
     const btn = document.createElement('button');
@@ -3050,10 +3354,13 @@ function renderSkinSelector() {
   if (!sg) return;
   sg.innerHTML = '';
   const isBrainrot = state.gameMode === 'brainrot';
-  const first = isBrainrot ? 'sneakerShark' : 'raddy';
+  const isMinecraft = state.gameMode === 'minecraft';
+  const first = isBrainrot ? 'sneakerShark' : isMinecraft ? 'chicken' : 'raddy';
+  const classicBase = isBrainrot ? 'brainrot/classic/' : isMinecraft ? 'minecraft/classic/' : 'classic/';
+  const refreshedBase = isBrainrot ? 'brainrot/refreshed/' : isMinecraft ? 'minecraft/refreshed/' : '';
   [
-    { id: 'classic', name: '经典', src: `images/${isBrainrot ? 'brainrot/classic/' : 'classic/'}${first}.png` },
-    { id: 'refreshed', name: '焕新', src: `images/${isBrainrot ? 'brainrot/refreshed/' : ''}${first}.png` },
+    { id: 'classic', name: '经典', src: `images/${classicBase}${first}.png` },
+    { id: 'refreshed', name: '焕新', src: `images/${refreshedBase}${first}.png` },
   ].forEach(skin => {
     const btn = document.createElement('button');
     btn.className = 'scene-btn skin-btn' + (skin.id === state.skin ? ' active' : '');
@@ -3117,6 +3424,13 @@ function startGame() {
     sceneCacheKey = '';
     showToast('🌊 山海异境，开卷！');
     unlockAchievement('brainrot');
+  } else if (state.gameMode === 'minecraft') {
+    // 直入我的世界
+    LEVELS = MINECRAFT_LEVELS;
+    state.scene = 'minecraft';
+    sceneCacheKey = '';
+    showToast('⛏️ 方块世界，开挖！');
+    unlockAchievement('minecraft');
   } else {
     // 节奏盒子经典模式
     LEVELS = SPRUNKI_LEVELS;
