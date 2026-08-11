@@ -4568,10 +4568,9 @@ function toggleFold(id) {
   if (!el) return;
   el.classList.toggle('collapsed');
 }
-// 桌面端全部展开；手机/平板上默认折叠"场景选择"与"难度选择"（省空间）
+// 场景选择与难度默认收起（省空间），用户可手动展开
 function initMenuFolds() {
-  const compact = window.innerWidth <= 900;
-  const defaultCollapse = compact ? ['fold-scene', 'fold-difficulty'] : [];
+  const defaultCollapse = ['fold-scene', 'fold-difficulty'];
   ['fold-mode', 'fold-scene', 'fold-difficulty', 'fold-skin'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -4626,12 +4625,12 @@ function initModeSelector() {
   const modes = [
     { id: 'kun', name: '🐋 召唤神鲲' },
     { id: 'dragon', name: '🐉 召唤神龙' },
-    { id: 'ultraman', name: '🦸 光之巨人' },
-    { id: 'saintseiya', name: '🛡️ 圣斗士' },
-    { id: 'ninja', name: '🍡 忍者乱太郎' },
     { id: 'classic', name: '📦 节奏盒子' },
     { id: 'brainrot', name: '🌊 山海经' },
     { id: 'minecraft', name: '⛏️ 我的世界' },
+    { id: 'ultraman', name: '🦸 光之巨人' },
+    { id: 'saintseiya', name: '🛡️ 圣斗士' },
+    { id: 'ninja', name: '🍡 忍者乱太郎' },
   ];
   modes.forEach(m => {
     const btn = document.createElement('button');

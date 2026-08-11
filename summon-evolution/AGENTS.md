@@ -5,7 +5,7 @@
 - 每个主题都有两套皮肤：**classic（经典）** 与 **refreshed（焕新）**，由 `state.skin` 切换、按主题记忆。
 - **焕新 = 程序化手绘**，**经典 = gpt-image 生成贴图**。
 - 现有主题：节奏盒子（classic，21 角色）、山海经（brainrot，11 角色）、我的世界（minecraft，17 角色）、**召唤神鲲（kun，18 角色）**、**召唤神龙（dragon，18 角色）**、**光之巨人（ultraman，18 角色，最高级=赛罗 zero）**、**圣斗士（saintseiya，18 角色，最高级=雅典娜 athena）**、**忍者乱太郎（ninja，18 角色，最高级=猫丸·觉醒 nyamaropower，即黑木的猫）**。
-- 主题在模式选择器里的顺序：**kun（神鲲）→ dragon（神龙）→ ultraman（奥特曼）→ saintseiya（圣斗士）→ ninja（忍者乱太郎）→ classic（节奏盒子）→ brainrot（山海经）→ minecraft（我的世界）**。神鲲排最前（用户明确要求）；新主题紧跟其后。
+- 主题在模式选择器里的顺序：**kun（神鲲）→ dragon（神龙）→ classic（节奏盒子）→ brainrot（山海经）→ minecraft（我的世界）→ ultraman（奥特曼）→ saintseiya（圣斗士）→ ninja（忍者乱太郎）**。神鲲排最前（用户明确要求）；奥特曼/圣斗士/忍者靠后（用户要求放在我的世界之后）。
 
 ## 经典（classic）：gpt-image 一张大图 + 切割
 
