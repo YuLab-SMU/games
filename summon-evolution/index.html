@@ -657,6 +657,18 @@ function preloadFruitImages() {
 }
 preloadFruitImages();
 
+const EGGY_IMAGE_SETS = { classic: {}, refreshed: {} };
+// 经典 PNG 已在切片时置透明，直接加载使用（无需 JS 去背景）
+function preloadEggyImages() {
+  const ROLES = ['white','yellow','pink','blue','green','panda','bunny','cat','cowboy','pirate','knight','ninja','magician','astronaut','ice','flame','aurora','eggking'];
+  ROLES.forEach(role => {
+    const img = new Image();
+    img.src = 'images/eggy/classic/' + role + '.png';
+    EGGY_IMAGE_SETS.classic[role] = img;
+  });
+}
+preloadEggyImages();
+
 // ==================== POLYFILLS ====================
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -914,6 +926,28 @@ const FRUIT_LEVELS = [
   { id: 17, name: '荔枝',   color: '#D83A3A', dark: '#9C1C1C', accent: '#6BC94A', size: 100, role: 'lychee' },
 ];
 
+// 蛋仔主题 - 从白蛋仔一路进化到蛋皇·传说
+const EGGY_LEVELS = [
+  { id: 0,  name: '白蛋仔',   color: '#F5F0E8', dark: '#B8B0A4', accent: '#FFE0A0', size: 28, role: 'white' },
+  { id: 1,  name: '黄蛋仔',   color: '#FFD94A', dark: '#C8A01E', accent: '#FFF0B0', size: 31, role: 'yellow' },
+  { id: 2,  name: '粉蛋仔',   color: '#FF9EC4', dark: '#D06890', accent: '#FFD8E8', size: 34, role: 'pink' },
+  { id: 3,  name: '蓝蛋仔',   color: '#5AC8F5', dark: '#2E8CBA', accent: '#C0EAFF', size: 38, role: 'blue' },
+  { id: 4,  name: '绿蛋仔',   color: '#6BD95A', dark: '#3EA02E', accent: '#C0F0B8', size: 42, role: 'green' },
+  { id: 5,  name: '熊猫蛋仔', color: '#F2F2F2', dark: '#3A3A3A', accent: '#2E2E2E', size: 46, role: 'panda' },
+  { id: 6,  name: '兔兔蛋仔', color: '#FFE8DC', dark: '#D8A890', accent: '#FFB0C0', size: 50, role: 'bunny' },
+  { id: 7,  name: '猫咪蛋仔', color: '#FFB84A', dark: '#C87E1E', accent: '#5A3A1E', size: 54, role: 'cat' },
+  { id: 8,  name: '牛仔蛋仔', color: '#C8A068', dark: '#8C6B3A', accent: '#7A4E2E', size: 58, role: 'cowboy' },
+  { id: 9,  name: '海盗蛋仔', color: '#4A5A8C', dark: '#2E3A5E', accent: '#2E2E3A', size: 62, role: 'pirate' },
+  { id: 10, name: '骑士蛋仔', color: '#C8C8D8', dark: '#8C8CA0', accent: '#F0F0F8', size: 66, role: 'knight' },
+  { id: 11, name: '忍者蛋仔', color: '#5A6B8C', dark: '#3A4660', accent: '#C8D8F0', size: 70, role: 'ninja' },
+  { id: 12, name: '魔法师蛋仔', color: '#8C5AC8', dark: '#5A38A0', accent: '#F0C8FF', size: 74, role: 'magician' },
+  { id: 13, name: '宇航员蛋仔', color: '#E8F0F8', dark: '#8CA0B8', accent: '#5AC8F5', size: 78, role: 'astronaut' },
+  { id: 14, name: '冰晶蛋仔', color: '#A8E8FF', dark: '#5AB0D8', accent: '#FFFFFF', size: 82, role: 'ice' },
+  { id: 15, name: '烈焰蛋仔', color: '#FF7A3E', dark: '#C84A1E', accent: '#FFD04A', size: 88, role: 'flame' },
+  { id: 16, name: '极光蛋仔', color: '#7A5CF0', dark: '#4A3A9C', accent: '#48D8B8', size: 92, role: 'aurora' },
+  { id: 17, name: '蛋皇·传说', color: '#FFD84A', dark: '#C8A01E', accent: '#FF9EC4', size: 100, role: 'eggking' },
+];
+
 let LEVELS = SPRUNKI_LEVELS;
 
 const SCENES = [
@@ -956,6 +990,7 @@ const SCENES = [
   { id: 'saintseiya', name: '🏛️ 圣域', bg: '#2A2440', stageOnly: true, saintseiya: true },
   { id: 'ninja', name: '🏯 忍术学园', bg: '#2E3A2E', stageOnly: true, ninja: true },
   { id: 'fruit', name: '🍇 果园星空', bg: '#3A2F2A', stageOnly: true, fruit: true },
+  { id: 'eggy', name: '🥚 蛋仔乐园', bg: '#3A2A4A', stageOnly: true, eggy: true },
 ];
 
 const PLAYABLE_SCENES = SCENES.filter(scene => !scene.stageOnly);
@@ -1593,6 +1628,45 @@ function drawStaticScene(sc) {
     // 地面
     g.fillStyle = 'rgba(10,8,12,.6)';
     g.fillRect(0, H - 24, W, 24);
+  } else if (sc.id === 'eggy') {
+    // 蛋仔乐园：糖果星空 + 彩色气球 + 云朵 + 彩虹地面
+    fillVerticalGradient(g, '#241A3E', '#5A3A7A');
+    // 星
+    for (let i = 0; i < 50; i++) {
+      const sx = rand() * W, sy = rand() * H * 0.45;
+      g.fillStyle = `rgba(255,240,220,${0.2 + rand() * 0.6})`;
+      g.beginPath(); g.arc(sx, sy, 1 + rand() * 1.3, 0, Math.PI * 2); g.fill();
+    }
+    // 大月亮
+    g.fillStyle = 'rgba(255,240,200,.9)';
+    g.beginPath(); g.arc(W * 0.78, H * 0.18, 44, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,240,200,.22)';
+    g.beginPath(); g.arc(W * 0.78, H * 0.18, 60, 0, Math.PI * 2); g.fill();
+    // 飘浮气球（彩球+细线）
+    for (let i = 0; i < 8; i++) {
+      const bx = rand() * W, by = rand() * H * 0.5;
+      const bc = ['#FF9EC4','#FFD94A','#5AC8F5','#6BD95A','#C8A0FF','#FF7A3E'][i % 6];
+      g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.5;
+      g.beginPath(); g.moveTo(bx, by + 14); g.quadraticCurveTo(bx + rand() * 30 - 15, by + 34, bx + rand() * 40 - 20, H - 30); g.stroke();
+      g.fillStyle = bc;
+      g.beginPath(); g.ellipse(bx, by, 12, 15, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(bx - 5, by - 4); g.lineTo(bx - 1, by - 1); g.stroke();
+    }
+    // 云朵
+    for (let i = 0; i < 4; i++) {
+      const cx2 = rand() * W, cy2 = H * 0.3 + rand() * H * 0.35;
+      g.fillStyle = 'rgba(240,230,255,.16)';
+      g.beginPath(); g.arc(cx2, cy2, 26 + rand() * 16, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(cx2 - 22, cy2 + 8, 18 + rand() * 10, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(cx2 + 24, cy2 + 6, 16 + rand() * 10, 0, Math.PI * 2); g.fill();
+    }
+    // 地面（彩虹跑道）
+    const rainbow = ['#FF9EC4','#FFD94A','#6BD95A','#5AC8F5','#C8A0FF'];
+    for (let i = 0; i < 5; i++) {
+      g.fillStyle = rainbow[i];
+      g.fillRect(0, H - 24 + i * 5, W, 5);
+    }
   } else {
     fillVerticalGradient(g, '#f49ac3', '#91d8ee');
     const bands=['rgba(255,206,119,.72)','rgba(194,133,240,.46)','rgba(255,150,192,.48)','rgba(145,220,238,.48)'];
@@ -1636,6 +1710,7 @@ function drawSceneBg(sc, camX, camY, w, h) {
       saintseiya: '255,224,130',
       ninja: '150,230,170',
       fruit: '255,180,150',
+      eggy: '255,220,160',
     };
     ctx.fillStyle = `rgba(${pulseColors[sc.id]},${beatClock.pulse * 0.035})`;
     ctx.fillRect(vl, vt, w, h);
@@ -4359,6 +4434,267 @@ function drawFruitCharacter(cx, cy, char, bob) {
   ctx.restore();
 }
 
+// 蛋仔主题手绘：蛋形身体 + 两只标志小脚 + 各角色头饰
+function drawEggyCharacter(cx, cy, char, bob) {
+  const s = char.size;
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(s / 100, s / 100);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = char.dark;
+  function body() {
+    // 两只小脚（蛋仔标志性，先画在身体下）
+    ctx.fillStyle = char.dark;
+    ctx.beginPath(); ctx.ellipse(-10, 27, 6.5, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(10, 27, 6.5, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    // 蛋形身体：上圆下略收
+    ctx.fillStyle = char.color;
+    ctx.beginPath();
+    ctx.moveTo(0, -27);
+    ctx.bezierCurveTo(22, -24, 24, 4, 15, 22);
+    ctx.quadraticCurveTo(0, 29, -15, 22);
+    ctx.bezierCurveTo(-24, 4, -22, -24, 0, -27);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  function face() {
+    ctx.fillStyle = '#1A1A2E';
+    ctx.beginPath(); ctx.arc(-7, -7, 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(7, -7, 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = char.dark; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, -1, 4.2, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    ctx.lineWidth = 3;
+    ctx.fillStyle = 'rgba(255,150,150,.5)';
+    ctx.beginPath(); ctx.ellipse(-11, -1, 2.6, 1.7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(11, -1, 2.6, 1.7, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  switch (char.role) {
+    case 'white': // 白蛋仔：基础，头顶呆毛
+      body();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(0, -27); ctx.quadraticCurveTo(3, -34, 0, -37); ctx.stroke();
+      face();
+      break;
+    case 'yellow': // 黄蛋仔：黄色+呆毛
+      body();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(0, -27); ctx.quadraticCurveTo(-3, -34, 0, -37); ctx.stroke();
+      face();
+      break;
+    case 'pink': // 粉蛋仔：蝴蝶结
+      body();
+      ctx.fillStyle = '#FF6B9E';
+      ctx.beginPath(); ctx.moveTo(0, -30); ctx.lineTo(-8, -37); ctx.lineTo(-8, -27); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, -30); ctx.lineTo(8, -37); ctx.lineTo(8, -27); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#FFD0E0';
+      ctx.beginPath(); ctx.arc(0, -30, 2.4, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'blue': // 蓝蛋仔：头顶小水滴
+      body();
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(0, -32); ctx.quadraticCurveTo(5, -25, 0, -22); ctx.quadraticCurveTo(-5, -25, 0, -32); ctx.closePath(); ctx.fill();
+      face();
+      break;
+    case 'green': // 绿蛋仔：头顶嫩芽
+      body();
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(0, -26); ctx.lineTo(-2, -33); ctx.lineTo(2, -33); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, -34, 4, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'panda': // 熊猫蛋仔：黑眼圈+黑耳朵
+      body();
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.arc(-16, -18, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(16, -18, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1A1A2E';
+      ctx.beginPath(); ctx.ellipse(-8, -6, 4.5, 5.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(8, -6, 4.5, 5.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#F2F2F2';
+      ctx.beginPath(); ctx.arc(-8, -7, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(8, -7, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, -1, 4.2, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+      ctx.lineWidth = 3;
+      break;
+    case 'bunny': // 兔兔蛋仔：长耳朵+粉内耳
+      body();
+      ctx.fillStyle = '#FFE8DC';
+      ctx.beginPath(); ctx.ellipse(-7, -40, 4.5, 13, -0.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(7, -40, 4.5, 13, 0.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#FFB0C0';
+      ctx.beginPath(); ctx.ellipse(-7, -48, 2.6, 6, -0.12, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(7, -48, 2.6, 6, 0.12, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'cat': // 猫咪蛋仔：尖耳朵+胡须
+      body();
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.moveTo(-14, -20); ctx.lineTo(-9, -34); ctx.lineTo(-3, -22); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(14, -20); ctx.lineTo(9, -34); ctx.lineTo(3, -22); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(-11, -28); ctx.lineTo(-7, -32); ctx.lineTo(-7, -26); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(11, -28); ctx.lineTo(7, -32); ctx.lineTo(7, -26); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(-16, -2); ctx.lineTo(-24, 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-16, 3); ctx.lineTo(-24, 7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(16, -2); ctx.lineTo(24, 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(16, 3); ctx.lineTo(24, 7); ctx.stroke();
+      ctx.lineWidth = 3;
+      face();
+      break;
+    case 'cowboy': // 牛仔蛋仔：帽子+领巾
+      body();
+      ctx.fillStyle = '#7A4E2E';
+      ctx.beginPath(); ctx.ellipse(0, -20, 20, 5.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-12, -20); ctx.lineTo(-7, -36); ctx.lineTo(7, -36); ctx.lineTo(12, -20); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#C8A068';
+      ctx.fillRect(-6, -32, 12, 4);
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(-7, 7); ctx.lineTo(7, 7); ctx.stroke();
+      ctx.lineWidth = 3;
+      face();
+      break;
+    case 'pirate': // 海盗蛋仔：三角帽+眼罩
+      body();
+      ctx.fillStyle = '#2E2E3A';
+      ctx.beginPath(); ctx.moveTo(-18, -18); ctx.lineTo(18, -18); ctx.lineTo(0, -34); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#FFD84A';
+      ctx.beginPath(); ctx.arc(0, -24, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1A1A2E';
+      ctx.beginPath(); ctx.ellipse(-8, -6, 3.2, 3.6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#1A1A2E'; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(-11, -10); ctx.lineTo(-5, -2); ctx.stroke();
+      ctx.fillStyle = '#1A1A2E';
+      ctx.beginPath(); ctx.arc(8, -7, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, -1, 4.2, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+      ctx.lineWidth = 3;
+      break;
+    case 'knight': // 骑士蛋仔：头盔+盾
+      body();
+      ctx.fillStyle = '#9EA8B8';
+      ctx.beginPath(); ctx.ellipse(0, -14, 17, 13, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#F0F0F8';
+      ctx.fillRect(-10, -24, 20, 3);
+      ctx.fillStyle = '#C84A4A';
+      ctx.beginPath(); ctx.ellipse(0, -14, 9, 7, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFD84A';
+      ctx.beginPath(); ctx.arc(0, -16, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#8CA0B8';
+      ctx.beginPath(); ctx.ellipse(19, 2, 8, 11, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#F0F0F8'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(19, -8); ctx.lineTo(19, 12); ctx.stroke();
+      ctx.lineWidth = 3;
+      break;
+    case 'ninja': // 忍者蛋仔：头巾+飘带
+      body();
+      ctx.fillStyle = char.dark;
+      ctx.beginPath(); ctx.ellipse(0, -21, 19, 7, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(-19, -21); ctx.quadraticCurveTo(-26, -14, -24, -8); ctx.quadraticCurveTo(-20, -12, -18, -17); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(19, -21); ctx.quadraticCurveTo(26, -14, 24, -8); ctx.quadraticCurveTo(20, -12, 18, -17); ctx.closePath(); ctx.fill();
+      face();
+      break;
+    case 'magician': // 魔法师蛋仔：魔法帽+星星
+      body();
+      ctx.fillStyle = '#5A38A0';
+      ctx.beginPath(); ctx.moveTo(-13, -20); ctx.lineTo(13, -20); ctx.lineTo(4, -40); ctx.quadraticCurveTo(0, -44, -4, -40); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#F0C8FF';
+      ctx.fillRect(-13, -22, 26, 4);
+      ctx.fillStyle = '#FFD84A';
+      ctx.beginPath(); ctx.moveTo(0, -36); ctx.lineTo(2, -32); ctx.lineTo(6, -32); ctx.lineTo(3, -29); ctx.lineTo(4, -25); ctx.lineTo(0, -27); ctx.lineTo(-4, -25); ctx.lineTo(-3, -29); ctx.lineTo(-6, -32); ctx.lineTo(-2, -32); ctx.closePath(); ctx.fill();
+      face();
+      break;
+    case 'astronaut': // 宇航员蛋仔：头盔+胸按钮
+      body();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(0, -4, 20, Math.PI, 0); ctx.stroke();
+      ctx.fillStyle = 'rgba(90,200,245,.25)';
+      ctx.beginPath(); ctx.ellipse(0, -8, 16, 12, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#1A1A2E';
+      ctx.beginPath(); ctx.arc(-7, -7, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(7, -7, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, -1, 4.2, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.fillStyle = '#5AC8F5';
+      ctx.beginPath(); ctx.arc(-14, 8, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(14, 8, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 3;
+      break;
+    case 'ice': // 冰晶蛋仔：雪花+冰晶
+      body();
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, -26); ctx.lineTo(0, -33); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-7, -29); ctx.lineTo(7, -29); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-5, -32); ctx.lineTo(5, -26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(5, -32); ctx.lineTo(-5, -26); ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.ellipse(-12, 6, 3.5, 2.2, 0.6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(12, 4, 3.5, 2.2, -0.6, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'flame': // 烈焰蛋仔：火苗+内焰
+      body();
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(0, -26);
+      ctx.quadraticCurveTo(-9, -32, -6, -40);
+      ctx.quadraticCurveTo(0, -34, 0, -39);
+      ctx.quadraticCurveTo(6, -34, 9, -41);
+      ctx.quadraticCurveTo(10, -32, 0, -26);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#FF9EC4';
+      ctx.beginPath(); ctx.moveTo(0, -29);
+      ctx.quadraticCurveTo(-4, -34, -2, -37);
+      ctx.quadraticCurveTo(0, -34, 0, -36);
+      ctx.quadraticCurveTo(3, -34, 4, -37);
+      ctx.quadraticCurveTo(4, -32, 0, -29);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#FFD84A';
+      ctx.beginPath(); ctx.ellipse(-12, 8, 3.5, 2, 0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(12, 8, 3.5, 2, -0.5, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'aurora': // 极光蛋仔：三色流光+星点
+      body();
+      ctx.strokeStyle = '#48D8B8'; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.arc(0, 0, 22, 0.15 * Math.PI, 0.6 * Math.PI); ctx.stroke();
+      ctx.strokeStyle = '#FF9EC4';
+      ctx.beginPath(); ctx.arc(0, 0, 22, 0.7 * Math.PI, 1.15 * Math.PI); ctx.stroke();
+      ctx.strokeStyle = '#5AC8F5';
+      ctx.beginPath(); ctx.arc(0, 0, 22, 1.2 * Math.PI, 1.65 * Math.PI); ctx.stroke();
+      ctx.fillStyle = '#FFF';
+      ctx.beginPath(); ctx.arc(-16, -12, 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(16, -14, 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 20, 1.8, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'eggking': // 蛋皇·传说：披风+皇冠+金光（最终形态）
+      ctx.fillStyle = '#7A5CF0';
+      ctx.beginPath(); ctx.moveTo(-22, 22); ctx.lineTo(-22, 10); ctx.lineTo(-13, 22); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(22, 22); ctx.lineTo(22, 10); ctx.lineTo(13, 22); ctx.closePath(); ctx.fill();
+      body();
+      ctx.fillStyle = '#FFD84A';
+      ctx.beginPath(); ctx.moveTo(-15, -24); ctx.lineTo(-9, -36); ctx.lineTo(-4, -28); ctx.lineTo(0, -39); ctx.lineTo(4, -28); ctx.lineTo(9, -36); ctx.lineTo(15, -24); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#C84A4A';
+      ctx.beginPath(); ctx.arc(0, -24, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(-12, 4, 2.4, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(12, 2, 2.4, 0, Math.PI * 2); ctx.stroke();
+      // 金光
+      ctx.strokeStyle = 'rgba(255,220,120,.6)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, 33, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -35); ctx.lineTo(0, -42); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(24, -24); ctx.lineTo(30, -30); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-24, -24); ctx.lineTo(-30, -30); ctx.stroke();
+      ctx.lineWidth = 3;
+      face();
+      break;
+  }
+  ctx.restore();
+}
+
 // --- Draw character using real image sprite or the procedural second-stage roster ---
 function drawCharacter(cx, cy, char, isPlayer) {
   const s = char.size;
@@ -4395,7 +4731,8 @@ function drawCharacter(cx, cy, char, isPlayer) {
   const inSaintseiya = state.gameMode === 'saintseiya';
   const inNinja = state.gameMode === 'ninja';
   const inFruit = state.gameMode === 'fruit';
-  const img = (!inBrainrot && !inMinecraft && !inKun && !inDragon && !inUltraman && !inSaintseiya && !inNinja && !inFruit) ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
+  const inEggy = state.gameMode === 'eggy';
+  const img = (!inBrainrot && !inMinecraft && !inKun && !inDragon && !inUltraman && !inSaintseiya && !inNinja && !inFruit && !inEggy) ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
   ctx.fillStyle = 'rgba(0,0,0,0.22)';
   ctx.beginPath();
   ctx.ellipse(cx, cy + s * 0.95 + bob, s * 0.72, s * 0.26, 0, 0, Math.PI * 2);
@@ -4536,6 +4873,22 @@ function drawCharacter(cx, cy, char, isPlayer) {
         ctx.drawImage(frImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
       } else {
         drawFruitCharacter(cx, cy, char, bob);
+      }
+    }
+  } else if (inEggy) {
+    if (state.skin === 'refreshed') {
+      // 焕新：乐园手绘版（与经典大图风格区分明显）
+      drawEggyCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
+    } else {
+      const egImg = EGGY_IMAGE_SETS.classic[char.role];
+      if (egImg && egImg.complete && egImg.naturalWidth > 0) {
+        const aspect = egImg.naturalWidth / egImg.naturalHeight;
+        let dw, dh;
+        if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+        else { dh = imgScale; dw = dh * aspect; }
+        ctx.drawImage(egImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+      } else {
+        drawEggyCharacter(cx, cy, char, bob);
       }
     }
   } else if (img && img.complete && img.naturalWidth > 0) {
@@ -4883,9 +5236,9 @@ function resolveSceneChoice(reroll = false) {
 }
 
 const GAME_TITLE = '召唤进化'; // 统一主名，后续加主题只需扩展 MODE_NAMES
-const MODE_NAMES = { classic: '节奏盒子', brainrot: '山海经', minecraft: '我的世界', kun: '召唤神鲲', dragon: '召唤神龙', ultraman: '光之巨人', saintseiya: '圣斗士', ninja: '忍者乱太郎', fruit: '召唤水果' };
-const MODE_TAGLINES = { classic: '吃小的，躲大的，一路进化到平基！', brainrot: '吃小的，躲大的，一路进化到茶壶人！', minecraft: '吃小的，躲大的，一路进化到末影龙！', kun: '开局一条鲲，进化全靠吞！', dragon: '蛇化为龙，一飞冲天！', ultraman: '吃小的，躲大的，一路进化到赛罗！', saintseiya: '吃小的，躲大的，一路进化到雅典娜！', ninja: '吃小的，躲大的，一路进化到猫丸！', fruit: '吃小的，躲大的，一路进化到荔枝王！' };
-const MODE_ICONS = { classic: '📦', brainrot: '🌊', minecraft: '⛏️', kun: '🐋', dragon: '🐉', ultraman: '🦸', saintseiya: '🛡️', ninja: '🍡', fruit: '🍎' };
+const MODE_NAMES = { classic: '节奏盒子', brainrot: '山海经', minecraft: '我的世界', kun: '召唤神鲲', dragon: '召唤神龙', ultraman: '光之巨人', saintseiya: '圣斗士', ninja: '忍者乱太郎', fruit: '召唤水果', eggy: '召唤蛋仔' };
+const MODE_TAGLINES = { classic: '吃小的，躲大的，一路进化到平基！', brainrot: '吃小的，躲大的，一路进化到茶壶人！', minecraft: '吃小的，躲大的，一路进化到末影龙！', kun: '开局一条鲲，进化全靠吞！', dragon: '蛇化为龙，一飞冲天！', ultraman: '吃小的，躲大的，一路进化到赛罗！', saintseiya: '吃小的，躲大的，一路进化到雅典娜！', ninja: '吃小的，躲大的，一路进化到猫丸！', fruit: '吃小的，躲大的，一路进化到荔枝王！', eggy: '吃小的，躲大的，一路进化到蛋皇传说！' };
+const MODE_ICONS = { classic: '📦', brainrot: '🌊', minecraft: '⛏️', kun: '🐋', dragon: '🐉', ultraman: '🦸', saintseiya: '🛡️', ninja: '🍡', fruit: '🍎', eggy: '🥚' };
 
 function updateTitle() {
   const modeName = MODE_NAMES[state.gameMode] || MODE_NAMES.classic;
@@ -4908,6 +5261,7 @@ function initModeSelector() {
   else if (state.gameMode === 'saintseiya') LEVELS = SAINTSEIYA_LEVELS;
   else if (state.gameMode === 'ninja') LEVELS = NINJA_LEVELS;
   else if (state.gameMode === 'fruit') LEVELS = FRUIT_LEVELS;
+  else if (state.gameMode === 'eggy') LEVELS = EGGY_LEVELS;
   else LEVELS = SPRUNKI_LEVELS; // 主题与进化链同步
   const grid = document.getElementById('mode-selector');
   grid.innerHTML = '';
@@ -4918,9 +5272,10 @@ function initModeSelector() {
     { id: 'brainrot', name: '🌊 山海经' },
     { id: 'minecraft', name: '⛏️ 我的世界' },
     { id: 'ultraman', name: '🦸 光之巨人' },
+    { id: 'fruit', name: '🍎 召唤水果' },
+    { id: 'eggy', name: '🥚 召唤蛋仔' },
     { id: 'saintseiya', name: '🛡️ 圣斗士' },
     { id: 'ninja', name: '🍡 忍者乱太郎' },
-    { id: 'fruit', name: '🍎 召唤水果' },
   ];
   modes.forEach(m => {
     const btn = document.createElement('button');
@@ -4981,9 +5336,10 @@ function renderSkinSelector() {
   const isSaintseiya = state.gameMode === 'saintseiya';
   const isNinja = state.gameMode === 'ninja';
   const isFruit = state.gameMode === 'fruit';
-  const first = isBrainrot ? 'sneakerShark' : isMinecraft ? 'chicken' : isKun ? 'tadpole' : isDragon ? 'snakelet' : isUltraman ? 'pigmon' : isSaintseiya ? 'soldier' : isNinja ? 'rantaro' : isFruit ? 'watermelon' : 'raddy';
-  const classicBase = isBrainrot ? 'brainrot/classic/' : isMinecraft ? 'minecraft/classic/' : isKun ? 'kun/classic/' : isDragon ? 'dragon/classic/' : isUltraman ? 'ultraman/classic/' : isSaintseiya ? 'saintseiya/classic/' : isNinja ? 'ninja/classic/' : isFruit ? 'fruit/classic/' : 'classic/';
-  const refreshedBase = isBrainrot ? 'brainrot/refreshed/' : isMinecraft ? 'minecraft/refreshed/' : isKun ? 'kun/refreshed/' : isDragon ? 'dragon/refreshed/' : isUltraman ? 'ultraman/refreshed/' : isSaintseiya ? 'saintseiya/refreshed/' : isNinja ? 'ninja/refreshed/' : isFruit ? 'fruit/refreshed/' : '';
+  const isEggy = state.gameMode === 'eggy';
+  const first = isBrainrot ? 'sneakerShark' : isMinecraft ? 'chicken' : isKun ? 'tadpole' : isDragon ? 'snakelet' : isUltraman ? 'pigmon' : isSaintseiya ? 'soldier' : isNinja ? 'rantaro' : isFruit ? 'watermelon' : isEggy ? 'white' : 'raddy';
+  const classicBase = isBrainrot ? 'brainrot/classic/' : isMinecraft ? 'minecraft/classic/' : isKun ? 'kun/classic/' : isDragon ? 'dragon/classic/' : isUltraman ? 'ultraman/classic/' : isSaintseiya ? 'saintseiya/classic/' : isNinja ? 'ninja/classic/' : isFruit ? 'fruit/classic/' : isEggy ? 'eggy/classic/' : 'classic/';
+  const refreshedBase = isBrainrot ? 'brainrot/refreshed/' : isMinecraft ? 'minecraft/refreshed/' : isKun ? 'kun/refreshed/' : isDragon ? 'dragon/refreshed/' : isUltraman ? 'ultraman/refreshed/' : isSaintseiya ? 'saintseiya/refreshed/' : isNinja ? 'ninja/refreshed/' : isFruit ? 'fruit/refreshed/' : isEggy ? 'eggy/refreshed/' : '';
   [
     { id: 'classic', name: '经典', src: `images/${classicBase}${first}.png` },
     { id: 'refreshed', name: '焕新', src: `images/${refreshedBase}${first}.png` },
@@ -5099,6 +5455,13 @@ function startGame() {
     sceneCacheKey = '';
     showToast('🍎 瓜田李下，一路进化到荔枝王！');
     unlockAchievement('fruit');
+  } else if (state.gameMode === 'eggy') {
+    // 直入召唤蛋仔
+    LEVELS = EGGY_LEVELS;
+    state.scene = 'eggy';
+    sceneCacheKey = '';
+    showToast('🥚 蛋蛋集合，一路进化到蛋皇传说！');
+    unlockAchievement('eggy');
   } else {
     // 节奏盒子经典模式
     LEVELS = SPRUNKI_LEVELS;
