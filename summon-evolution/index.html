@@ -4057,6 +4057,32 @@ function drawNinjaCharacter(cx, cy, char, bob) {
         }
         ctx.lineWidth = 3;
         break;
+      case 'year2': // 二年级生：头顶小苦无
+        ctx.fillStyle = '#D8D8E0';
+        ctx.beginPath(); ctx.moveTo(-8, -52); ctx.lineTo(-8, -58); ctx.lineTo(-4, -55); ctx.closePath(); ctx.fill(); ctx.stroke();
+        break;
+      case 'year3': // 三年级生：头带结
+        ctx.fillStyle = '#E8E8F0';
+        ctx.beginPath(); ctx.moveTo(8, -41); ctx.lineTo(15, -44); ctx.lineTo(8, -47); ctx.closePath(); ctx.fill();
+        break;
+      case 'year4': // 四年级生：双袖白边
+        ctx.strokeStyle = '#F0F0F0'; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.moveTo(-18, -6); ctx.lineTo(-12, -6); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(12, -6); ctx.lineTo(18, -6); ctx.stroke();
+        ctx.lineWidth = 3;
+        break;
+      case 'year5': // 五年级生：额头圆点
+        ctx.fillStyle = '#C94A4A';
+        ctx.beginPath(); ctx.arc(0, -37, 1.8, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'year6': // 六年级生：精英头带结+两道飘带
+        ctx.fillStyle = '#F0F0F0';
+        ctx.beginPath(); ctx.moveTo(-8, -41); ctx.lineTo(-15, -44); ctx.lineTo(-8, -47); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#F0F0F0'; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.moveTo(-15, -44); ctx.lineTo(-20, -50); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-15, -44); ctx.lineTo(-20, -42); ctx.stroke();
+        ctx.lineWidth = 3;
+        break;
     }
   }
   ctx.restore();
