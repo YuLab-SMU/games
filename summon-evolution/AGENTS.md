@@ -4,8 +4,8 @@
 
 - 每个主题都有两套皮肤：**classic（经典）** 与 **refreshed（焕新）**，由 `state.skin` 切换、按主题记忆。
 - **焕新 = 程序化手绘**，**经典 = gpt-image 生成贴图**。
-- 现有主题：节奏盒子（classic，21 角色）、山海经（brainrot，11 角色）、我的世界（minecraft，17 角色）、**召唤神鲲（kun，18 角色）**、**召唤神龙（dragon，18 角色）**、**光之巨人（ultraman，18 角色，最高级=赛罗 zero）**、**圣斗士（saintseiya，18 角色，最高级=雅典娜 athena）**、**忍者乱太郎（ninja，18 角色，最高级=猫丸·觉醒 nyamaropower，即黑木的猫）**。
-- 主题在模式选择器里的顺序：**kun（神鲲）→ dragon（神龙）→ classic（节奏盒子）→ brainrot（山海经）→ minecraft（我的世界）→ ultraman（奥特曼）→ saintseiya（圣斗士）→ ninja（忍者乱太郎）**。神鲲排最前（用户明确要求）；奥特曼/圣斗士/忍者靠后（用户要求放在我的世界之后）。
+- 现有主题：节奏盒子（classic，21 角色）、山海经（brainrot，11 角色）、我的世界（minecraft，17 角色）、**召唤神鲲（kun，18 角色）**、**召唤神龙（dragon，18 角色）**、**光之巨人（ultraman，18 角色，最高级=赛罗 zero）**、**圣斗士（saintseiya，18 角色，最高级=雅典娜 athena）**、**忍者乱太郎（ninja，18 角色，最高级=猫丸·觉醒 nyamaropower，即黑木的猫）**、**召唤水果（fruit，18 角色，从西瓜到荔枝）**。
+- 主题在模式选择器里的顺序：**kun（神鲲）→ dragon（神龙）→ classic（节奏盒子）→ brainrot（山海经）→ minecraft（我的世界）→ ultraman（奥特曼）→ saintseiya（圣斗士）→ ninja（忍者乱太郎）→ fruit（召唤水果）**。神鲲排最前（用户明确要求）；奥特曼/圣斗士/忍者靠后（用户要求放在我的世界之后）；水果排最后（用户要求从西瓜开始、荔枝结束）。
 
 ## 经典（classic）：gpt-image 一张大图 + 切割
 
@@ -76,7 +76,7 @@
 - 预加载**只加载 classic**：refreshed 皮肤纯手绘无图片，预加载不存在的图会产生 404 噪音（曾一次产生 16 条）。
 - 焕新缩略图只需首角色一张（可程序化生成），否则皮肤选择器破图。
 - 新增**主题**（mode）时，除 `*_LEVELS` 外还要同步 6 处：`SCENES`（专属场景，`stageOnly:true`）、`state.skinByMode`、`drawStaticScene` 场景分支、`drawSceneBg` 的 `pulseColors`、`MODE_NAMES/MODE_TAGLINES/MODE_ICONS`、`renderSkinSelector` 的 first/classicBase/refreshedBase、`startGame` 直入分支、`initModeSelector` 的模式数组与 LEVELS 分支（`updateTitle` 已统一负责 HUD 图标/标题/口号）。`drawCharacter` 的 img 分支判断也要把新主题排除在外。
-- 直入式主题（brainrot/minecraft/kun/dragon/ultraman/saintseiya/ninja）不参与 `resolveSceneChoice` 随机场景，`state.scene` 直接指向专属场景 id（`stageOnly:true`）。新主题场景配色：dragon 凌霄云海 `#1B2A52`、ultraman 光之国度 `#1A2E4A`、saintseiya 圣域 `#2A2440`、ninja 忍术学园 `#2E3A2E`。
+- 直入式主题（brainrot/minecraft/kun/dragon/ultraman/saintseiya/ninja/fruit）不参与 `resolveSceneChoice` 随机场景，`state.scene` 直接指向专属场景 id（`stageOnly:true`）。新主题场景配色：dragon 凌霄云海 `#1B2A52`、ultraman 光之国度 `#1A2E4A`、saintseiya 圣域 `#2A2440`、ninja 忍术学园 `#2E3A2E`、fruit 果园星空 `#3A2F2A`。
 
 ### 验证与实测
 

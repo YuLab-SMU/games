@@ -645,6 +645,18 @@ function preloadNinjaImages() {
 }
 preloadNinjaImages();
 
+const FRUIT_IMAGE_SETS = { classic: {}, refreshed: {} };
+// 经典 PNG 已在切片时置透明，直接加载使用（无需 JS 去背景）
+function preloadFruitImages() {
+  const ROLES = ['watermelon','cantaloupe','muskmelon','pumpkin','dragonfruit','pineapple','coconut','banana','apple','orange','peach','mango','grape','strawberry','blueberry','cherry','longan','lychee'];
+  ROLES.forEach(role => {
+    const img = new Image();
+    img.src = 'images/fruit/classic/' + role + '.png';
+    FRUIT_IMAGE_SETS.classic[role] = img;
+  });
+}
+preloadFruitImages();
+
 // ==================== POLYFILLS ====================
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -880,6 +892,28 @@ const NINJA_LEVELS = [
   { id: 17, name: '猫丸·觉醒', color: '#4A4A4A', dark: '#2E2E2E', accent: '#FFE84A', size: 100, role: 'nyamaropower' },
 ];
 
+// 水果主题 - 从西瓜一路进化到荔枝（越大越普通，越小越珍贵）
+const FRUIT_LEVELS = [
+  { id: 0,  name: '西瓜',   color: '#3E8C4A', dark: '#24592B', accent: '#C9E8C0', size: 28, role: 'watermelon' },
+  { id: 1,  name: '哈密瓜', color: '#E8A84A', dark: '#A8702C', accent: '#F0D8A8', size: 31, role: 'cantaloupe' },
+  { id: 2,  name: '香瓜',   color: '#E8D84A', dark: '#A89828', accent: '#F0E8B0', size: 34, role: 'muskmelon' },
+  { id: 3,  name: '南瓜',   color: '#E87A2C', dark: '#A84E1C', accent: '#F0C9A0', size: 38, role: 'pumpkin' },
+  { id: 4,  name: '火龙果', color: '#D85A8C', dark: '#8C3A5E', accent: '#6BC98C', size: 42, role: 'dragonfruit' },
+  { id: 5,  name: '菠萝',   color: '#E8C84A', dark: '#A89C28', accent: '#4A9C3E', size: 46, role: 'pineapple' },
+  { id: 6,  name: '椰子',   color: '#8C6B4A', dark: '#5A4230', accent: '#D8C8B0', size: 50, role: 'coconut' },
+  { id: 7,  name: '香蕉',   color: '#E8E84A', dark: '#A8A828', accent: '#D8D8A0', size: 54, role: 'banana' },
+  { id: 8,  name: '苹果',   color: '#D84A4A', dark: '#8C2E2E', accent: '#5A8C3A', size: 58, role: 'apple' },
+  { id: 9,  name: '橙子',   color: '#E88C2C', dark: '#A85A1C', accent: '#8C5A2E', size: 62, role: 'orange' },
+  { id: 10, name: '桃子',   color: '#F0A8B8', dark: '#B06B7E', accent: '#6BA85A', size: 66, role: 'peach' },
+  { id: 11, name: '芒果',   color: '#E8C94A', dark: '#A88C1C', accent: '#7AB83E', size: 70, role: 'mango' },
+  { id: 12, name: '葡萄',   color: '#8C5AC8', dark: '#5A388C', accent: '#C8A8F0', size: 74, role: 'grape' },
+  { id: 13, name: '草莓',   color: '#D84A3E', dark: '#8C2E26', accent: '#4AA83E', size: 78, role: 'strawberry' },
+  { id: 14, name: '蓝莓',   color: '#4A5AC8', dark: '#2E38A8', accent: '#C8C8F0', size: 82, role: 'blueberry' },
+  { id: 15, name: '樱桃',   color: '#C83A3A', dark: '#8C1C1C', accent: '#5A8C3A', size: 86, role: 'cherry' },
+  { id: 16, name: '龙眼',   color: '#B87A4A', dark: '#7A4E2E', accent: '#C9A878', size: 92, role: 'longan' },
+  { id: 17, name: '荔枝',   color: '#D83A3A', dark: '#9C1C1C', accent: '#6BC94A', size: 100, role: 'lychee' },
+];
+
 let LEVELS = SPRUNKI_LEVELS;
 
 const SCENES = [
@@ -921,6 +955,7 @@ const SCENES = [
   { id: 'ultraman', name: '✨ 光之国度', bg: '#1A2E4A', stageOnly: true, ultraman: true },
   { id: 'saintseiya', name: '🏛️ 圣域', bg: '#2A2440', stageOnly: true, saintseiya: true },
   { id: 'ninja', name: '🏯 忍术学园', bg: '#2E3A2E', stageOnly: true, ninja: true },
+  { id: 'fruit', name: '🍇 果园星空', bg: '#3A2F2A', stageOnly: true, fruit: true },
 ];
 
 const PLAYABLE_SCENES = SCENES.filter(scene => !scene.stageOnly);
@@ -1003,7 +1038,7 @@ const state = {
   gameMode: 'classic', // 'classic' | 'brainrot'
   difficulty: 'normal',
   skin: 'classic',
-  skinByMode: { classic: 'classic', brainrot: 'classic', minecraft: 'classic', kun: 'classic', dragon: 'classic', ultraman: 'classic', saintseiya: 'classic', ninja: 'classic' }, // 每个主题独立记忆皮肤
+  skinByMode: { classic: 'classic', brainrot: 'classic', minecraft: 'classic', kun: 'classic', dragon: 'classic', ultraman: 'classic', saintseiya: 'classic', ninja: 'classic', fruit: 'classic' }, // 每个主题独立记忆皮肤
   squadMode: 'hunt', // 默认狩猎模式
   playerLevel: 0,
   score: 0,
@@ -1532,6 +1567,32 @@ function drawStaticScene(sc) {
       g.fillStyle = `rgba(255,190,210,${0.3 + rand() * 0.5})`;
       g.beginPath(); g.arc(rand() * W, rand() * H, 2 + rand() * 2.5, 0, Math.PI * 2); g.fill();
     }
+  } else if (sc.id === 'fruit') {
+    // 果园星空：夜空 + 果林剪影 + 大月亮
+    fillVerticalGradient(g, '#1A1420', '#4A3428');
+    // 星
+    for (let i = 0; i < 60; i++) {
+      const sx = rand() * W, sy = rand() * H * 0.5;
+      g.fillStyle = `rgba(255,235,200,${0.2 + rand() * 0.6})`;
+      g.beginPath(); g.arc(sx, sy, 1 + rand() * 1.4, 0, Math.PI * 2); g.fill();
+    }
+    // 大月亮
+    g.fillStyle = 'rgba(255,220,160,.9)';
+    g.beginPath(); g.arc(W * 0.8, H * 0.2, 46, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,240,200,.25)';
+    g.beginPath(); g.arc(W * 0.8, H * 0.2, 62, 0, Math.PI * 2); g.fill();
+    // 果林剪影（圆冠树木）
+    for (let i = 0; i < 6; i++) {
+      const mx = rand() * W, mw = 150 + rand() * 180;
+      g.fillStyle = 'rgba(16,10,14,.55)';
+      g.beginPath(); g.moveTo(mx - mw / 2, H);
+      g.quadraticCurveTo(mx - mw / 2, H - 110 - rand() * 60, mx, H - 120 - rand() * 70);
+      g.quadraticCurveTo(mx + mw / 2, H - 110 - rand() * 60, mx + mw / 2, H);
+      g.closePath(); g.fill();
+    }
+    // 地面
+    g.fillStyle = 'rgba(10,8,12,.6)';
+    g.fillRect(0, H - 24, W, 24);
   } else {
     fillVerticalGradient(g, '#f49ac3', '#91d8ee');
     const bands=['rgba(255,206,119,.72)','rgba(194,133,240,.46)','rgba(255,150,192,.48)','rgba(145,220,238,.48)'];
@@ -1574,6 +1635,7 @@ function drawSceneBg(sc, camX, camY, w, h) {
       ultraman: '160,220,255',
       saintseiya: '255,224,130',
       ninja: '150,230,170',
+      fruit: '255,180,150',
     };
     ctx.fillStyle = `rgba(${pulseColors[sc.id]},${beatClock.pulse * 0.035})`;
     ctx.fillRect(vl, vt, w, h);
@@ -4088,6 +4150,215 @@ function drawNinjaCharacter(cx, cy, char, bob) {
   ctx.restore();
 }
 
+// 水果主题手绘：从西瓜进化到荔枝（均带可爱表情）
+function drawFruitCharacter(cx, cy, char, bob) {
+  const s = char.size;
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(s / 100, s / 100);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = char.dark;
+  // 通用小表情（眼睛+嘴）
+  function face() {
+    ctx.fillStyle = '#1A1A2E';
+    ctx.beginPath(); ctx.arc(-7, -6, 2.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(7, -6, 2.2, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = char.dark; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, -1, 4, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    ctx.lineWidth = 3;
+    ctx.fillStyle = 'rgba(255,150,150,.5)';
+    ctx.beginPath(); ctx.ellipse(-10, 0, 2.6, 1.6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(10, 0, 2.6, 1.6, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  switch (char.role) {
+    case 'watermelon': // 西瓜：绿圆+深绿条纹
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 2.4;
+      for (let a = -0.6; a < 0.9; a += 0.45) {
+        ctx.beginPath(); ctx.arc(0, 0, 21, a, a + 0.55); ctx.stroke();
+      }
+      ctx.lineWidth = 3;
+      face();
+      break;
+    case 'cantaloupe': // 哈密瓜：橙椭圆+网纹
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.ellipse(0, 0, 24, 27, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,220,160,.9)'; ctx.lineWidth = 1.5;
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath(); ctx.ellipse(0, -10 + i * 6, 20, 7, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.lineWidth = 3;
+      face();
+      break;
+    case 'muskmelon': // 香瓜：淡黄圆+细棱
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,240,180,.95)'; ctx.lineWidth = 2;
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath(); ctx.arc(0, 0, 15 + Math.abs(i) * 2, -0.4, 0.4); ctx.stroke();
+      }
+      ctx.lineWidth = 3;
+      face();
+      break;
+    case 'pumpkin': // 南瓜：橙+纵向棱+蒂
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.ellipse(-8, 0, 16, 26, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(8, 0, 16, 26, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.dark;
+      ctx.fillRect(-3, -30, 6, 5); ctx.strokeRect(-3, -30, 6, 5);
+      face();
+      break;
+    case 'dragonfruit': // 火龙果：玫红椭圆+绿鳞
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.ellipse(0, 0, 22, 26, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.accent;
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath(); ctx.moveTo(-14 + i * 9, -20 + i * 2);
+        ctx.quadraticCurveTo(-14 + i * 9 + 4, -10, -14 + i * 9 + 2, -22); ctx.fill();
+      }
+      face();
+      break;
+    case 'pineapple': // 菠萝：黄椭圆+网格+绿叶冠
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.ellipse(0, 4, 23, 24, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 1.5;
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath(); ctx.moveTo(-18, 4 + i * 9); ctx.lineTo(18, 4 + i * 9); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-16 + i * 10, -14); ctx.lineTo(-16 + i * 10, 24); ctx.stroke();
+      }
+      ctx.lineWidth = 3;
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(-7, -30); ctx.lineTo(-2, -22); ctx.lineTo(0, -32); ctx.lineTo(3, -22); ctx.lineTo(8, -30); ctx.lineTo(2, -14); ctx.closePath(); ctx.fill();
+      face();
+      break;
+    case 'coconut': // 椰子：棕圆+三孔+毛
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.dark;
+      ctx.beginPath(); ctx.arc(-5, -8, 2.6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(5, -8, 2.6, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'banana': // 香蕉：黄弯月
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.moveTo(-24, 2);
+      ctx.quadraticCurveTo(0, 32, 24, 6);
+      ctx.quadraticCurveTo(14, 16, 0, 12);
+      ctx.quadraticCurveTo(-14, 8, -24, 2);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.dark;
+      ctx.beginPath(); ctx.arc(-22, 2, 3, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'apple': // 苹果：红圆+梗+叶
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(0, 2, 25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(0, -31); ctx.stroke();
+      ctx.lineWidth = 3;
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.ellipse(7, -30, 7, 4, -0.5, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'orange': // 橙子：橙圆+顶部点
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.dark;
+      ctx.beginPath(); ctx.arc(0, -26, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(0, 0, 19, 0.1 * Math.PI, 0.4 * Math.PI); ctx.stroke();
+      ctx.lineWidth = 3;
+      face();
+      break;
+    case 'peach': // 桃子：粉红圆+沟+叶
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(-6, 3, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(6, 3, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(-5, -33); ctx.lineTo(1, -30); ctx.lineTo(5, -33); ctx.closePath(); ctx.fill();
+      face();
+      break;
+    case 'mango': // 芒果：黄绿歪椭圆
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.ellipse(0, 3, 23, 17, -0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(150,200,80,.85)';
+      ctx.beginPath(); ctx.ellipse(-16, -8, 9, 6, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = char.dark;
+      ctx.beginPath(); ctx.arc(21, 9, 3, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'grape': // 葡萄：紫圆串
+      ctx.fillStyle = char.color;
+      for (const [gx, gy] of [[-10,-6],[10,-6],[-15,6],[0,6],[15,6],[-7,17],[7,17]]) {
+        ctx.beginPath(); ctx.arc(gx, gy, 8, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, -24); ctx.stroke();
+      ctx.lineWidth = 3;
+      face();
+      break;
+    case 'strawberry': // 草莓：红锥+绿冠+白点
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.moveTo(-20, -4);
+      ctx.quadraticCurveTo(0, 30, 20, -4);
+      ctx.quadraticCurveTo(0, 8, -20, -4);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(-10, -22); ctx.lineTo(-3, -15); ctx.lineTo(0, -24); ctx.lineTo(3, -15); ctx.lineTo(10, -22); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.75)';
+      ctx.beginPath(); ctx.arc(-6, 8, 1.6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(6, 12, 1.6, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'blueberry': // 蓝莓：深蓝小圆+星冠
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(0, 3, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-6, -27); ctx.lineTo(-1, -25); ctx.lineTo(0, -29); ctx.lineTo(1, -25); ctx.lineTo(6, -27); ctx.closePath(); ctx.fill();
+      face();
+      break;
+    case 'cherry': // 樱桃：双红球+茎
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(-9, 6, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(9, 6, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-7, -6); ctx.quadraticCurveTo(0, -28, 8, -22); ctx.stroke();
+      ctx.lineWidth = 3;
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.ellipse(7, -24, 7, 4, -0.4, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'longan': // 龙眼：棕圆+小叶梗
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(0, 2, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.dark;
+      ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-3, -27); ctx.lineTo(3, -27); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -28, 3, 0, Math.PI * 2); ctx.fill();
+      face();
+      break;
+    case 'lychee': // 荔枝：红圆+疙瘩+绿叶冠（最终形态+金光）
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,120,120,.9)'; ctx.lineWidth = 1.6;
+      for (let a = 0; a < Math.PI * 2; a += 0.9) {
+        ctx.beginPath(); ctx.arc(Math.cos(a) * 18, Math.sin(a) * 18, 3, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.lineWidth = 3;
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(-9, -36); ctx.lineTo(-3, -28); ctx.lineTo(0, -38); ctx.lineTo(3, -28); ctx.lineTo(9, -36); ctx.closePath(); ctx.fill();
+      // 金光
+      ctx.strokeStyle = 'rgba(255,220,120,.55)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -34); ctx.lineTo(0, -41); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(23, -23); ctx.lineTo(28, -28); ctx.stroke();
+      ctx.lineWidth = 3;
+      face();
+      break;
+  }
+  ctx.restore();
+}
+
 // --- Draw character using real image sprite or the procedural second-stage roster ---
 function drawCharacter(cx, cy, char, isPlayer) {
   const s = char.size;
@@ -4123,7 +4394,8 @@ function drawCharacter(cx, cy, char, isPlayer) {
   const inUltraman = state.gameMode === 'ultraman';
   const inSaintseiya = state.gameMode === 'saintseiya';
   const inNinja = state.gameMode === 'ninja';
-  const img = (!inBrainrot && !inMinecraft && !inKun && !inDragon && !inUltraman && !inSaintseiya && !inNinja) ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
+  const inFruit = state.gameMode === 'fruit';
+  const img = (!inBrainrot && !inMinecraft && !inKun && !inDragon && !inUltraman && !inSaintseiya && !inNinja && !inFruit) ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
   ctx.fillStyle = 'rgba(0,0,0,0.22)';
   ctx.beginPath();
   ctx.ellipse(cx, cy + s * 0.95 + bob, s * 0.72, s * 0.26, 0, 0, Math.PI * 2);
@@ -4248,6 +4520,22 @@ function drawCharacter(cx, cy, char, isPlayer) {
         ctx.drawImage(njImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
       } else {
         drawNinjaCharacter(cx, cy, char, bob);
+      }
+    }
+  } else if (inFruit) {
+    if (state.skin === 'refreshed') {
+      // 焕新：果园手绘版（与经典大图风格区分明显）
+      drawFruitCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
+    } else {
+      const frImg = FRUIT_IMAGE_SETS.classic[char.role];
+      if (frImg && frImg.complete && frImg.naturalWidth > 0) {
+        const aspect = frImg.naturalWidth / frImg.naturalHeight;
+        let dw, dh;
+        if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+        else { dh = imgScale; dw = dh * aspect; }
+        ctx.drawImage(frImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+      } else {
+        drawFruitCharacter(cx, cy, char, bob);
       }
     }
   } else if (img && img.complete && img.naturalWidth > 0) {
@@ -4595,9 +4883,9 @@ function resolveSceneChoice(reroll = false) {
 }
 
 const GAME_TITLE = '召唤进化'; // 统一主名，后续加主题只需扩展 MODE_NAMES
-const MODE_NAMES = { classic: '节奏盒子', brainrot: '山海经', minecraft: '我的世界', kun: '召唤神鲲', dragon: '召唤神龙', ultraman: '光之巨人', saintseiya: '圣斗士', ninja: '忍者乱太郎' };
-const MODE_TAGLINES = { classic: '吃小的，躲大的，一路进化到平基！', brainrot: '吃小的，躲大的，一路进化到茶壶人！', minecraft: '吃小的，躲大的，一路进化到末影龙！', kun: '开局一条鲲，进化全靠吞！', dragon: '蛇化为龙，一飞冲天！', ultraman: '吃小的，躲大的，一路进化到赛罗！', saintseiya: '吃小的，躲大的，一路进化到雅典娜！', ninja: '吃小的，躲大的，一路进化到猫丸！' };
-const MODE_ICONS = { classic: '📦', brainrot: '🌊', minecraft: '⛏️', kun: '🐋', dragon: '🐉', ultraman: '🦸', saintseiya: '🛡️', ninja: '🍡' };
+const MODE_NAMES = { classic: '节奏盒子', brainrot: '山海经', minecraft: '我的世界', kun: '召唤神鲲', dragon: '召唤神龙', ultraman: '光之巨人', saintseiya: '圣斗士', ninja: '忍者乱太郎', fruit: '召唤水果' };
+const MODE_TAGLINES = { classic: '吃小的，躲大的，一路进化到平基！', brainrot: '吃小的，躲大的，一路进化到茶壶人！', minecraft: '吃小的，躲大的，一路进化到末影龙！', kun: '开局一条鲲，进化全靠吞！', dragon: '蛇化为龙，一飞冲天！', ultraman: '吃小的，躲大的，一路进化到赛罗！', saintseiya: '吃小的，躲大的，一路进化到雅典娜！', ninja: '吃小的，躲大的，一路进化到猫丸！', fruit: '吃小的，躲大的，一路进化到荔枝王！' };
+const MODE_ICONS = { classic: '📦', brainrot: '🌊', minecraft: '⛏️', kun: '🐋', dragon: '🐉', ultraman: '🦸', saintseiya: '🛡️', ninja: '🍡', fruit: '🍎' };
 
 function updateTitle() {
   const modeName = MODE_NAMES[state.gameMode] || MODE_NAMES.classic;
@@ -4619,6 +4907,7 @@ function initModeSelector() {
   else if (state.gameMode === 'ultraman') LEVELS = ULTRAMAN_LEVELS;
   else if (state.gameMode === 'saintseiya') LEVELS = SAINTSEIYA_LEVELS;
   else if (state.gameMode === 'ninja') LEVELS = NINJA_LEVELS;
+  else if (state.gameMode === 'fruit') LEVELS = FRUIT_LEVELS;
   else LEVELS = SPRUNKI_LEVELS; // 主题与进化链同步
   const grid = document.getElementById('mode-selector');
   grid.innerHTML = '';
@@ -4631,6 +4920,7 @@ function initModeSelector() {
     { id: 'ultraman', name: '🦸 光之巨人' },
     { id: 'saintseiya', name: '🛡️ 圣斗士' },
     { id: 'ninja', name: '🍡 忍者乱太郎' },
+    { id: 'fruit', name: '🍎 召唤水果' },
   ];
   modes.forEach(m => {
     const btn = document.createElement('button');
@@ -4690,9 +4980,10 @@ function renderSkinSelector() {
   const isUltraman = state.gameMode === 'ultraman';
   const isSaintseiya = state.gameMode === 'saintseiya';
   const isNinja = state.gameMode === 'ninja';
-  const first = isBrainrot ? 'sneakerShark' : isMinecraft ? 'chicken' : isKun ? 'tadpole' : isDragon ? 'snakelet' : isUltraman ? 'pigmon' : isSaintseiya ? 'soldier' : isNinja ? 'rantaro' : 'raddy';
-  const classicBase = isBrainrot ? 'brainrot/classic/' : isMinecraft ? 'minecraft/classic/' : isKun ? 'kun/classic/' : isDragon ? 'dragon/classic/' : isUltraman ? 'ultraman/classic/' : isSaintseiya ? 'saintseiya/classic/' : isNinja ? 'ninja/classic/' : 'classic/';
-  const refreshedBase = isBrainrot ? 'brainrot/refreshed/' : isMinecraft ? 'minecraft/refreshed/' : isKun ? 'kun/refreshed/' : isDragon ? 'dragon/refreshed/' : isUltraman ? 'ultraman/refreshed/' : isSaintseiya ? 'saintseiya/refreshed/' : isNinja ? 'ninja/refreshed/' : '';
+  const isFruit = state.gameMode === 'fruit';
+  const first = isBrainrot ? 'sneakerShark' : isMinecraft ? 'chicken' : isKun ? 'tadpole' : isDragon ? 'snakelet' : isUltraman ? 'pigmon' : isSaintseiya ? 'soldier' : isNinja ? 'rantaro' : isFruit ? 'watermelon' : 'raddy';
+  const classicBase = isBrainrot ? 'brainrot/classic/' : isMinecraft ? 'minecraft/classic/' : isKun ? 'kun/classic/' : isDragon ? 'dragon/classic/' : isUltraman ? 'ultraman/classic/' : isSaintseiya ? 'saintseiya/classic/' : isNinja ? 'ninja/classic/' : isFruit ? 'fruit/classic/' : 'classic/';
+  const refreshedBase = isBrainrot ? 'brainrot/refreshed/' : isMinecraft ? 'minecraft/refreshed/' : isKun ? 'kun/refreshed/' : isDragon ? 'dragon/refreshed/' : isUltraman ? 'ultraman/refreshed/' : isSaintseiya ? 'saintseiya/refreshed/' : isNinja ? 'ninja/refreshed/' : isFruit ? 'fruit/refreshed/' : '';
   [
     { id: 'classic', name: '经典', src: `images/${classicBase}${first}.png` },
     { id: 'refreshed', name: '焕新', src: `images/${refreshedBase}${first}.png` },
@@ -4801,6 +5092,13 @@ function startGame() {
     sceneCacheKey = '';
     showToast('🍡 一路进化到猫丸！');
     unlockAchievement('ninja');
+  } else if (state.gameMode === 'fruit') {
+    // 直入召唤水果
+    LEVELS = FRUIT_LEVELS;
+    state.scene = 'fruit';
+    sceneCacheKey = '';
+    showToast('🍎 瓜田李下，一路进化到荔枝王！');
+    unlockAchievement('fruit');
   } else {
     // 节奏盒子经典模式
     LEVELS = SPRUNKI_LEVELS;
