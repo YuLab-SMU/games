@@ -382,7 +382,7 @@ html, body {
 <!-- HUD -->
 <div id="hud">
   <div class="hud-item" id="hud-level">
-    <span style="font-size:1.2rem;">📦</span>
+    <span style="font-size:1.2rem;" id="hud-mode-icon">📦</span>
     <span><span class="hud-label">等级</span> <span class="hud-level" id="level-name">瑞迪</span></span>
   </div>
   <div class="hud-item" id="hud-score">
@@ -587,6 +587,64 @@ function preloadMinecraftImages() {
 }
 preloadMinecraftImages();
 
+const KUN_IMAGE_SETS = { classic: {}, refreshed: {} };
+// 经典 PNG 已在切片时置透明，直接加载使用（无需 JS 去背景）
+function preloadKunImages() {
+  const ROLES = ['tadpole','redfin','koi','eel','swordfish','shark','octopus','squid','orca','whale','tortoise','kraken','leviathan','jiao','tuntian','kun','shenkun','peng'];
+  ROLES.forEach(role => {
+    const img = new Image();
+    img.src = 'images/kun/classic/' + role + '.png';
+    KUN_IMAGE_SETS.classic[role] = img;
+  });
+}
+preloadKunImages();
+
+const DRAGON_IMAGE_SETS = { classic: {}, refreshed: {} };
+// 经典 PNG 已在切片时置透明，直接加载使用（无需 JS 去背景）
+function preloadDragonImages() {
+  const ROLES = ['snakelet','greensnake','python','cobra','viper','flamesnake','jadesnake','gemsnake','spiritsnake','jiao','chi','qiu','pan','ying','qinglong','zhulong','shenlong','jinlong'];
+  ROLES.forEach(role => {
+    const img = new Image();
+    img.src = 'images/dragon/classic/' + role + '.png';
+    DRAGON_IMAGE_SETS.classic[role] = img;
+  });
+}
+preloadDragonImages();
+
+const ULTRAMAN_IMAGE_SETS = { classic: {}, refreshed: {} };
+// 经典 PNG 已在切片时置透明，直接加载使用（无需 JS 去背景）
+function preloadUltramanImages() {
+  const ROLES = ['pigmon','miclas','windom','eleking','gomora','tyrant','bemular','zetton','baltan','darktiga','ultraman','seven','taro','leo','tiga','dyna','mebius','zero'];
+  ROLES.forEach(role => {
+    const img = new Image();
+    img.src = 'images/ultraman/classic/' + role + '.png';
+    ULTRAMAN_IMAGE_SETS.classic[role] = img;
+  });
+}
+preloadUltramanImages();
+
+const SAINTSEIYA_IMAGE_SETS = { classic: {}, refreshed: {} };
+function preloadSaintseiyaImages() {
+  const ROLES = ['soldier','pegasus','shiryu','hyoga','shun','ikki','eagle','lyra','lizard','aries','taurus','gemini','cancer','leoaioria','virgo','scorpio','sagittarius','athena'];
+  ROLES.forEach(role => {
+    const img = new Image();
+    img.src = 'images/saintseiya/classic/' + role + '.png';
+    SAINTSEIYA_IMAGE_SETS.classic[role] = img;
+  });
+}
+preloadSaintseiyaImages();
+
+const NINJA_IMAGE_SETS = { classic: {}, refreshed: {} };
+function preloadNinjaImages() {
+  const ROLES = ['rantaro','kirimaru','shinbe','year2','year3','year4','year5','year6','rikichi','doi','yamada','ando','kyojin','headmaster','kuroki','kurokikaze','nyamaro','nyamaropower'];
+  ROLES.forEach(role => {
+    const img = new Image();
+    img.src = 'images/ninja/classic/' + role + '.png';
+    NINJA_IMAGE_SETS.classic[role] = img;
+  });
+}
+preloadNinjaImages();
+
 // ==================== POLYFILLS ====================
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -711,6 +769,117 @@ const MINECRAFT_LEVELS = [
   { id: 16, name: '末影龙', color: '#3A2E5E', dark: '#1D1630', accent: '#B388FF', size: 92, role: 'enderDragon' },
 ];
 
+// 神鲲主题 - 海洋生物 → 神话鲲鹏进化链（开局一条鲲，进化全靠吞）
+// 颜色：color 主体色, dark 深色/阴影, accent 强调色
+const KUN_LEVELS = [
+  { id: 0,  name: '幼鲲',   color: '#7EC8C4', dark: '#3E7E7A', accent: '#D0F0EE', size: 28, role: 'tadpole' },
+  { id: 1,  name: '赤鳞鱼', color: '#E2584A', dark: '#A03126', accent: '#FFD3C9', size: 31, role: 'redfin' },
+  { id: 2,  name: '锦鲤',   color: '#F2764B', dark: '#B54E28', accent: '#FFE0C9', size: 34, role: 'koi' },
+  { id: 3,  name: '电鳗',   color: '#3D5A99', dark: '#24375F', accent: '#FFE14D', size: 38, role: 'eel' },
+  { id: 4,  name: '剑鱼',   color: '#6FA8C7', dark: '#3D6A85', accent: '#D8ECF7', size: 42, role: 'swordfish' },
+  { id: 5,  name: '食人鲨', color: '#6C8FA7', dark: '#3D5A70', accent: '#F2F2F2', size: 46, role: 'shark' },
+  { id: 6,  name: '八爪章鱼', color: '#A05E8C', dark: '#6B3A5C', accent: '#F2C9E2', size: 50, role: 'octopus' },
+  { id: 7,  name: '大王乌贼', color: '#7B5EA7', dark: '#4E3A6E', accent: '#D8C7F0', size: 54, role: 'squid' },
+  { id: 8,  name: '虎鲸',   color: '#3A4550', dark: '#1F272E', accent: '#F2F5F7', size: 58, role: 'orca' },
+  { id: 9,  name: '蓝鲸',   color: '#4A6FB5', dark: '#2B4478', accent: '#B8D0F0', size: 62, role: 'whale' },
+  { id: 10, name: '玄龟',   color: '#3E7C59', dark: '#24503A', accent: '#C9E8D4', size: 66, role: 'tortoise' },
+  { id: 11, name: '北海巨妖', color: '#2F6B5F', dark: '#1B423B', accent: '#9AD8C8', size: 70, role: 'kraken' },
+  { id: 12, name: '利维坦', color: '#1E3A5F', dark: '#12223C', accent: '#7FA8D8', size: 74, role: 'leviathan' },
+  { id: 13, name: '蛟龙',   color: '#2E6E6E', dark: '#1B4545', accent: '#9AD8D8', size: 78, role: 'jiao' },
+  { id: 14, name: '吞天兽', color: '#2B2E4A', dark: '#191B2E', accent: '#B388FF', size: 82, role: 'tuntian' },
+  { id: 15, name: '北冥鲲', color: '#1F2438', dark: '#12151F', accent: '#7F8CD8', size: 88, role: 'kun' },
+  { id: 16, name: '神鲲',   color: '#6C5CE7', dark: '#4434A8', accent: '#FFD166', size: 94, role: 'shenkun' },
+  { id: 17, name: '神鲲·鹏', color: '#B388FF', dark: '#6C4E9E', accent: '#FFD166', size: 102, role: 'peng' },
+];
+
+// 神龙主题 - 蛇 → 龙进化链（小蛇吃成五爪金龙）
+const DRAGON_LEVELS = [
+  { id: 0,  name: '小蛇',   color: '#6BBF59', dark: '#3E7A33', accent: '#C9E8BF', size: 28, role: 'snakelet' },
+  { id: 1,  name: '青蛇',   color: '#4CAF50', dark: '#2E7D32', accent: '#B8E6B0', size: 31, role: 'greensnake' },
+  { id: 2,  name: '蟒蛇',   color: '#7C6B4F', dark: '#4E4230', accent: '#D8C9A8', size: 34, role: 'python' },
+  { id: 3,  name: '眼镜王蛇', color: '#5A6B2E', dark: '#37421C', accent: '#E8D8A0', size: 38, role: 'cobra' },
+  { id: 4,  name: '蝰蛇',   color: '#8C5A3C', dark: '#5A3825', accent: '#E0B88C', size: 42, role: 'viper' },
+  { id: 5,  name: '赤炎蛇', color: '#D95A3C', dark: '#8C3823', accent: '#FFC9A0', size: 46, role: 'flamesnake' },
+  { id: 6,  name: '碧鳞蛇', color: '#2FA48F', dark: '#1C6B5E', accent: '#A8E8D8', size: 50, role: 'jadesnake' },
+  { id: 7,  name: '紫晶蛇', color: '#8C5AC8', dark: '#5A388C', accent: '#DCC8F0', size: 54, role: 'gemsnake' },
+  { id: 8,  name: '灵蛇',   color: '#3A8FD0', dark: '#23577E', accent: '#C8E0F8', size: 58, role: 'spiritsnake' },
+  { id: 9,  name: '蛟',     color: '#2E8C5A', dark: '#1B5A38', accent: '#A8E8C8', size: 62, role: 'jiao' },
+  { id: 10, name: '螭龙',   color: '#3A9C8C', dark: '#23685C', accent: '#B0E8DC', size: 66, role: 'chi' },
+  { id: 11, name: '虬龙',   color: '#3A7C9C', dark: '#234E66', accent: '#C8E0F0', size: 70, role: 'qiu' },
+  { id: 12, name: '蟠龙',   color: '#5A8C3A', dark: '#385A23', accent: '#D8E8B0', size: 74, role: 'pan' },
+  { id: 13, name: '应龙',   color: '#D8A02C', dark: '#8C661C', accent: '#FFE8A8', size: 78, role: 'ying' },
+  { id: 14, name: '青龙',   color: '#2E9C6B', dark: '#1B5A3E', accent: '#A8E8CC', size: 82, role: 'qinglong' },
+  { id: 15, name: '烛龙',   color: '#D85A2C', dark: '#8C3820', accent: '#FFC9A0', size: 86, role: 'zhulong' },
+  { id: 16, name: '神龙',   color: '#5A6BD8', dark: '#3A46A8', accent: '#FFD166', size: 92, role: 'shenlong' },
+  { id: 17, name: '五爪金龙', color: '#E8B02C', dark: '#A87A1C', accent: '#FFF0B0', size: 100, role: 'jinlong' },
+];
+
+// 奥特曼主题 - 怪兽 → 光之巨人进化链（一路进化到赛罗）
+const ULTRAMAN_LEVELS = [
+  { id: 0,  name: '皮古蒙', color: '#C98A5B', dark: '#8C5A38', accent: '#F0D8B8', size: 28, role: 'pigmon' },
+  { id: 1,  name: '米克拉斯', color: '#E8C94A', dark: '#A87A1C', accent: '#FFF0B0', size: 31, role: 'miclas' },
+  { id: 2,  name: '乌英达姆', color: '#9FB8C9', dark: '#5A6B7E', accent: '#D8E8F0', size: 34, role: 'windom' },
+  { id: 3,  name: '艾雷王', color: '#E8D84A', dark: '#A88C1C', accent: '#FFF0B0', size: 38, role: 'eleking' },
+  { id: 4,  name: '哥莫拉', color: '#A8764A', dark: '#6B4E2E', accent: '#E0C8A0', size: 42, role: 'gomora' },
+  { id: 5,  name: '泰兰特', color: '#B85A4A', dark: '#7A3A2E', accent: '#F0B8A8', size: 46, role: 'tyrant' },
+  { id: 6,  name: '贝蒙斯坦', color: '#8C6BB8', dark: '#5A3A7A', accent: '#D8C8F0', size: 50, role: 'bemular' },
+  { id: 7,  name: '杰顿', color: '#3A3A4A', dark: '#1F1F2E', accent: '#F0F0F0', size: 54, role: 'zetton' },
+  { id: 8,  name: '巴尔坦星人', color: '#B8B8C9', dark: '#6E6E7E', accent: '#F0F0F2', size: 58, role: 'baltan' },
+  { id: 9,  name: '黑暗迪迦', color: '#4A4A6E', dark: '#2E2E4A', accent: '#4AE8E8', size: 62, role: 'darktiga' },
+  { id: 10, name: '初代奥特曼', color: '#C94A4A', dark: '#8C2E2E', accent: '#F0F0F2', size: 66, role: 'ultraman' },
+  { id: 11, name: '赛文',   color: '#B84A4A', dark: '#7A2E2E', accent: '#D8E8F0', size: 70, role: 'seven' },
+  { id: 12, name: '泰罗',   color: '#C94A4A', dark: '#8C2E2E', accent: '#E8C84A', size: 74, role: 'taro' },
+  { id: 13, name: '雷欧',   color: '#C94A4A', dark: '#8C2E2E', accent: '#F0C9A0', size: 78, role: 'leo' },
+  { id: 14, name: '迪迦',   color: '#B85A9C', dark: '#7A3A6B', accent: '#E8D8F0', size: 82, role: 'tiga' },
+  { id: 15, name: '戴拿',   color: '#C94A4A', dark: '#8C2E2E', accent: '#5AB8E8', size: 86, role: 'dyna' },
+  { id: 16, name: '梦比优斯', color: '#C94A4A', dark: '#8C2E2E', accent: '#E8E8F0', size: 92, role: 'mebius' },
+  { id: 17, name: '赛罗',   color: '#5A8CD8', dark: '#3A5AA8', accent: '#F0E84A', size: 100, role: 'zero' },
+];
+
+// 圣斗士主题 - 杂兵 → 青铜 → 黄金 → 雅典娜进化链
+const SAINTSEIYA_LEVELS = [
+  { id: 0,  name: '杂兵',   color: '#8C8C99', dark: '#5A5A66', accent: '#D8D8E0', size: 28, role: 'soldier' },
+  { id: 1,  name: '天马·星矢', color: '#B87A3A', dark: '#7A4E1C', accent: '#F0D8A8', size: 32, role: 'pegasus' },
+  { id: 2,  name: '天龙·紫龙', color: '#B87A3A', dark: '#7A4E1C', accent: '#B8E8C8', size: 36, role: 'shiryu' },
+  { id: 3,  name: '白鸟·冰河', color: '#6B9CC9', dark: '#3A6B8C', accent: '#D8F0F0', size: 40, role: 'hyoga' },
+  { id: 4,  name: '仙女·瞬', color: '#A86BA8', dark: '#6B3A6E', accent: '#F0D8E8', size: 44, role: 'shun' },
+  { id: 5,  name: '凤凰·一辉', color: '#C97A3A', dark: '#8C4E1C', accent: '#F0B84A', size: 48, role: 'ikki' },
+  { id: 6,  name: '天鹰·魔铃', color: '#B8B8C9', dark: '#6E6E7E', accent: '#E8E8F0', size: 52, role: 'eagle' },
+  { id: 7,  name: '天琴·奥路菲', color: '#B8B8C9', dark: '#6E6E7E', accent: '#E8D8F0', size: 56, role: 'lyra' },
+  { id: 8,  name: '蜥蜴·美斯狄', color: '#B8B8C9', dark: '#6E6E7E', accent: '#C8E8E0', size: 60, role: 'lizard' },
+  { id: 9,  name: '白羊·穆', color: '#E8C84A', dark: '#A88C1C', accent: '#FFF0B0', size: 64, role: 'aries' },
+  { id: 10, name: '金牛·阿鲁迪巴', color: '#E8C84A', dark: '#A88C1C', accent: '#F0D8A8', size: 68, role: 'taurus' },
+  { id: 11, name: '双子·撒加', color: '#E8C84A', dark: '#A88C1C', accent: '#B8C8E8', size: 72, role: 'gemini' },
+  { id: 12, name: '巨蟹·迪斯马斯克', color: '#E8C84A', dark: '#A88C1C', accent: '#E8B8B8', size: 76, role: 'cancer' },
+  { id: 13, name: '狮子·艾奥里亚', color: '#E8C84A', dark: '#A88C1C', accent: '#F0E0A8', size: 80, role: 'leoaioria' },
+  { id: 14, name: '处女·沙加', color: '#E8C84A', dark: '#A88C1C', accent: '#E8D8F0', size: 84, role: 'virgo' },
+  { id: 15, name: '天蝎·米罗', color: '#E8C84A', dark: '#A88C1C', accent: '#F0A8B8', size: 88, role: 'scorpio' },
+  { id: 16, name: '射手·艾俄洛斯', color: '#E8C84A', dark: '#A88C1C', accent: '#C8E8F0', size: 94, role: 'sagittarius' },
+  { id: 17, name: '雅典娜', color: '#F0E8D8', dark: '#A89C7A', accent: '#E8C84A', size: 102, role: 'athena' },
+];
+
+// 忍者乱太郎主题 - 一年级 → 老师 → 黑木的猫进化链
+const NINJA_LEVELS = [
+  { id: 0,  name: '乱太郎', color: '#D84A4A', dark: '#8C2E2E', accent: '#F0B8A8', size: 28, role: 'rantaro' },
+  { id: 1,  name: '雾丸',   color: '#7A5AB8', dark: '#4E3A7A', accent: '#D8C8F0', size: 31, role: 'kirimaru' },
+  { id: 2,  name: '新兵卫', color: '#E89C3A', dark: '#A86B1C', accent: '#FFE0B0', size: 34, role: 'shinbe' },
+  { id: 3,  name: '二年级生', color: '#5A9C5A', dark: '#3A6B3A', accent: '#C8E8C8', size: 38, role: 'year2' },
+  { id: 4,  name: '三年级生', color: '#5A8CC9', dark: '#3A5A8C', accent: '#C8E0F0', size: 42, role: 'year3' },
+  { id: 5,  name: '四年级生', color: '#4AC9C9', dark: '#2E8C8C', accent: '#C8F0F0', size: 46, role: 'year4' },
+  { id: 6,  name: '五年级生', color: '#4AC98C', dark: '#2E8C5A', accent: '#C8F0E0', size: 50, role: 'year5' },
+  { id: 7,  name: '六年级生', color: '#3A5A8C', dark: '#22365A', accent: '#C8D8F0', size: 54, role: 'year6' },
+  { id: 8,  name: '精英·利吉', color: '#5A7A3A', dark: '#3A4E1C', accent: '#D8E8B8', size: 58, role: 'rikichi' },
+  { id: 9,  name: '土井老师', color: '#B84A4A', dark: '#7A2E2E', accent: '#F0D8D8', size: 62, role: 'doi' },
+  { id: 10, name: '山田老师', color: '#8C6B3A', dark: '#5A4220', accent: '#F0E0C8', size: 66, role: 'yamada' },
+  { id: 11, name: '安藤老师', color: '#4A6B8C', dark: '#2E4666', accent: '#C8E0F0', size: 70, role: 'ando' },
+  { id: 12, name: '巨汉忍者', color: '#7A4A2E', dark: '#4E2E1C', accent: '#E0C8B0', size: 74, role: 'kyojin' },
+  { id: 13, name: '学园长', color: '#6B5A8C', dark: '#42364E', accent: '#D8C8F0', size: 78, role: 'headmaster' },
+  { id: 14, name: '黑木老师', color: '#2E2E3A', dark: '#1A1A23', accent: '#C8C8D8', size: 82, role: 'kuroki' },
+  { id: 15, name: '黑木·疾风', color: '#2E3A5A', dark: '#1A2336', accent: '#B8D8F0', size: 88, role: 'kurokikaze' },
+  { id: 16, name: '猫丸·见习', color: '#3A3A3A', dark: '#1F1F1F', accent: '#F0F0F0', size: 92, role: 'nyamaro' },
+  { id: 17, name: '猫丸·觉醒', color: '#4A4A4A', dark: '#2E2E2E', accent: '#FFE84A', size: 100, role: 'nyamaropower' },
+];
+
 let LEVELS = SPRUNKI_LEVELS;
 
 const SCENES = [
@@ -747,6 +916,11 @@ const SCENES = [
   },
   { id: 'brainrot', name: '🗽 山海异境', bg: '#111827', stageOnly: true, brainrotCity: true },
   { id: 'minecraft', name: '⛏️ 我的世界', bg: '#87CEEB', stageOnly: true, minecraft: true },
+  { id: 'kun', name: '🌊 北冥之海', bg: '#0A1E3F', stageOnly: true, kun: true },
+  { id: 'dragon', name: '☁️ 凌霄云海', bg: '#1B2A52', stageOnly: true, dragon: true },
+  { id: 'ultraman', name: '✨ 光之国度', bg: '#1A2E4A', stageOnly: true, ultraman: true },
+  { id: 'saintseiya', name: '🏛️ 圣域', bg: '#2A2440', stageOnly: true, saintseiya: true },
+  { id: 'ninja', name: '🏯 忍术学园', bg: '#2E3A2E', stageOnly: true, ninja: true },
 ];
 
 const PLAYABLE_SCENES = SCENES.filter(scene => !scene.stageOnly);
@@ -829,7 +1003,7 @@ const state = {
   gameMode: 'classic', // 'classic' | 'brainrot'
   difficulty: 'normal',
   skin: 'classic',
-  skinByMode: { classic: 'classic', brainrot: 'classic', minecraft: 'classic' }, // 每个主题独立记忆皮肤
+  skinByMode: { classic: 'classic', brainrot: 'classic', minecraft: 'classic', kun: 'classic', dragon: 'classic', ultraman: 'classic', saintseiya: 'classic', ninja: 'classic' }, // 每个主题独立记忆皮肤
   squadMode: 'hunt', // 默认狩猎模式
   playerLevel: 0,
   score: 0,
@@ -1220,6 +1394,144 @@ function drawStaticScene(sc) {
     // 泥土块纹理
     g.fillStyle = 'rgba(0,0,0,0.08)';
     for (let i = 0; i < 70; i++) g.fillRect(rand() * W, grassTop + 26 + rand() * (H - grassTop - 30), 8 + rand() * 10, 8 + rand() * 10);
+  } else if (sc.id === 'kun') {
+    // 神鲲：北冥深海，鲲鹏扶摇
+    fillVerticalGradient(g, '#0A1E3F', '#14456E');
+    const horizon = H * 0.7;
+    // 海面光斑
+    g.fillStyle = 'rgba(160,220,255,.10)';
+    for (let i = 0; i < 40; i++) g.beginPath(), g.arc(rand() * W, rand() * horizon * 0.8, 8 + rand() * 30, 0, Math.PI * 2), g.fill();
+    // 海底光柱
+    for (let i = 0; i < 6; i++) {
+      const x = (i + 0.5) * W / 6, sway = (rand() - 0.5) * 80;
+      const ray = g.createLinearGradient(x, 0, x + sway, H);
+      ray.addColorStop(0, 'rgba(140,210,255,.14)'); ray.addColorStop(1, 'rgba(140,210,255,0)');
+      g.fillStyle = ray; g.beginPath(); g.moveTo(x - 48, 0); g.lineTo(x + 48, 0); g.lineTo(x + sway + 220, H); g.lineTo(x + sway - 220, H); g.fill();
+    }
+    // 上升气泡
+    for (let i = 0; i < 42; i++) {
+      const bx = rand() * W, by = H * (0.08 + rand() * 0.86), br = 2 + rand() * 5;
+      g.fillStyle = `rgba(200,230,255,${0.18 + rand() * 0.4})`;
+      g.beginPath(); g.arc(bx, by, br, 0, Math.PI * 2); g.fill();
+    }
+    // 海草
+    for (let i = 0; i < 24; i++) {
+      const x = rand() * W, h = 90 + rand() * 220;
+      g.strokeStyle = ['rgba(46,150,130,.55)','rgba(60,180,140,.5)','rgba(90,190,160,.45)'][Math.floor(rand() * 3)];
+      g.lineWidth = 8 + rand() * 10;
+      g.beginPath(); g.moveTo(x, H);
+      g.quadraticCurveTo(x + 42, H - h * .55, x + (rand() - .5) * 70, H - h); g.stroke();
+    }
+    // 海床
+    g.fillStyle = '#0E4C57'; g.fillRect(0, H - 56, W, 56);
+    // 远处巨鲲剪影（北冥之鲲）
+    g.fillStyle = 'rgba(12,34,74,.55)';
+    g.beginPath(); g.ellipse(W * 0.74, H * 0.20, 150, 40, -0.08, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(W * 0.74 + 105, H * 0.19, 62, 20, 0.24, 0, Math.PI * 2); g.fill();
+  } else if (sc.id === 'dragon') {
+    // 神龙：凌霄云海，云雾缭绕
+    fillVerticalGradient(g, '#1B2A52', '#3A4E8C');
+    // 金色霞光
+    const sun = g.createRadialGradient(W * .5, H * .2, 20, W * .5, H * .2, 420);
+    sun.addColorStop(0, 'rgba(255,214,110,.5)'); sun.addColorStop(1, 'rgba(255,214,110,0)');
+    g.fillStyle = sun; g.fillRect(0, 0, W, H);
+    // 云海（多层椭圆云团）
+    for (let i = 0; i < 26; i++) {
+      const cx = rand() * W, cy = H * (0.12 + rand() * 0.72), cw = 90 + rand() * 200;
+      g.fillStyle = `rgba(226,236,255,${0.06 + rand() * 0.12})`;
+      g.beginPath(); g.ellipse(cx, cy, cw, cw * 0.26, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(cx + cw * 0.35, cy - cw * 0.12, cw * 0.5, cw * 0.14, 0, 0, Math.PI * 2); g.fill();
+    }
+    // 底部翻滚云层
+    for (let i = 0; i < 16; i++) {
+      const cx = rand() * W, cw = 140 + rand() * 260;
+      g.fillStyle = `rgba(210,224,252,${0.1 + rand() * 0.16})`;
+      g.beginPath(); g.ellipse(cx, H - 30 + rand() * 20, cw, 30 + rand() * 30, 0, 0, Math.PI * 2); g.fill();
+    }
+    // 远处远山剪影
+    for (let i = 0; i < 6; i++) {
+      const mx = rand() * W, mw = 240 + rand() * 280, mh = 60 + rand() * 120;
+      g.fillStyle = `rgba(16,26,58,${0.35 + rand() * 0.3})`;
+      g.beginPath(); g.moveTo(mx - mw / 2, H);
+      g.quadraticCurveTo(mx, H - mh, mx + mw / 2, H); g.fill();
+    }
+    // 金色神龙剪影（远处云海中盘旋）
+    g.strokeStyle = 'rgba(255,214,110,.35)'; g.lineWidth = 7; g.lineCap = 'round';
+    g.beginPath();
+    for (let t = 0; t <= 1; t += 0.03) {
+      const x = W * 0.72 + Math.sin(t * Math.PI * 2) * 190;
+      const y = H * 0.2 + Math.cos(t * Math.PI * 3) * 46;
+      if (t === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
+    g.fillStyle = 'rgba(255,214,110,.4)';
+    g.beginPath(); g.arc(W * 0.72 + 190, H * 0.2, 16, 0, Math.PI * 2); g.fill();
+  } else if (sc.id === 'ultraman') {
+    // 光之国度：城市夜景 + 光束
+    fillVerticalGradient(g, '#0E1E33', '#2A4A6E');
+    // 城市剪影
+    for (let i = 0; i < 14; i++) {
+      const bx = rand() * W, bw = 30 + rand() * 70, bh = 30 + rand() * 120;
+      g.fillStyle = `rgba(8,14,26,${0.5 + rand() * 0.4})`;
+      g.fillRect(bx, H - bh, bw, bh);
+      if (rand() < .3) { g.fillStyle = `rgba(255,224,130,${0.25 + rand() * 0.3})`; g.fillRect(bx + 8, H - bh + 6, 4, 5); }
+    }
+    // 城市灯光
+    for (let i = 0; i < 30; i++) {
+      g.fillStyle = `rgba(255,224,130,${0.15 + rand() * 0.4})`;
+      g.fillRect(rand() * W, H - 10 - rand() * 90, 3, 3);
+    }
+    // 天空光束
+    for (let i = 0; i < 4; i++) {
+      const bx = rand() * W;
+      const beam = g.createLinearGradient(bx, 0, bx, H * 0.6);
+      beam.addColorStop(0, `rgba(160,220,255,${0.12 + rand() * 0.15})`);
+      beam.addColorStop(1, 'rgba(160,220,255,0)');
+      g.fillStyle = beam;
+      g.beginPath(); g.moveTo(bx, 0); g.lineTo(bx + 60 + rand() * 80, H * 0.6); g.lineTo(bx - 40, H * 0.6); g.closePath(); g.fill();
+    }
+    // 远处巨人身形剪影
+    g.fillStyle = 'rgba(120,190,255,.14)';
+    g.beginPath(); g.ellipse(W * 0.72, H * 0.16, 70, 160, 0, 0, Math.PI * 2); g.fill();
+  } else if (sc.id === 'saintseiya') {
+    // 圣域：帕特农神庙剪影 + 星夜
+    fillVerticalGradient(g, '#151030', '#3A2A5E');
+    // 星
+    for (let i = 0; i < 60; i++) {
+      const sx = rand() * W, sy = rand() * H * 0.6;
+      g.fillStyle = `rgba(255,240,200,${0.2 + rand() * 0.6})`;
+      g.beginPath(); g.arc(sx, sy, 1 + rand() * 1.4, 0, Math.PI * 2); g.fill();
+    }
+    // 神庙柱廊剪影
+    const px = W * 0.5, pw = 300;
+    for (let i = 0; i < 8; i++) {
+      g.fillStyle = 'rgba(12,6,24,.75)';
+      const cx = px - pw / 2 + (i + 0.5) * (pw / 8);
+      g.fillRect(cx - 12, H - 150, 24, 130);
+      g.fillStyle = 'rgba(20,12,38,.85)';
+      g.fillRect(cx - 34, H - 28, 68, 10);
+    }
+    g.fillStyle = 'rgba(12,6,24,.8)';
+    g.beginPath(); g.moveTo(px - pw / 2, H - 150); g.lineTo(px, H - 200); g.lineTo(px + pw / 2, H - 150); g.closePath(); g.fill();
+  } else if (sc.id === 'ninja') {
+    // 忍术学园：山间学堂 + 樱花
+    fillVerticalGradient(g, '#2A3A2E', '#4E6B4E');
+    // 远山
+    for (let i = 0; i < 5; i++) {
+      const mx = rand() * W, mw = 220 + rand() * 240, mh = 90 + rand() * 140;
+      g.fillStyle = `rgba(20,34,22,${0.4 + rand() * 0.35})`;
+      g.beginPath(); g.moveTo(mx - mw / 2, H);
+      g.quadraticCurveTo(mx, H - mh, mx + mw / 2, H); g.fill();
+    }
+    // 学园屋顶剪影
+    g.fillStyle = 'rgba(16,26,16,.8)';
+    g.beginPath(); g.moveTo(W * 0.5 - 140, H - 30); g.lineTo(W * 0.5 - 90, H - 80); g.lineTo(W * 0.5 - 40, H - 30); g.lineTo(W * 0.5 + 20, H - 30); g.lineTo(W * 0.5 + 70, H - 95); g.lineTo(W * 0.5 + 140, H - 30); g.closePath(); g.fill();
+    g.fillRect(W * 0.5 - 30, H - 30, 60, 10);
+    // 飘落樱花
+    for (let i = 0; i < 24; i++) {
+      g.fillStyle = `rgba(255,190,210,${0.3 + rand() * 0.5})`;
+      g.beginPath(); g.arc(rand() * W, rand() * H, 2 + rand() * 2.5, 0, Math.PI * 2); g.fill();
+    }
   } else {
     fillVerticalGradient(g, '#f49ac3', '#91d8ee');
     const bands=['rgba(255,206,119,.72)','rgba(194,133,240,.46)','rgba(255,150,192,.48)','rgba(145,220,238,.48)'];
@@ -1257,6 +1569,11 @@ function drawSceneBg(sc, camX, camY, w, h) {
       candy: '255,160,210',
       brainrot: '255,209,102',
       minecraft: '255,224,130',
+      kun: '120,220,255',
+      dragon: '255,224,130',
+      ultraman: '160,220,255',
+      saintseiya: '255,224,130',
+      ninja: '150,230,170',
     };
     ctx.fillStyle = `rgba(${pulseColors[sc.id]},${beatClock.pulse * 0.035})`;
     ctx.fillRect(vl, vt, w, h);
@@ -2357,8 +2674,8 @@ function updateHUD() {
   document.getElementById('progress-fill').style.width = pct + '%';
   document.getElementById('progress-text').textContent = state.playerLevel >= LEVELS.length - 1 ? '完成' : `${Math.min(sameLevel, needed)}/${needed}`;
   
-  document.getElementById('prev-emoji').textContent = '📦';
-  document.getElementById('next-emoji').textContent = state.playerLevel < LEVELS.length - 1 ? '📦' : '🏆';
+  document.getElementById('prev-emoji').textContent = MODE_ICONS[state.gameMode] || '📦';
+  document.getElementById('next-emoji').textContent = state.playerLevel < LEVELS.length - 1 ? (MODE_ICONS[state.gameMode] || '📦') : '🏆';
   
   // Gratitude glow on progress bar
   const progressWrap = document.getElementById('progress-wrap');
@@ -2977,6 +3294,774 @@ function drawMinecraftCharacter(cx, cy, char, bob) {
   ctx.restore();
 }
 
+// --- 神鲲主题手绘（焕新皮肤 + 经典缺图兜底）：海洋生物 → 神话鲲鹏 ---
+function drawKunCharacter(cx, cy, char, bob) {
+  const scale = char.size / 50;
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(scale, scale);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = char.dark;
+
+  const eye = (x, y, r = 4) => {
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#171722'; ctx.beginPath(); ctx.arc(x + 1, y, r * .55, 0, Math.PI * 2); ctx.fill();
+  };
+  const fin = (x, y, dx, dy, color) => {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx, y + dy); ctx.lineTo(x + dx * .55, y - dy * .4); ctx.closePath(); ctx.fill(); ctx.stroke();
+  };
+  const limb = (x1, y1, x2, y2, color = char.dark, width = 6) => {
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  };
+  const tentacle = (x, y, len, sway, color) => {
+    ctx.strokeStyle = color; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x + sway, y + len * .55, x - sway * .6, y + len);
+    ctx.stroke();
+  };
+  const body = (rx, ry, color = char.color) => {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  };
+
+  switch (char.role) {
+    case 'tadpole': // 幼鲲：圆头 + 细尾
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.ellipse(-5, 1, 23, 17, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(16, 4); ctx.quadraticCurveTo(34, 14, 42, -8); ctx.stroke();
+      eye(7, -5, 4);
+      break;
+    case 'redfin': // 赤鳞鱼
+      body(30, 16);
+      fin(-29, -2, -20, -13, char.color); fin(28, -4, 20, -13, char.dark);
+      ctx.beginPath(); ctx.moveTo(-2, -13); ctx.quadraticCurveTo(3, -28, 13, -13); ctx.closePath(); ctx.fillStyle = char.dark; ctx.fill(); ctx.stroke();
+      eye(13, -5, 3.5);
+      break;
+    case 'koi': // 锦鲤：飘逸大尾
+      body(30, 16);
+      ctx.beginPath(); ctx.moveTo(-30, 0); ctx.quadraticCurveTo(-46, -16, -40, 8); ctx.quadraticCurveTo(-46, 22, -30, 6); ctx.closePath(); ctx.fillStyle = char.color; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-2, -13); ctx.quadraticCurveTo(4, -29, 14, -13); ctx.closePath(); ctx.fillStyle = char.dark; ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(-4, 2, 11, 8, 0, 0, Math.PI * 2); ctx.fill();
+      eye(13, -5, 3.5);
+      break;
+    case 'eel': // 电鳗：S 形带电
+      ctx.strokeStyle = char.color; ctx.lineWidth = 19; ctx.beginPath(); ctx.moveTo(-30, 13); ctx.quadraticCurveTo(0, -20, 30, 8); ctx.stroke();
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(-22, -8); ctx.lineTo(-14, -24); ctx.moveTo(2, -10); ctx.lineTo(10, -26); ctx.moveTo(26, -9); ctx.lineTo(34, -25); ctx.stroke();
+      eye(-19, 0, 4);
+      break;
+    case 'swordfish': // 剑鱼
+      body(28, 14);
+      ctx.beginPath(); ctx.moveTo(28, 0); ctx.lineTo(52, -5); ctx.lineTo(28, 5); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-2, -11); ctx.quadraticCurveTo(5, -32, 18, -17); ctx.closePath(); ctx.fillStyle = char.dark; ctx.fill(); ctx.stroke();
+      fin(-26, -3, -18, -12, char.color);
+      eye(9, -4, 3.5);
+      break;
+    case 'shark': // 食人鲨
+      body(30, 17);
+      ctx.beginPath(); ctx.moveTo(5, -11); ctx.lineTo(13, -34); ctx.lineTo(22, -12); ctx.closePath(); ctx.fill(); ctx.stroke();
+      fin(-29, -2, -21, -13, char.color);
+      eye(14, -6, 4);
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(-10, 9); ctx.lineTo(8, 7); ctx.lineTo(4, 15); ctx.lineTo(0, 12); ctx.lineTo(-5, 15); ctx.closePath(); ctx.fill();
+      break;
+    case 'octopus': // 八爪章鱼
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.arc(0, -6, 21, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      for (let i = -3; i <= 3; i++) tentacle(i * 8, 13, 25, i * 4 + 2, char.color);
+      eye(-8, -8, 4); eye(8, -8, 4);
+      break;
+    case 'squid': // 大王乌贼
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.ellipse(0, -4, 17, 24, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-5, -26); ctx.quadraticCurveTo(-2, -44, -11, -50); ctx.quadraticCurveTo(1, -46, 9, -52); ctx.quadraticCurveTo(3, -40, 8, -26); ctx.closePath(); ctx.fill(); ctx.stroke();
+      for (let i = -2; i <= 2; i++) tentacle(i * 6.5, 16, 30, i * 5 + 3, char.dark);
+      eye(-6, -7, 3.5); eye(6, -7, 3.5);
+      break;
+    case 'orca': // 虎鲸
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.ellipse(0, 0, 32, 18, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f2f5f7'; ctx.beginPath(); ctx.ellipse(2, 4, 14, 11, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(3, -10); ctx.lineTo(10, -34); ctx.lineTo(18, -11); ctx.closePath(); ctx.fill(); ctx.stroke();
+      fin(-31, 3, -22, -13, char.color);
+      eye(16, -6, 3.5);
+      break;
+    case 'whale': // 蓝鲸
+      body(34, 21, char.color);
+      fin(-33, 7, -24, -15, char.color);
+      ctx.fillStyle = '#eaf2fb'; ctx.beginPath(); ctx.ellipse(-7, 11, 12, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(2, -16); ctx.quadraticCurveTo(4, -40, 13, -45); ctx.quadraticCurveTo(3, -42, -3, -51); ctx.stroke();
+      eye(13, -7, 3.5);
+      break;
+    case 'tortoise': // 玄龟
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.ellipse(0, 1, 29, 23, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, -21); ctx.lineTo(0, 23); ctx.moveTo(-24, 1); ctx.lineTo(24, 1); ctx.moveTo(-17, -12); ctx.lineTo(17, 15); ctx.moveTo(17, -12); ctx.lineTo(-17, 15); ctx.stroke();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(26, -2); ctx.lineTo(44, -12); ctx.stroke();
+      eye(31, -9, 3.5);
+      limb(-19, 21, -26, 40); limb(19, 21, 26, 40);
+      break;
+    case 'kraken': // 北海巨妖：多爪海怪
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.arc(0, -10, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.dark; ctx.beginPath(); ctx.arc(-7, -13, 8, Math.PI, 0); ctx.arc(7, -13, 8, Math.PI, 0); ctx.fill();
+      for (let i = -3; i <= 3; i++) tentacle(i * 8, 8, 34, i * 5, char.color);
+      eye(-9, -12, 4); eye(9, -12, 4);
+      break;
+    case 'leviathan': // 利维坦：带角深渊巨兽
+      body(34, 22, char.color);
+      fin(-33, 6, -24, -15, char.color);
+      ctx.beginPath(); ctx.moveTo(-6, -19); ctx.lineTo(-16, -42); ctx.lineTo(2, -30); ctx.moveTo(6, -19); ctx.lineTo(16, -42); ctx.lineTo(-2, -30); ctx.closePath(); ctx.fillStyle = char.accent; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#cfe0f0'; ctx.beginPath(); ctx.ellipse(-4, 8, 10, 8, 0, 0, Math.PI * 2); ctx.fill();
+      eye(16, -8, 3.5); limb(-10, 22, -14, 38, char.dark, 7); limb(10, 22, 14, 38, char.dark, 7);
+      break;
+    case 'jiao': // 蛟龙：S 形踏浪
+      ctx.strokeStyle = char.color; ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(-34, 14); ctx.quadraticCurveTo(-10, -22, 6, 0); ctx.quadraticCurveTo(18, 16, 34, -8); ctx.stroke();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(-28, -6); ctx.lineTo(-22, -20); ctx.moveTo(-6, -8); ctx.lineTo(0, -22); ctx.moveTo(18, 0); ctx.lineTo(26, -14); ctx.stroke();
+      ctx.fillStyle = char.accent; ctx.beginPath(); ctx.arc(30, -14, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.moveTo(32, -8); ctx.lineTo(46, -20); ctx.lineTo(40, -6); ctx.lineTo(50, -2); ctx.lineTo(38, 0); ctx.lineTo(44, 12); ctx.lineTo(33, 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+      limb(-30, 12, -40, 28, char.dark, 5); limb(-8, 6, -18, 22, char.dark, 5); limb(12, 6, 4, 24, char.dark, 5);
+      eye(28, -10, 3.5);
+      break;
+    case 'tuntian': // 吞天兽：巨口獠牙
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.ellipse(0, 0, 34, 26, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#3a1d2e'; ctx.beginPath(); ctx.ellipse(-6, 8, 24, 15, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; for (let i = 0; i < 4; i++) { const x = -18 + i * 11; ctx.beginPath(); ctx.moveTo(x, -2); ctx.lineTo(x + 4, 8); ctx.lineTo(x + 8, -2); ctx.closePath(); ctx.fill(); }
+      ctx.beginPath(); ctx.arc(-12, -8, 9, Math.PI, 0); ctx.arc(12, -8, 9, Math.PI, 0); ctx.fillStyle = char.color; ctx.fill();
+      eye(-12, -8, 4); eye(12, -8, 4);
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-22, -20); ctx.lineTo(-30, -34); ctx.moveTo(22, -20); ctx.lineTo(30, -34); ctx.stroke();
+      break;
+    case 'kun': // 北冥鲲：大鱼 + 翼状背鳍
+    case 'shenkun': // 神鲲：流光大鱼
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.ellipse(0, 2, 38, 22, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      fin(-37, 6, -28, -16, char.color); fin(34, -6, 24, -16, char.dark);
+      ctx.beginPath(); ctx.moveTo(-8, -18); ctx.quadraticCurveTo(-2, -44, 14, -26); ctx.quadraticCurveTo(24, -18, 12, -14); ctx.closePath(); ctx.fillStyle = char.accent; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(-8, 8, 10, 7, 0, 0, Math.PI * 2); ctx.fill();
+      eye(16, -8, 4);
+      if (char.role === 'shenkun') { // 流光
+        ctx.strokeStyle = char.accent; ctx.lineWidth = 3; ctx.setLineDash([6, 8]);
+        ctx.beginPath(); ctx.moveTo(-30, -6); ctx.quadraticCurveTo(0, -34, 32, -10); ctx.stroke(); ctx.setLineDash([]);
+      }
+      break;
+    case 'peng': // 神鲲·鹏：展翅冲天
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.ellipse(0, 6, 26, 20, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-10, -8); ctx.lineTo(-46, -34); ctx.quadraticCurveTo(-22, -6, -24, 10); ctx.lineTo(-14, 16); ctx.lineTo(-8, -2); ctx.closePath(); ctx.fillStyle = char.accent; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(10, -8); ctx.lineTo(46, -34); ctx.quadraticCurveTo(22, -6, 24, 10); ctx.lineTo(14, 16); ctx.lineTo(8, -2); ctx.closePath(); ctx.fillStyle = char.accent; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#FFD166'; ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(10, -6); ctx.lineTo(0, -2); ctx.lineTo(-10, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-14, 20); ctx.lineTo(-8, 40); ctx.moveTo(14, 20); ctx.lineTo(8, 40); ctx.stroke();
+      eye(-8, -6, 4); eye(8, -6, 4);
+      break;
+    default:
+      body(30, 16); fin(-29, -2, -20, -13, char.color); eye(12, -5, 4);
+      break;
+  }
+  ctx.restore();
+}
+
+// --- 神龙主题手绘（焕新皮肤 + 经典缺图兜底）：蛇 → 龙进化链 ---
+function drawDragonCharacter(cx, cy, char, bob) {
+  const scale = char.size / 50;
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(scale, scale);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = char.dark;
+
+  const eye = (x, y, r = 4) => {
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#171722'; ctx.beginPath(); ctx.arc(x + 1, y, r * .55, 0, Math.PI * 2); ctx.fill();
+  };
+  // 蛇身：左头右尾的 S 形身体，可加背纹
+  const snake = (headX, headY, tailX, tailY, thick, pattern) => {
+    const bodyPath = () => {
+      ctx.beginPath(); ctx.moveTo(headX, headY);
+      ctx.bezierCurveTo(headX - 10, headY - 10, tailX + 8, tailY - 10, tailX, tailY);
+    };
+    ctx.strokeStyle = char.dark; ctx.lineWidth = thick + 3; bodyPath(); ctx.stroke();
+    ctx.strokeStyle = char.color; ctx.lineWidth = thick; bodyPath(); ctx.stroke();
+    if (pattern) {
+      ctx.strokeStyle = pattern; ctx.lineWidth = thick * 0.35;
+      ctx.beginPath(); ctx.moveTo(headX - 3, headY - 3);
+      ctx.bezierCurveTo(headX - 10, headY - 10, tailX + 8, tailY - 10, tailX - 3, tailY - 3);
+      ctx.stroke();
+    }
+  };
+  // 蛇头：椭圆头 + 眼睛 + 吐信
+  const head = (x, y, w, h) => {
+    ctx.fillStyle = char.color; ctx.beginPath(); ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    eye(x + w * 0.25, y - h * 0.15, 3.5);
+    ctx.strokeStyle = '#E2584A'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x + w * 0.8, y); ctx.lineTo(x + w * 1.3, y + 2); ctx.lineTo(x + w * 1.5, y - 3); ctx.moveTo(x + w * 1.3, y + 2); ctx.lineTo(x + w * 1.5, y + 6); ctx.stroke();
+  };
+  // 龙角
+  const horns = (x, y, len, spread, color) => {
+    ctx.strokeStyle = color || char.accent; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x - spread, y); ctx.quadraticCurveTo(x - spread - 5, y - len * 0.5, x - spread - 9, y - len); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + spread, y); ctx.quadraticCurveTo(x + spread + 5, y - len * 0.5, x + spread + 9, y - len); ctx.stroke();
+  };
+  // 龙须
+  const whiskers = (x, y, len, color) => {
+    ctx.strokeStyle = color || char.accent; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + len, y + 5, x + len * 1.6, y - 5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y + 7); ctx.quadraticCurveTo(x + len, y + 13, x + len * 1.6, y + 5); ctx.stroke();
+  };
+  // 龙翼（side=1 右翼 / -1 左翼）
+  const wing = (x, y, side) => {
+    ctx.fillStyle = char.accent;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.lineTo(x + side * 34, y - 26);
+    ctx.quadraticCurveTo(x + side * 16, y - 6, x + side * 14, y + 10);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  };
+  // 龙爪腿
+  const leg = (x, y, n) => {
+    ctx.strokeStyle = char.dark; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 10); ctx.stroke();
+    ctx.strokeStyle = char.dark; ctx.lineWidth = 3;
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI / 2 + (i - (n - 1) / 2) * 0.4;
+      ctx.beginPath(); ctx.moveTo(x, y + 10); ctx.lineTo(x + Math.cos(a) * 9, y + 10 + Math.sin(a) * 9); ctx.stroke();
+    }
+  };
+  // 龙身：S 形 + 背鳍刺
+  const dragon = (len, thick) => {
+    ctx.strokeStyle = char.dark; ctx.lineWidth = thick + 4;
+    ctx.beginPath(); ctx.moveTo(-len / 2, 0);
+    ctx.bezierCurveTo(-len / 4, -18, len / 4, 18, len / 2, 0); ctx.stroke();
+    ctx.strokeStyle = char.color; ctx.lineWidth = thick;
+    ctx.beginPath(); ctx.moveTo(-len / 2, 0);
+    ctx.bezierCurveTo(-len / 4, -18, len / 4, 18, len / 2, 0); ctx.stroke();
+    ctx.fillStyle = char.accent;
+    [[-len * 0.32, -14], [-len * 0.16, -20], [0, -22], [len * 0.16, -18], [len * 0.3, -10]].forEach(([x, y]) => {
+      ctx.beginPath(); ctx.moveTo(x - 4, y + 2); ctx.lineTo(x, y - 8); ctx.lineTo(x + 4, y + 2); ctx.closePath(); ctx.fill();
+    });
+  };
+
+  switch (char.role) {
+    case 'snakelet': // 小蛇：胖短小蛇
+      snake(-8, 2, 20, -4, 9);
+      head(-13, 2, 8, 7);
+      break;
+    case 'greensnake': // 青蛇：更修长
+      snake(-10, 0, 28, -8, 8);
+      head(-15, 0, 8, 6);
+      break;
+    case 'python': // 蟒蛇：粗壮 + 腹部圆点
+      snake(-12, 2, 32, -6, 12);
+      ctx.fillStyle = char.dark;
+      [[-7, 1], [1, -1], [9, -3], [17, -4]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill(); });
+      head(-16, 2, 9, 7);
+      break;
+    case 'cobra': // 眼镜王蛇：立起伞翼 + 眼斑
+      snake(-2, 8, 26, 0, 6);
+      ctx.fillStyle = char.color; ctx.beginPath(); ctx.ellipse(-12, 0, 15, 13, 0.15, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = char.dark;
+      ctx.beginPath(); ctx.arc(-17, -4, 3.2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-7, -4, 3.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(-17, -4, 1.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-7, -4, 1.4, 0, Math.PI * 2); ctx.fill();
+      head(-19, -5, 7, 6);
+      break;
+    case 'viper': // 蝰蛇：深色锯齿背纹
+      snake(-10, 2, 30, -6, 8, '#222233');
+      head(-15, 2, 8, 6);
+      break;
+    case 'flamesnake': // 赤炎蛇：背上火苗
+      snake(-10, 2, 28, -6, 9);
+      ctx.fillStyle = char.accent;
+      [[-4, -8], [6, -10], [14, -8]].forEach(([x, y]) => {
+        ctx.beginPath(); ctx.moveTo(x - 3, y + 2); ctx.lineTo(x, y - 7); ctx.lineTo(x + 3, y + 2); ctx.closePath(); ctx.fill();
+      });
+      head(-15, 2, 8, 7);
+      break;
+    case 'jadesnake': // 碧鳞蛇：额头宝石
+      snake(-10, 2, 30, -6, 8);
+      head(-15, 2, 8, 6);
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.moveTo(-18, -4); ctx.lineTo(-14, -8); ctx.lineTo(-10, -4); ctx.lineTo(-14, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+      break;
+    case 'gemsnake': // 紫晶蛇：晶芒闪烁
+      snake(-10, 0, 30, -8, 8);
+      ctx.fillStyle = char.accent;
+      [[-6, -10], [8, -14], [18, -12], [0, -16]].forEach(([x, y]) => {
+        ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x + 2, y - 1); ctx.lineTo(x + 5, y); ctx.lineTo(x + 2, y + 1);
+        ctx.lineTo(x, y + 5); ctx.lineTo(x - 2, y + 1); ctx.lineTo(x - 5, y); ctx.lineTo(x - 2, y - 1); ctx.closePath(); ctx.fill();
+      });
+      head(-15, 0, 8, 6);
+      break;
+    case 'spiritsnake': // 灵蛇：光环
+      ctx.fillStyle = 'rgba(200,224,248,0.35)';
+      ctx.beginPath(); ctx.ellipse(6, -4, 34, 16, 0, 0, Math.PI * 2); ctx.fill();
+      snake(-10, 0, 30, -8, 7);
+      head(-15, 0, 8, 6);
+      break;
+    case 'jiao': // 蛟：独角初生
+      dragon(44, 8);
+      ctx.strokeStyle = '#7FBF9F'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(-14, -6); ctx.quadraticCurveTo(-17, -12, -20, -18); ctx.stroke();
+      head(-18, 0, 11, 8);
+      break;
+    case 'chi': // 螭龙：无角盘身
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 9;
+      ctx.beginPath(); ctx.arc(2, 0, 16, 0, Math.PI * 1.9); ctx.stroke();
+      ctx.strokeStyle = char.color; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(2, 0, 16, 0, Math.PI * 1.9); ctx.stroke();
+      head(-14, -10, 9, 7);
+      break;
+    case 'qiu': // 虬龙：小角 + 须
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 9;
+      ctx.beginPath(); ctx.arc(2, 0, 16, 0, Math.PI * 1.9); ctx.stroke();
+      ctx.strokeStyle = char.color; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(2, 0, 16, 0, Math.PI * 1.9); ctx.stroke();
+      horns(-10, -14, 10, 4);
+      whiskers(-7, -8, 8);
+      head(-14, -10, 9, 7);
+      break;
+    case 'pan': // 蟠龙：盘绕立柱
+      ctx.fillStyle = '#B8A87C'; ctx.fillRect(2, -24, 8, 48);
+      ctx.strokeStyle = char.dark; ctx.strokeRect(2, -24, 8, 48);
+      ctx.strokeStyle = char.dark; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.moveTo(-16, 18); ctx.bezierCurveTo(-2, 14, 14, 14, 12, 6);
+      ctx.bezierCurveTo(10, -4, -12, -6, -10, -16); ctx.stroke();
+      ctx.strokeStyle = char.color; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(-16, 18); ctx.bezierCurveTo(-2, 14, 14, 14, 12, 6);
+      ctx.bezierCurveTo(10, -4, -12, -6, -10, -16); ctx.stroke();
+      head(-16, 18, 9, 7);
+      break;
+    case 'ying': // 应龙：展翅
+      dragon(48, 9);
+      wing(-14, -4, -1); wing(14, -4, 1);
+      horns(-18, -6, 12, 4);
+      whiskers(-12, -4, 8);
+      head(-20, 0, 10, 8);
+      break;
+    case 'qinglong': // 青龙：四足
+      dragon(52, 10);
+      leg(-14, 8, 4); leg(0, 14, 4); leg(14, 10, 4); leg(24, 4, 4);
+      horns(-20, -8, 14, 5);
+      whiskers(-14, -4, 10);
+      head(-24, 0, 11, 8);
+      break;
+    case 'zhulong': // 烛龙：衔烛火
+      dragon(50, 10);
+      horns(-20, -8, 14, 5);
+      head(-24, 0, 11, 8);
+      ctx.fillStyle = '#FFE14D';
+      ctx.beginPath(); ctx.moveTo(-33, -4); ctx.quadraticCurveTo(-42, -10, -38, -18);
+      ctx.quadraticCurveTo(-34, -12, -32, -14); ctx.quadraticCurveTo(-30, -8, -33, -4); ctx.fill();
+      ctx.fillStyle = '#FF8C3A';
+      ctx.beginPath(); ctx.moveTo(-31, -2); ctx.quadraticCurveTo(-36, -6, -33, -12);
+      ctx.quadraticCurveTo(-30, -8, -31, -2); ctx.fill();
+      break;
+    case 'shenlong': // 神龙：飘逸长须
+      dragon(56, 11);
+      leg(-14, 8, 4); leg(4, 14, 4); leg(16, 10, 4); leg(24, 4, 4);
+      horns(-22, -9, 16, 5, '#FFD166');
+      whiskers(-15, -5, 12, '#FFD166');
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-16, -8); ctx.quadraticCurveTo(-24, -16, -14, -24); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-12, -8); ctx.quadraticCurveTo(-18, -20, -6, -26); ctx.stroke();
+      head(-26, 0, 12, 9);
+      break;
+    case 'jinlong': // 五爪金龙：金冠 + 五爪
+      dragon(58, 11);
+      leg(-16, 8, 5); leg(0, 14, 5); leg(14, 10, 5); leg(24, 2, 5);
+      horns(-22, -9, 15, 5, '#8C661C');
+      ctx.fillStyle = '#FFD166';
+      ctx.beginPath(); ctx.moveTo(-30, -12); ctx.lineTo(-24, -20); ctx.lineTo(-18, -12);
+      ctx.lineTo(-12, -20); ctx.lineTo(-6, -12); ctx.closePath(); ctx.fill(); ctx.stroke();
+      whiskers(-16, -4, 12, '#8C661C');
+      head(-27, 0, 12, 9);
+      break;
+    default:
+      snake(-8, 2, 22, -4, 9);
+      head(-13, 2, 8, 7);
+      break;
+  }
+  ctx.restore();
+}
+
+// --- 奥特曼主题手绘（焕新）：怪兽 → 光之巨人 ---
+function drawUltramanCharacter(cx, cy, char, bob) {
+  const s = char.size;
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(s / 100, s / 100);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = char.dark;
+  const MONSTER = ['pigmon','miclas','windom','eleking','gomora','tyrant','bemular','zetton','baltan'];
+  if (MONSTER.includes(char.role)) {
+    // 怪兽通用身体
+    ctx.fillStyle = char.color;
+    ctx.beginPath(); ctx.ellipse(0, -4, 26, 30, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillRect(-15, 22, 9, 10); ctx.strokeRect(-15, 22, 9, 10);
+    ctx.fillRect(6, 22, 9, 10); ctx.strokeRect(6, 22, 9, 10);
+    switch (char.role) {
+      case 'pigmon': // 圆滚滚小怪兽
+        ctx.beginPath(); ctx.ellipse(-12, -36, 8, 9, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(12, -36, 8, 9, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#2E1F14'; ctx.beginPath(); ctx.arc(-5, -10, 3, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(5, -10, 3, 0, Math.PI*2); ctx.fill();
+        break;
+      case 'miclas': // 黄色牛角机器人
+        ctx.fillStyle = char.dark;
+        ctx.beginPath(); ctx.moveTo(-14, -38); ctx.lineTo(-7, -52); ctx.lineTo(0, -36); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(14, -38); ctx.lineTo(7, -52); ctx.lineTo(0, -36); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#1F1F2E'; ctx.beginPath(); ctx.arc(-6, -8, 3, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(6, -8, 3, 0, Math.PI*2); ctx.fill();
+        break;
+      case 'windom': // 银青色鸟嘴机器人
+        ctx.fillStyle = char.dark;
+        ctx.beginPath(); ctx.moveTo(0, -40); ctx.lineTo(9, -44); ctx.lineTo(0, -30); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#1F1F2E'; ctx.beginPath(); ctx.arc(-5, -10, 3, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(5, -10, 3, 0, Math.PI*2); ctx.fill();
+        break;
+      case 'eleking': // 黄色斑点怪兽
+        ctx.fillStyle = '#2E2E2E';
+        [[-14,-12,4],[0,-18,4],[13,-10,4],[-8,2,3],[8,4,3]].forEach(([x,y,r]) => { ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); });
+        ctx.beginPath(); ctx.moveTo(20,-24); ctx.lineTo(34,-14); ctx.lineTo(22,-10); ctx.closePath(); ctx.fill(); // 尾
+        ctx.fillStyle = '#1F1F2E'; ctx.beginPath(); ctx.arc(-6,-12,3,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(6,-12,3,0,Math.PI*2); ctx.fill();
+        break;
+      case 'gomora': // 棕恐龙 + 月牙头冠
+        ctx.fillStyle = char.dark;
+        ctx.beginPath(); ctx.moveTo(-6,-34); ctx.quadraticCurveTo(0,-54,8,-32); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(18,-16); ctx.quadraticCurveTo(40,-26,34,-8); ctx.closePath(); ctx.fill(); // 尾
+        ctx.fillStyle = '#2E1F14'; ctx.beginPath(); ctx.arc(-6,-8,3,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(6,-8,3,0,Math.PI*2); ctx.fill();
+        break;
+      case 'tyrant': // 红色尖刺怪
+        ctx.fillStyle = char.dark;
+        for (let i = 0; i < 5; i++) {
+          const hx = -18 + i * 9;
+          ctx.beginPath(); ctx.moveTo(hx, -30); ctx.lineTo(hx + 4, -44); ctx.lineTo(hx + 8, -30); ctx.closePath(); ctx.fill();
+        }
+        ctx.fillStyle = '#2E1F14'; ctx.beginPath(); ctx.arc(-6,-8,3,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(6,-8,3,0,Math.PI*2); ctx.fill();
+        break;
+      case 'bemular': // 扁脸独角紫色怪
+        ctx.fillStyle = char.dark;
+        ctx.beginPath(); ctx.moveTo(0,-36); ctx.lineTo(5,-48); ctx.lineTo(10,-34); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#1F1F2E'; ctx.beginPath(); ctx.arc(-6,-8,3,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(6,-8,3,0,Math.PI*2); ctx.fill();
+        break;
+      case 'zetton': // 黑黄甲虫怪
+        ctx.fillStyle = '#F0E84A';
+        ctx.beginPath(); ctx.arc(-7,-12,4.5,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(7,-12,4.5,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#1F1F2E';
+        ctx.beginPath(); ctx.arc(-7,-12,2,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(7,-12,2,0,Math.PI*2); ctx.fill();
+        break;
+      case 'baltan': // 龙虾钳外星人
+        ctx.fillStyle = char.dark;
+        ctx.beginPath(); ctx.moveTo(-26,-14); ctx.lineTo(-38,-6); ctx.lineTo(-24,-4); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(26,-14); ctx.lineTo(38,-6); ctx.lineTo(24,-4); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#1F1F2E'; ctx.beginPath(); ctx.arc(-6,-10,3,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(6,-10,3,0,Math.PI*2); ctx.fill();
+        break;
+    }
+  } else {
+    // 光之巨人通用身体
+    ctx.fillRect(-11, 12, 9, 15); ctx.strokeRect(-11, 12, 9, 15);
+    ctx.fillRect(2, 12, 9, 15); ctx.strokeRect(2, 12, 9, 15);
+    ctx.beginPath(); ctx.moveTo(-12, -20); ctx.lineTo(12, -20); ctx.lineTo(14, 8); ctx.lineTo(-14, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // 银色胸甲
+    ctx.fillStyle = '#E8E8F0';
+    ctx.beginPath(); ctx.ellipse(0, -6, 7, 10, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = char.color;
+    ctx.fillRect(-20, -18, 6, 22); ctx.strokeRect(-20, -18, 6, 22);
+    ctx.fillRect(14, -18, 6, 22); ctx.strokeRect(14, -18, 6, 22);
+    // 头
+    ctx.fillStyle = char.color;
+    ctx.beginPath(); ctx.roundRect(-9, -44, 18, 22, 6); ctx.fill(); ctx.stroke();
+    // 眼睛
+    ctx.fillStyle = '#FFF8DC';
+    ctx.beginPath(); ctx.ellipse(-4.5, -34, 3.6, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(4.5, -34, 3.6, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1A1A2E';
+    ctx.beginPath(); ctx.ellipse(-4.5, -34, 1.6, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(4.5, -34, 1.6, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+    // 彩色计时器
+    ctx.fillStyle = char.accent;
+    ctx.beginPath(); ctx.arc(0, -6, 3.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // 头饰
+    ctx.strokeStyle = char.dark; ctx.lineWidth = 3;
+    switch (char.role) {
+      case 'darktiga': // 黑暗迪迦：胸口青色，头紫黑
+        ctx.fillStyle = '#4AE8E8';
+        ctx.beginPath(); ctx.arc(0, -6, 3.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        break;
+      case 'ultraman': // 初代：圆脸银头
+        ctx.fillStyle = '#E8E8F0';
+        ctx.beginPath(); ctx.roundRect(-9, -44, 18, 22, 6); ctx.fill(); ctx.stroke();
+        break;
+      case 'seven': // 赛文：额头镭射灯
+        ctx.fillStyle = '#E8E84A';
+        ctx.beginPath(); ctx.arc(0, -42, 2.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        break;
+      case 'taro': // 泰罗：金色双角
+        ctx.fillStyle = '#E8C84A';
+        ctx.beginPath(); ctx.moveTo(-8, -42); ctx.lineTo(-16, -56); ctx.lineTo(-3, -46); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(8, -42); ctx.lineTo(16, -56); ctx.lineTo(3, -46); ctx.closePath(); ctx.fill();
+        break;
+      case 'leo': // 雷欧：脸颊伤疤
+        ctx.strokeStyle = '#8C2E2E';
+        ctx.beginPath(); ctx.moveTo(-8, -28); ctx.lineTo(-4, -32); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(8, -28); ctx.lineTo(4, -32); ctx.stroke();
+        break;
+      case 'tiga': // 迪迦：三角眼
+        ctx.fillStyle = '#FFF8DC';
+        ctx.beginPath(); ctx.moveTo(-6.5, -38); ctx.lineTo(-2.5, -38); ctx.lineTo(-4.5, -30); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(6.5, -38); ctx.lineTo(2.5, -38); ctx.lineTo(4.5, -30); ctx.closePath(); ctx.fill();
+        break;
+      case 'dyna': // 戴拿：蓝色线条
+        ctx.strokeStyle = '#5AB8E8';
+        ctx.beginPath(); ctx.moveTo(-10, -2); ctx.lineTo(10, -2); ctx.stroke();
+        break;
+      case 'mebius': // 梦比优斯：银色M型头饰
+        ctx.strokeStyle = '#E8E8F0';
+        ctx.beginPath(); ctx.moveTo(-7, -42); ctx.lineTo(-3, -36); ctx.lineTo(0, -40); ctx.lineTo(3, -36); ctx.lineTo(7, -42); ctx.stroke();
+        break;
+      case 'zero': // 赛罗：蓝色双头镖
+        ctx.fillStyle = '#3A5AA8';
+        ctx.beginPath(); ctx.moveTo(-5, -44); ctx.lineTo(-20, -52); ctx.lineTo(-12, -38); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(5, -44); ctx.lineTo(20, -52); ctx.lineTo(12, -38); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#F0E84A';
+        ctx.beginPath(); ctx.arc(0, -40, 2.6, 0, Math.PI * 2); ctx.fill();
+        break;
+    }
+  }
+  ctx.restore();
+}
+
+// --- 圣斗士主题手绘（焕新）：杂兵 → 青铜 → 黄金 → 雅典娜 ---
+function drawSaintseiyaCharacter(cx, cy, char, bob) {
+  const s = char.size;
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(s / 100, s / 100);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = char.dark;
+  // 腿
+  ctx.fillStyle = char.color;
+  ctx.fillRect(-11, 12, 8, 15); ctx.strokeRect(-11, 12, 8, 15);
+  ctx.fillRect(3, 12, 8, 15); ctx.strokeRect(3, 12, 8, 15);
+  // 裙甲
+  ctx.beginPath(); ctx.moveTo(-16, -12); ctx.lineTo(16, -12); ctx.lineTo(12, 14); ctx.lineTo(-12, 14); ctx.closePath(); ctx.fill(); ctx.stroke();
+  // 胸甲
+  ctx.beginPath(); ctx.moveTo(-13, -24); ctx.lineTo(13, -24); ctx.lineTo(15, -12); ctx.lineTo(-15, -12); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = char.accent;
+  ctx.beginPath(); ctx.arc(0, -17, 3, 0, Math.PI * 2); ctx.fill();
+  // 护肩
+  ctx.fillStyle = char.color;
+  ctx.beginPath(); ctx.arc(-18, -20, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(18, -20, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  // 头（肤色）
+  ctx.fillStyle = '#F0D8A0';
+  ctx.beginPath(); ctx.roundRect(-8, -44, 16, 18, 5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1A1A2E';
+  ctx.beginPath(); ctx.arc(-3.5, -36, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(3.5, -36, 2, 0, Math.PI * 2); ctx.fill();
+  // 头盔
+  ctx.fillStyle = char.color;
+  ctx.beginPath(); ctx.roundRect(-11, -46, 22, 10, 5); ctx.fill(); ctx.stroke();
+  // 头盔装饰
+  switch (char.role) {
+    case 'soldier': // 杂兵：盔缨
+      ctx.fillStyle = '#C94A4A';
+      ctx.beginPath(); ctx.moveTo(0, -46); ctx.lineTo(5, -56); ctx.lineTo(-5, -56); ctx.closePath(); ctx.fill();
+      break;
+    case 'pegasus': // 天马：马耳
+      ctx.beginPath(); ctx.moveTo(-8, -44); ctx.lineTo(-13, -56); ctx.lineTo(-2, -48); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(8, -44); ctx.lineTo(13, -56); ctx.lineTo(2, -48); ctx.closePath(); ctx.fill();
+      break;
+    case 'shiryu': // 天龙：龙角
+      ctx.beginPath(); ctx.moveTo(-9, -46); ctx.lineTo(-16, -58); ctx.lineTo(-4, -52); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(9, -46); ctx.lineTo(16, -58); ctx.lineTo(4, -52); ctx.closePath(); ctx.fill();
+      break;
+    case 'hyoga': // 白鸟：双翼盔
+      ctx.beginPath(); ctx.moveTo(-10, -44); ctx.quadraticCurveTo(-22, -52, -20, -34); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(10, -44); ctx.quadraticCurveTo(22, -52, 20, -34); ctx.closePath(); ctx.fill();
+      break;
+    case 'shun': // 仙女：锁链手臂
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(-18, -18, 10, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 3;
+      break;
+    case 'ikki': // 凤凰：高冠
+      ctx.beginPath(); ctx.moveTo(0, -46); ctx.quadraticCurveTo(4, -60, -2, -66); ctx.lineTo(2, -58); ctx.lineTo(6, -66); ctx.quadraticCurveTo(0, -54, 0, -46); ctx.closePath(); ctx.fill();
+      break;
+    case 'eagle': // 天鹰：鹰嘴盔
+      ctx.beginPath(); ctx.moveTo(10, -44); ctx.lineTo(18, -40); ctx.lineTo(10, -38); ctx.closePath(); ctx.fill();
+      break;
+    case 'lyra': // 天琴：头盔小竖琴
+      ctx.strokeStyle = char.accent; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(17, -28, 6, 0, Math.PI); ctx.stroke();
+      ctx.lineWidth = 3;
+      break;
+    case 'lizard': // 蜥蜴：背尾盔
+      ctx.beginPath(); ctx.moveTo(10, -46); ctx.quadraticCurveTo(22, -46, 20, -36); ctx.lineTo(14, -40); ctx.closePath(); ctx.fill();
+      break;
+    case 'aries': // 白羊：螺旋双角
+      ctx.beginPath(); ctx.moveTo(-9, -46); ctx.quadraticCurveTo(-20, -56, -18, -40); ctx.quadraticCurveTo(-16, -52, -8, -48); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(9, -46); ctx.quadraticCurveTo(20, -56, 18, -40); ctx.quadraticCurveTo(16, -52, 8, -48); ctx.closePath(); ctx.fill();
+      break;
+    case 'taurus': // 金牛：牛角
+      ctx.beginPath(); ctx.moveTo(-9, -46); ctx.lineTo(-22, -56); ctx.lineTo(-6, -52); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(9, -46); ctx.lineTo(22, -56); ctx.lineTo(6, -52); ctx.closePath(); ctx.fill();
+      break;
+    case 'gemini': // 双子：左右双脸盔
+      ctx.fillStyle = '#B8C8E8';
+      ctx.beginPath(); ctx.arc(-16, -20, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(16, -20, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      break;
+    case 'cancer': // 巨蟹：钳肩
+      ctx.beginPath(); ctx.moveTo(-24, -22); ctx.lineTo(-30, -30); ctx.lineTo(-22, -26); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(24, -22); ctx.lineTo(30, -30); ctx.lineTo(22, -26); ctx.closePath(); ctx.fill();
+      break;
+    case 'leoaioria': // 狮子：鬃毛盔
+      ctx.fillStyle = char.dark;
+      ctx.beginPath(); ctx.arc(0, -44, 14, Math.PI, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = char.color;
+      ctx.beginPath(); ctx.roundRect(-11, -46, 22, 10, 5); ctx.fill(); ctx.stroke();
+      break;
+    case 'virgo': // 处女：莲花台
+      ctx.fillStyle = char.accent;
+      ctx.beginPath(); ctx.ellipse(0, -14, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'scorpio': // 天蝎：蝎尾
+      ctx.beginPath(); ctx.moveTo(0, -14); ctx.quadraticCurveTo(22, -10, 26, -24); ctx.lineTo(18, -20); ctx.lineTo(24, -16); ctx.closePath(); ctx.fill();
+      break;
+    case 'sagittarius': // 射手：弓与翼
+      ctx.strokeStyle = char.color; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(-20, -18, 10, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-10, -42); ctx.quadraticCurveTo(-24, -50, -22, -34); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(10, -42); ctx.quadraticCurveTo(24, -50, 22, -34); ctx.closePath(); ctx.fill();
+      break;
+    case 'athena': // 雅典娜：白金光环 + 长矛 + 盾
+      ctx.strokeStyle = '#E8C84A'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(0, -40, 16, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 3;
+      ctx.fillStyle = '#E8C84A';
+      ctx.beginPath(); ctx.roundRect(14, -34, 8, 28, 2); ctx.fill(); // 长矛
+      ctx.beginPath(); ctx.moveTo(14, -34); ctx.lineTo(26, -40); ctx.lineTo(18, -30); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-24, -6, 8, 12, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); // 盾
+      break;
+  }
+  ctx.restore();
+}
+
+// --- 忍者乱太郎主题手绘（焕新）：学生 → 老师 → 黑木的猫 ---
+function drawNinjaCharacter(cx, cy, char, bob) {
+  const s = char.size;
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(s / 100, s / 100);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = char.dark;
+  const CAT = ['nyamaro', 'nyamaropower'];
+  if (CAT.includes(char.role)) {
+    // 黑猫
+    ctx.fillStyle = char.color;
+    ctx.beginPath(); ctx.ellipse(0, 0, 20, 24, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-15, -16); ctx.lineTo(-9, -34); ctx.lineTo(-3, -18); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(15, -16); ctx.lineTo(9, -34); ctx.lineTo(3, -18); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = char.color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(0, 22); ctx.quadraticCurveTo(20, 20, 24, 4); ctx.stroke();
+    // 眼睛
+    ctx.fillStyle = char.accent;
+    ctx.beginPath(); ctx.ellipse(-6, -10, 3.4, 4.2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(6, -10, 3.4, 4.2, 0, 0, Math.PI * 2); ctx.fill();
+    // 忍者头巾
+    ctx.fillStyle = '#C94A4A';
+    ctx.fillRect(-12, -22, 24, 6); ctx.strokeRect(-12, -22, 24, 6);
+    ctx.beginPath(); ctx.moveTo(-12, -22); ctx.lineTo(-20, -16); ctx.lineTo(-12, -19); ctx.closePath(); ctx.fill();
+    if (char.role === 'nyamaropower') {
+      // 觉醒：红围巾 + 金色瞳孔
+      ctx.fillStyle = '#C94A4A';
+      ctx.fillRect(-12, -2, 24, 5); ctx.strokeRect(-12, -2, 24, 5);
+      ctx.fillStyle = '#FFE84A';
+      ctx.beginPath(); ctx.ellipse(-6, -10, 1.6, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(6, -10, 1.6, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  } else {
+    // 忍者通用身体
+    ctx.fillStyle = char.color;
+    ctx.fillRect(-10, 12, 8, 14); ctx.strokeRect(-10, 12, 8, 14);
+    ctx.fillRect(2, 12, 8, 14); ctx.strokeRect(2, 12, 8, 14);
+    ctx.beginPath(); ctx.moveTo(-12, -20); ctx.lineTo(12, -20); ctx.lineTo(13, 8); ctx.lineTo(-13, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // 腰带
+    ctx.fillStyle = char.dark;
+    ctx.fillRect(-12, -2, 24, 5); ctx.strokeRect(-12, -2, 24, 5);
+    // 手臂
+    ctx.fillStyle = char.color;
+    ctx.fillRect(-18, -18, 6, 20); ctx.strokeRect(-18, -18, 6, 20);
+    ctx.fillRect(12, -18, 6, 20); ctx.strokeRect(12, -18, 6, 20);
+    // 头（肤色）
+    ctx.fillStyle = '#F0D8A0';
+    ctx.beginPath(); ctx.roundRect(-8, -44, 16, 18, 5); ctx.fill(); ctx.stroke();
+    // 头巾
+    ctx.fillStyle = char.color;
+    ctx.fillRect(-10, -44, 20, 7); ctx.strokeRect(-10, -44, 20, 7);
+    // 眼睛
+    ctx.fillStyle = '#1A1A2E';
+    ctx.beginPath(); ctx.arc(-3.5, -32, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(3.5, -32, 2, 0, Math.PI * 2); ctx.fill();
+    switch (char.role) {
+      case 'rantaro': // 圆框眼镜
+        ctx.strokeStyle = '#1A1A2E'; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.arc(-3.5, -32, 3.4, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(3.5, -32, 3.4, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 3;
+        break;
+      case 'kirimaru': // 精明眼神
+        ctx.beginPath(); ctx.moveTo(-6, -34); ctx.lineTo(-1, -31); ctx.lineTo(-6, -30); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(6, -34); ctx.lineTo(1, -31); ctx.lineTo(6, -30); ctx.closePath(); ctx.fill();
+        break;
+      case 'shinbe': // 圆胖脸 + 头巾结
+        ctx.beginPath(); ctx.ellipse(0, -35, 12, 11, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        break;
+      case 'rikichi': // 精英：腰后短刀
+        ctx.fillStyle = '#D8D8E0';
+        ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(12, -14); ctx.lineTo(15, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+        break;
+      case 'doi': // 土井老师：教书先生，胡茬
+        ctx.strokeStyle = '#4E2E2E'; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.moveTo(-5, -25); ctx.lineTo(-1, -24); ctx.lineTo(3, -25); ctx.stroke();
+        ctx.lineWidth = 3;
+        break;
+      case 'yamada': // 山田老师：草帽
+        ctx.fillStyle = '#D8C078';
+        ctx.beginPath(); ctx.ellipse(0, -44, 16, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        break;
+      case 'ando': // 安藤老师：竖眉
+        ctx.strokeStyle = '#1A1A2E'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-5, -37); ctx.lineTo(-2, -34); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(5, -37); ctx.lineTo(2, -34); ctx.stroke();
+        ctx.lineWidth = 3;
+        break;
+      case 'kyojin': // 巨汉：大围巾
+        ctx.fillStyle = '#D85A3C';
+        ctx.fillRect(-14, -12, 28, 8); ctx.strokeRect(-14, -12, 28, 8);
+        break;
+      case 'headmaster': // 学园长：白胡 + 高帽
+        ctx.fillStyle = '#E8E8F0';
+        ctx.beginPath(); ctx.ellipse(0, -25, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#3A3A4E';
+        ctx.fillRect(-8, -56, 16, 14); ctx.strokeRect(-8, -56, 16, 14);
+        break;
+      case 'kuroki': // 黑木老师：佩刀 + 严峻
+        ctx.fillStyle = '#D8D8E0';
+        ctx.beginPath(); ctx.moveTo(12, 2); ctx.lineTo(12, -18); ctx.lineTo(16, 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#1A1A2E'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-5, -37); ctx.lineTo(-2, -34); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(5, -37); ctx.lineTo(2, -34); ctx.stroke();
+        ctx.lineWidth = 3;
+        break;
+      case 'kurokikaze': // 疾风：旋风特效
+        ctx.strokeStyle = 'rgba(184,216,240,.8)'; ctx.lineWidth = 2.5;
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath(); ctx.arc(-20 - i * 4, -30 + i * 12, 8 + i * 4, i, i + 4); ctx.stroke();
+        }
+        ctx.lineWidth = 3;
+        break;
+    }
+  }
+  ctx.restore();
+}
+
 // --- Draw character using real image sprite or the procedural second-stage roster ---
 function drawCharacter(cx, cy, char, isPlayer) {
   const s = char.size;
@@ -3007,7 +4092,12 @@ function drawCharacter(cx, cy, char, isPlayer) {
   const imgScale = s * 3.2;
   const inBrainrot = state.gameMode === 'brainrot';
   const inMinecraft = state.gameMode === 'minecraft';
-  const img = (!inBrainrot && !inMinecraft) ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
+  const inKun = state.gameMode === 'kun';
+  const inDragon = state.gameMode === 'dragon';
+  const inUltraman = state.gameMode === 'ultraman';
+  const inSaintseiya = state.gameMode === 'saintseiya';
+  const inNinja = state.gameMode === 'ninja';
+  const img = (!inBrainrot && !inMinecraft && !inKun && !inDragon && !inUltraman && !inSaintseiya && !inNinja) ? (CHAR_IMAGE_SETS[state.skin]?.[char.level] || CHAR_IMAGE_SETS.classic[char.level]) : null;
   ctx.fillStyle = 'rgba(0,0,0,0.22)';
   ctx.beginPath();
   ctx.ellipse(cx, cy + s * 0.95 + bob, s * 0.72, s * 0.26, 0, 0, Math.PI * 2);
@@ -3055,6 +4145,83 @@ function drawCharacter(cx, cy, char, isPlayer) {
         ctx.drawImage(mcImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
       } else {
         drawMinecraftCharacter(cx, cy, char, bob);
+      }
+    }
+  } else if (inKun) {
+    if (state.skin === 'refreshed') {
+      // 焕新：深海手绘版（与经典像素大图风格区分明显）
+      drawKunCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
+    } else {
+      const kunImg = KUN_IMAGE_SETS.classic[char.role];
+      if (kunImg && kunImg.complete && kunImg.naturalWidth > 0) {
+        const aspect = kunImg.naturalWidth / kunImg.naturalHeight;
+        let dw, dh;
+        if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+        else { dh = imgScale; dw = dh * aspect; }
+        ctx.drawImage(kunImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+      } else {
+        drawKunCharacter(cx, cy, char, bob);
+      }
+    }
+  } else if (inDragon) {
+    if (state.skin === 'refreshed') {
+      // 焕新：云海手绘版（与经典像素大图风格区分明显）
+      drawDragonCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
+    } else {
+      const drgImg = DRAGON_IMAGE_SETS.classic[char.role];
+      if (drgImg && drgImg.complete && drgImg.naturalWidth > 0) {
+        const aspect = drgImg.naturalWidth / drgImg.naturalHeight;
+        let dw, dh;
+        if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+        else { dh = imgScale; dw = dh * aspect; }
+        ctx.drawImage(drgImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+      } else {
+        drawDragonCharacter(cx, cy, char, bob);
+      }
+    }
+  } else if (inUltraman) {
+    if (state.skin === 'refreshed') {
+      drawUltramanCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
+    } else {
+      const umImg = ULTRAMAN_IMAGE_SETS.classic[char.role];
+      if (umImg && umImg.complete && umImg.naturalWidth > 0) {
+        const aspect = umImg.naturalWidth / umImg.naturalHeight;
+        let dw, dh;
+        if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+        else { dh = imgScale; dw = dh * aspect; }
+        ctx.drawImage(umImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+      } else {
+        drawUltramanCharacter(cx, cy, char, bob);
+      }
+    }
+  } else if (inSaintseiya) {
+    if (state.skin === 'refreshed') {
+      drawSaintseiyaCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
+    } else {
+      const ssImg = SAINTSEIYA_IMAGE_SETS.classic[char.role];
+      if (ssImg && ssImg.complete && ssImg.naturalWidth > 0) {
+        const aspect = ssImg.naturalWidth / ssImg.naturalHeight;
+        let dw, dh;
+        if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+        else { dh = imgScale; dw = dh * aspect; }
+        ctx.drawImage(ssImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+      } else {
+        drawSaintseiyaCharacter(cx, cy, char, bob);
+      }
+    }
+  } else if (inNinja) {
+    if (state.skin === 'refreshed') {
+      drawNinjaCharacter(cx, cy, { ...char, size: char.size * 1.55 }, bob);
+    } else {
+      const njImg = NINJA_IMAGE_SETS.classic[char.role];
+      if (njImg && njImg.complete && njImg.naturalWidth > 0) {
+        const aspect = njImg.naturalWidth / njImg.naturalHeight;
+        let dw, dh;
+        if (aspect >= 1) { dw = imgScale; dh = dw / aspect; }
+        else { dh = imgScale; dw = dh * aspect; }
+        ctx.drawImage(njImg, cx - dw/2, cy - dh/2 + bob, dw, dh);
+      } else {
+        drawNinjaCharacter(cx, cy, char, bob);
       }
     }
   } else if (img && img.complete && img.naturalWidth > 0) {
@@ -3375,10 +4542,10 @@ function toggleFold(id) {
   if (!el) return;
   el.classList.toggle('collapsed');
 }
-// 桌面端全部展开；手机/平板上默认折叠"场景选择"（按钮最多，最占空间）
+// 桌面端全部展开；手机/平板上默认折叠"场景选择"与"难度选择"（省空间）
 function initMenuFolds() {
   const compact = window.innerWidth <= 900;
-  const defaultCollapse = compact ? ['fold-scene'] : [];
+  const defaultCollapse = compact ? ['fold-scene', 'fold-difficulty'] : [];
   ['fold-mode', 'fold-scene', 'fold-difficulty', 'fold-skin'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -3403,8 +4570,9 @@ function resolveSceneChoice(reroll = false) {
 }
 
 const GAME_TITLE = '召唤进化'; // 统一主名，后续加主题只需扩展 MODE_NAMES
-const MODE_NAMES = { classic: '节奏盒子', brainrot: '山海经', minecraft: '我的世界' };
-const MODE_TAGLINES = { classic: '吃小的，躲大的，一路进化到平基！', brainrot: '吃小的，躲大的，一路进化到茶壶人！', minecraft: '吃小的，躲大的，一路进化到末影龙！' };
+const MODE_NAMES = { classic: '节奏盒子', brainrot: '山海经', minecraft: '我的世界', kun: '召唤神鲲', dragon: '召唤神龙', ultraman: '光之巨人', saintseiya: '圣斗士', ninja: '忍者乱太郎' };
+const MODE_TAGLINES = { classic: '吃小的，躲大的，一路进化到平基！', brainrot: '吃小的，躲大的，一路进化到茶壶人！', minecraft: '吃小的，躲大的，一路进化到末影龙！', kun: '开局一条鲲，进化全靠吞！', dragon: '蛇化为龙，一飞冲天！', ultraman: '吃小的，躲大的，一路进化到赛罗！', saintseiya: '吃小的，躲大的，一路进化到雅典娜！', ninja: '吃小的，躲大的，一路进化到猫丸！' };
+const MODE_ICONS = { classic: '📦', brainrot: '🌊', minecraft: '⛏️', kun: '🐋', dragon: '🐉', ultraman: '🦸', saintseiya: '🛡️', ninja: '🍡' };
 
 function updateTitle() {
   const modeName = MODE_NAMES[state.gameMode] || MODE_NAMES.classic;
@@ -3414,15 +4582,27 @@ function updateTitle() {
   if (h1) h1.textContent = title;
   const tag = document.getElementById('game-tagline');
   if (tag) tag.textContent = MODE_TAGLINES[state.gameMode] || MODE_TAGLINES.classic;
+  const icon = document.getElementById('hud-mode-icon');
+  if (icon) icon.textContent = MODE_ICONS[state.gameMode] || '📦';
 }
 
 function initModeSelector() {
   if (state.gameMode === 'brainrot') LEVELS = BRAINROT_LEVELS;
   else if (state.gameMode === 'minecraft') LEVELS = MINECRAFT_LEVELS;
+  else if (state.gameMode === 'kun') LEVELS = KUN_LEVELS;
+  else if (state.gameMode === 'dragon') LEVELS = DRAGON_LEVELS;
+  else if (state.gameMode === 'ultraman') LEVELS = ULTRAMAN_LEVELS;
+  else if (state.gameMode === 'saintseiya') LEVELS = SAINTSEIYA_LEVELS;
+  else if (state.gameMode === 'ninja') LEVELS = NINJA_LEVELS;
   else LEVELS = SPRUNKI_LEVELS; // 主题与进化链同步
   const grid = document.getElementById('mode-selector');
   grid.innerHTML = '';
   const modes = [
+    { id: 'kun', name: '🐋 召唤神鲲' },
+    { id: 'dragon', name: '🐉 召唤神龙' },
+    { id: 'ultraman', name: '🦸 光之巨人' },
+    { id: 'saintseiya', name: '🛡️ 圣斗士' },
+    { id: 'ninja', name: '🍡 忍者乱太郎' },
     { id: 'classic', name: '📦 节奏盒子' },
     { id: 'brainrot', name: '🌊 山海经' },
     { id: 'minecraft', name: '⛏️ 我的世界' },
@@ -3480,9 +4660,14 @@ function renderSkinSelector() {
   sg.innerHTML = '';
   const isBrainrot = state.gameMode === 'brainrot';
   const isMinecraft = state.gameMode === 'minecraft';
-  const first = isBrainrot ? 'sneakerShark' : isMinecraft ? 'chicken' : 'raddy';
-  const classicBase = isBrainrot ? 'brainrot/classic/' : isMinecraft ? 'minecraft/classic/' : 'classic/';
-  const refreshedBase = isBrainrot ? 'brainrot/refreshed/' : isMinecraft ? 'minecraft/refreshed/' : '';
+  const isKun = state.gameMode === 'kun';
+  const isDragon = state.gameMode === 'dragon';
+  const isUltraman = state.gameMode === 'ultraman';
+  const isSaintseiya = state.gameMode === 'saintseiya';
+  const isNinja = state.gameMode === 'ninja';
+  const first = isBrainrot ? 'sneakerShark' : isMinecraft ? 'chicken' : isKun ? 'tadpole' : isDragon ? 'snakelet' : isUltraman ? 'pigmon' : isSaintseiya ? 'soldier' : isNinja ? 'rantaro' : 'raddy';
+  const classicBase = isBrainrot ? 'brainrot/classic/' : isMinecraft ? 'minecraft/classic/' : isKun ? 'kun/classic/' : isDragon ? 'dragon/classic/' : isUltraman ? 'ultraman/classic/' : isSaintseiya ? 'saintseiya/classic/' : isNinja ? 'ninja/classic/' : 'classic/';
+  const refreshedBase = isBrainrot ? 'brainrot/refreshed/' : isMinecraft ? 'minecraft/refreshed/' : isKun ? 'kun/refreshed/' : isDragon ? 'dragon/refreshed/' : isUltraman ? 'ultraman/refreshed/' : isSaintseiya ? 'saintseiya/refreshed/' : isNinja ? 'ninja/refreshed/' : '';
   [
     { id: 'classic', name: '经典', src: `images/${classicBase}${first}.png` },
     { id: 'refreshed', name: '焕新', src: `images/${refreshedBase}${first}.png` },
@@ -3556,6 +4741,41 @@ function startGame() {
     sceneCacheKey = '';
     showToast('⛏️ 方块世界，开挖！');
     unlockAchievement('minecraft');
+  } else if (state.gameMode === 'kun') {
+    // 直入召唤神鲲
+    LEVELS = KUN_LEVELS;
+    state.scene = 'kun';
+    sceneCacheKey = '';
+    showToast('🐋 北冥有鱼，其名为鲲！');
+    unlockAchievement('kun');
+  } else if (state.gameMode === 'dragon') {
+    // 直入召唤神龙
+    LEVELS = DRAGON_LEVELS;
+    state.scene = 'dragon';
+    sceneCacheKey = '';
+    showToast('🐉 蛇化为龙，一飞冲天！');
+    unlockAchievement('dragon');
+  } else if (state.gameMode === 'ultraman') {
+    // 直入光之巨人
+    LEVELS = ULTRAMAN_LEVELS;
+    state.scene = 'ultraman';
+    sceneCacheKey = '';
+    showToast('🦸 一路进化到赛罗！');
+    unlockAchievement('ultraman');
+  } else if (state.gameMode === 'saintseiya') {
+    // 直入圣斗士
+    LEVELS = SAINTSEIYA_LEVELS;
+    state.scene = 'saintseiya';
+    sceneCacheKey = '';
+    showToast('🛡️ 一路进化到雅典娜！');
+    unlockAchievement('saintseiya');
+  } else if (state.gameMode === 'ninja') {
+    // 直入忍者乱太郎
+    LEVELS = NINJA_LEVELS;
+    state.scene = 'ninja';
+    sceneCacheKey = '';
+    showToast('🍡 一路进化到猫丸！');
+    unlockAchievement('ninja');
   } else {
     // 节奏盒子经典模式
     LEVELS = SPRUNKI_LEVELS;

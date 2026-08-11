@@ -4,6 +4,8 @@
 
 - 每个主题都有两套皮肤：**classic（经典）** 与 **refreshed（焕新）**，由 `state.skin` 切换、按主题记忆。
 - **焕新 = 程序化手绘**，**经典 = gpt-image 生成贴图**。
+- 现有主题：节奏盒子（classic，21 角色）、山海经（brainrot，11 角色）、我的世界（minecraft，17 角色）、**召唤神鲲（kun，18 角色）**、**召唤神龙（dragon，18 角色）**、**光之巨人（ultraman，18 角色，最高级=赛罗 zero）**、**圣斗士（saintseiya，18 角色，最高级=雅典娜 athena）**、**忍者乱太郎（ninja，18 角色，最高级=猫丸·觉醒 nyamaropower，即黑木的猫）**。
+- 主题在模式选择器里的顺序：**kun（神鲲）→ dragon（神龙）→ ultraman（奥特曼）→ saintseiya（圣斗士）→ ninja（忍者乱太郎）→ classic（节奏盒子）→ brainrot（山海经）→ minecraft（我的世界）**。神鲲排最前（用户明确要求）；新主题紧跟其后。
 
 ## 经典（classic）：gpt-image 一张大图 + 切割
 
@@ -49,6 +51,7 @@
 ### gpt-image 生图
 
 - API：gpt-image-2 走 yunwu.ai 转接，key 在 `e:\YuNotebooks\.trae\skills\ppt-master\.env`（`OPENAI_BASE_URL=https://yunwu.ai/v1`）。
+- **直连超时必挂**：yunwu.ai 直连报 `WinError 10060`（连接超时）。必须带系统代理 `127.0.0.1:7897` 跑（`export http_proxy/https_proxy/all_proxy`）。urllib 会自动读环境变量，gpt-image.py 无需改代码。
 - **沙箱会吞输出**：直接调 `gpt-image.py` 可能静默失败无输出。用 `nohup ... &` 重定向日志，或直接写 Python 脚本调用 API 并落盘。
 - **大响应会被代理切断**（"Remote end closed connection without response"）：`--quality medium`（响应约 1.4MB），重试循环 `range(1,6)`、`--timeout 240`。
 - 网格线不是纯白，实测约 `(253,253,254)`；格子背景也不是提示词里的精确色，实测 `(181,226,252)`。**不要假设颜色值，先跑分析脚本采样。**
@@ -59,6 +62,12 @@
 - 用**整行/整列"近白像素占比"**检测网格带（阈值 >244，占比 >0.9），再取带间区域为格子；单行采样易误判。
 - bbox 若从 `(0,0)` 开始说明格子切到了网格线残留；切完务必扫四边像素确认无白边（非背景像素数应为 0）。
 - 内容检测用 `abs(r-bg[0])+abs(g-bg[1])+abs(b-bg[2]) > 60`，缩放用 `Image.LANCZOS`。
+- **gpt 不保证画网格线**（神鲲实测 1692×930，纯背景无分隔线）：改用"内容密度"检测——逐行/逐列统计与背景 diff>60 的像素占比，按 >0.5% 聚成内容区段，取相邻区段中点作格线。注意区段边界可能等于图片宽高，遍历用半开区间 `range(c0,c1)` 防越界。
+- **先缩放、后置透明**：若先置透明再 `LANCZOS` 缩放，透明像素残留的背景 RGB 会被混回内容边缘，形成近背景色光晕（18 张全中招）。顺序必须是 `crop -> resize -> 置透明`。
+- **bbox 初始化必须用相对坐标**：`minx, miny, maxx, maxy = cell.width, cell.height, -1, -1`，不能拿格子的绝对坐标 `x1,y1,x0,y0` 作初值，否则除首格外的格子全裁错（只显示半个角色）。
+- **列间距过窄时切 6 列会失败**（忍者图实测只有 2 个全空白带）：`segs` 少于预期时改用 `--even` 等分网格 + bbox 兜底（等分线为 `round(i*W/N)`）。
+- **合并过近分割线**：gpt 偶尔画出横跨格子的薄装饰带（6px 宽），会让行方向多检出 1 条分割线。`grid_lines` 里丢弃与上一线间距 <20px 的伪线。
+- **18 角色 prompt 的 Row 分配必须逐个核对**：忍者大图曾把 Row2 写成 8 个角色（13-14 误入 Row2）、Row3 只剩 4 个，生成图 6×3 错位。生成前先数 prompt 里 Row1/Row2/Row3 的角色个数=6/6/6。
 
 ### 代码接入三处必须同步
 
@@ -66,6 +75,8 @@
   - 曾经只加了 case 忘了 LEVELS，导致游戏内进化链缺角色——浏览器实测才发现。
 - 预加载**只加载 classic**：refreshed 皮肤纯手绘无图片，预加载不存在的图会产生 404 噪音（曾一次产生 16 条）。
 - 焕新缩略图只需首角色一张（可程序化生成），否则皮肤选择器破图。
+- 新增**主题**（mode）时，除 `*_LEVELS` 外还要同步 6 处：`SCENES`（专属场景，`stageOnly:true`）、`state.skinByMode`、`drawStaticScene` 场景分支、`drawSceneBg` 的 `pulseColors`、`MODE_NAMES/MODE_TAGLINES/MODE_ICONS`、`renderSkinSelector` 的 first/classicBase/refreshedBase、`startGame` 直入分支、`initModeSelector` 的模式数组与 LEVELS 分支（`updateTitle` 已统一负责 HUD 图标/标题/口号）。`drawCharacter` 的 img 分支判断也要把新主题排除在外。
+- 直入式主题（brainrot/minecraft/kun/dragon/ultraman/saintseiya/ninja）不参与 `resolveSceneChoice` 随机场景，`state.scene` 直接指向专属场景 id（`stageOnly:true`）。新主题场景配色：dragon 凌霄云海 `#1B2A52`、ultraman 光之国度 `#1A2E4A`、saintseiya 圣域 `#2A2440`、ninja 忍术学园 `#2E3A2E`。
 
 ### 验证与实测
 
@@ -90,6 +101,6 @@
 
 - 目标：同一页面完整支持桌面、平板、手机三端，**移动端优先**，改样式时三端都要过一遍。
 - 断点约定：≤900px 为平板/手机（折叠菜单、缩小面板）；≤600px 为手机（显示 joystick）；≤380px 为小屏。
-- 主菜单：内容超一屏时用折叠块收纳，现为 `fold-mode / fold-scene / fold-difficulty / fold-skin` 四个区块；窄屏（≤900px）默认折叠"场景选择"（按钮最多最占空间）。`initMenuFolds()` 在 `init()` 和 `showMenu()` 里各调一次，每次回菜单按当前视口宽度重置折叠状态。
+- 主菜单：内容超一屏时用折叠块收纳，现为 `fold-mode / fold-scene / fold-difficulty / fold-skin` 四个区块；窄屏（≤900px）默认折叠"场景选择"与"难度选择"（省空间，用户要求）。`initMenuFolds()` 在 `init()` 和 `showMenu()` 里各调一次，每次回菜单按当前视口宽度重置折叠状态。
 - overlay-panel 统一 `max-height: calc(100vh - 24px)` + `overflow-y: auto`，保证任意屏幕一屏内可滚动到底。
 - joystick：手机端（≤600px）显示、桌面端隐藏，经 `@media` 控制。
