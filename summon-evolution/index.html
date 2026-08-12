@@ -1958,6 +1958,13 @@ function spawnAI(safeSpawn = false) {
 function maintainAIPopulation(dt) {
   const difficulty = DIFFICULTIES.find(d => d.id === state.difficulty) || DIFFICULTIES[1];
   state._aiSpawnTimer -= dt;
+  // 只保留玩家级别±3级以内的角色：玩家进化后超出范围的旧 AI 直接消失
+  const minLevel = Math.max(0, state.playerLevel - 3);
+  const maxLevel = Math.min(LEVELS.length - 1, state.playerLevel + 3);
+  for (let i = aiChars.length - 1; i >= 0; i--) {
+    const a = aiChars[i];
+    if (a.level < minLevel || a.level > maxLevel) aiChars.splice(i, 1);
+  }
   if (aiChars.length < difficulty.aiCount && state._aiSpawnTimer <= 0) {
     spawnAI();
     state._aiSpawnTimer = 0.12;
@@ -2313,15 +2320,17 @@ function winGame() {
 
 // Update follower positions (trail behind player)
 function updateFollowers(dt) {
+  const FOLLOW_DIST = 5; // 拖尾间隔：历史点里相隔多少格（原来 12，收紧到 5）
+  const PATH_INTERVAL = 2; // 每隔多少帧记录一个历史点
   // Record path
-  const PATH_INTERVAL = 2; // record path more frequently
   if (!state._pathCounter) state._pathCounter = 0;
   state._pathCounter += dt * 60;
   if (state._pathCounter >= PATH_INTERVAL) {
     state._pathCounter -= PATH_INTERVAL;
     state.pathHistory.push({ x: player.x, y: player.y });
-    // Keep limited history
-    const maxHistory = state.followers.length * PATH_INTERVAL + 30;
+    // Keep limited history — 必须足够所有跟随者回看 (i+1)*FOLLOW_DIST 个点，
+    // 否则尾部跟随者 histIdx<0 会一直不移动、定在屏幕上
+    const maxHistory = state.followers.length * FOLLOW_DIST + 30;
     while (state.pathHistory.length > maxHistory) state.pathHistory.shift();
   }
 
@@ -2346,48 +2355,51 @@ function updateFollowers(dt) {
     state._huntRetargetTimer = 0.25;
   }
   
-  // Each follower follows 12 steps behind the previous
-  const FOLLOW_DIST = 5; // in history points (was 12, tighter follow)
+  // Each follower follows FOLLOW_DIST steps behind the previous
   for (let i = 0; i < state.followers.length; i++) {
     const f = state.followers[i];
     const histIdx = state.pathHistory.length - 1 - ((i + 1) * FOLLOW_DIST);
+    let tx, ty;
     if (histIdx >= 0) {
-      const target = state.pathHistory[Math.max(0, histIdx)];
-      let tx = target.x, ty = target.y;
-      if (state.squadMode === 'guard') {
-        const a = (i / Math.max(1, state.followers.length)) * Math.PI * 2;
-        tx = player.x + Math.cos(a) * (player.size * 2.2 + i * 2);
-        ty = player.y + Math.sin(a) * (player.size * 2.2 + i * 2);
-      } else if (state.squadMode === 'hunt') {
-        const target = f.huntTarget;
-        // If target no longer exists (eaten) or can't be eaten, clear it and return to following
-        if (target && (!aiChars.includes(target) || target.level > f.level)) {
-          f.huntTarget = null;
-        }
-        if (f.huntTarget) {
-          const dHunt = (f.huntTarget.x - f.x) ** 2 + (f.huntTarget.y - f.y) ** 2;
-          // Distance to player too far -> abandon chase, return to following
-          const dPlayer = (player.x - f.x) ** 2 + (player.y - f.y) ** 2;
-          if (dHunt <= HUNT_CHASE_RANGE_SQ && dPlayer <= HUNT_ABANDON_RANGE_SQ) { tx = f.huntTarget.x; ty = f.huntTarget.y; }
-          else { f.huntTarget = null; }
-        }
-      } else {
-        // follow 模式拖尾上限：离玩家超过 MAX_TRAIL_DIST 时，沿连线方向拉回到最大距离处
-        const dPlayerSq = (player.x - f.x) ** 2 + (player.y - f.y) ** 2;
-        if (dPlayerSq > MAX_TRAIL_DIST_SQ) {
-          const dPlayer = Math.sqrt(dPlayerSq);
-          tx = player.x - ((player.x - f.x) / dPlayer) * MAX_TRAIL_DIST;
-          ty = player.y - ((player.y - f.y) / dPlayer) * MAX_TRAIL_DIST;
-        }
+      const target = state.pathHistory[histIdx];
+      tx = target.x; ty = target.y;
+    } else {
+      // 历史点不足（开局或跟随者骤增时）：先直接向玩家靠拢，避免定在屏幕上
+      tx = player.x; ty = player.y;
+    }
+    if (state.squadMode === 'guard') {
+      const a = (i / Math.max(1, state.followers.length)) * Math.PI * 2;
+      tx = player.x + Math.cos(a) * (player.size * 2.2 + i * 2);
+      ty = player.y + Math.sin(a) * (player.size * 2.2 + i * 2);
+    } else if (state.squadMode === 'hunt') {
+      const target = f.huntTarget;
+      // If target no longer exists (eaten) or can't be eaten, clear it and return to following
+      if (target && (!aiChars.includes(target) || target.level > f.level)) {
+        f.huntTarget = null;
       }
-      const dx = tx - f.x;
-      const dy = ty - f.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 2) {
-        const speed = Math.min(400, dist * 5);
-        f.x += (dx / dist) * speed * dt;
-        f.y += (dy / dist) * speed * dt;
+      if (f.huntTarget) {
+        const dHunt = (f.huntTarget.x - f.x) ** 2 + (f.huntTarget.y - f.y) ** 2;
+        // Distance to player too far -> abandon chase, return to following
+        const dPlayer = (player.x - f.x) ** 2 + (player.y - f.y) ** 2;
+        if (dHunt <= HUNT_CHASE_RANGE_SQ && dPlayer <= HUNT_ABANDON_RANGE_SQ) { tx = f.huntTarget.x; ty = f.huntTarget.y; }
+        else { f.huntTarget = null; }
       }
+    } else {
+      // follow 模式拖尾上限：离玩家超过 MAX_TRAIL_DIST 时，沿连线方向拉回到最大距离处
+      const dPlayerSq = (player.x - f.x) ** 2 + (player.y - f.y) ** 2;
+      if (dPlayerSq > MAX_TRAIL_DIST_SQ) {
+        const dPlayer = Math.sqrt(dPlayerSq);
+        tx = player.x - ((player.x - f.x) / dPlayer) * MAX_TRAIL_DIST;
+        ty = player.y - ((player.y - f.y) / dPlayer) * MAX_TRAIL_DIST;
+      }
+    }
+    const dx = tx - f.x;
+    const dy = ty - f.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 2) {
+      const speed = Math.min(400, dist * 5);
+      f.x += (dx / dist) * speed * dt;
+      f.y += (dy / dist) * speed * dt;
     }
     f.bobPhase += dt * 3;
   }
