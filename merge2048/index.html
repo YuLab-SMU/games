@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>合成2048</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; min-height: 100vh; min-height: 100dvh;
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  display: flex; flex-direction: column; align-items: center;
+  overflow-x: hidden;
+  user-select: none; -webkit-user-select: none;
+  touch-action: none;
+}
+
+header {
+  text-align: center; padding: 20px 16px 8px; width: 100%; max-width: 520px;
+}
+header h1 {
+  font-size: 2rem; font-weight: 900;
+  background: linear-gradient(135deg, #FFD93D, #FF9F43, #FF6B6B);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Mode tabs */
+.mode-tabs {
+  display: flex; gap: 8px; justify-content: center; padding: 8px 0 4px;
+}
+.mode-tab {
+  font-family: inherit; font-size: 0.85rem; font-weight: 800;
+  padding: 8px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.75);
+  cursor: pointer; transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.mode-tab.active {
+  background: linear-gradient(135deg, #6C63FF, #4834D4);
+  border-color: transparent; color: #fff;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.35);
+}
+.mode-tab:active { transform: scale(0.95); }
+
+/* Theme selector */
+.theme-row { padding: 4px 0 6px; }
+.theme-select {
+  font-family: inherit; font-size: 0.85rem; font-weight: 700;
+  padding: 7px 12px; border-radius: 12px;
+  background: rgba(255,255,255,0.08); color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  outline: none; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.theme-select option { background: #1a1a2e; color: #fff; }
+
+.score-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; gap: 12px;
+}
+.score-item {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px; padding: 8px 16px;
+  color: #ccc; font-size: 0.75rem; text-align: center;
+  backdrop-filter: blur(8px);
+}
+.score-val {
+  display: block; font-size: 1.2rem; font-weight: 900; color: #fff;
+}
+
+/* Launch HUD */
+.launch-hud {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 6px 18px; margin: 0 auto 6px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+}
+.launch-hud .lh-label { font-size: 0.75rem; color: #ccc; font-weight: 700; }
+.lh-img { width: 42px; height: 42px; object-fit: contain; }
+
+/* Game board */
+.board-wrap {
+  position: relative;
+  width: min(90vw, 450px); aspect-ratio: 1;
+  margin: 8px auto 16px;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  background: rgba(255,255,255,0.04);
+  background-size: cover; background-position: center;
+  border-radius: 14px;
+}
+#board {
+  position: absolute; inset: 0;
+  display: grid;
+  gap: 2.5%;
+  padding: 2.5%;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: rgba(10,10,30,0.35);
+}
+
+.cell {
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+}
+
+.tile {
+  position: absolute;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 10px;
+  font-weight: 900; color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: left 0.12s ease, top 0.12s ease;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  background: transparent;
+}
+.tile.new { animation: tilePop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.tile.merged { animation: tileMerge 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 2; }
+@keyframes tilePop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes tileMerge { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+.tile-img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  transform-origin: center bottom;
+}
+
+.tile-name {
+  font-size: clamp(0.6rem, 3vw, 1rem); line-height: 1.2;
+}
+.tile-lv {
+  font-size: clamp(0.35rem, 1.8vw, 0.55rem);
+  opacity: 0.7; margin-top: 1px;
+}
+
+/* 撞击物理手感：果冻式弹跳（受重力压扁→回弹） */
+@keyframes jellyBounce {
+  0%   { transform: scale(1, 1); }
+  18%  { transform: scale(1.22, 0.78); }
+  42%  { transform: scale(0.86, 1.18); }
+  68%  { transform: scale(1.08, 0.92); }
+  100% { transform: scale(1, 1); }
+}
+.tile.jelly .tile-img { animation: jellyBounce 0.42s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.cell.jelly { animation: jellyBounce 0.42s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* 发射物 */
+.projectile {
+  position: absolute;
+  z-index: 5;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
+
+/* Float text (merge subtitle) */
+.float-tagline {
+  position: absolute; pointer-events: none; z-index: 10;
+  font-weight: 800; font-size: clamp(0.6rem, 2.5vw, 0.9rem);
+  color: #FFD700; text-shadow: 0 0 10px rgba(255,215,0,0.6), 0 2px 4px rgba(0,0,0,0.5);
+  white-space: nowrap;
+  animation: tagFloat 1.2s ease-out forwards;
+}
+@keyframes tagFloat {
+  0% { opacity: 1; transform: translate(-50%, 0) scale(0.6); }
+  30% { opacity: 1; transform: translate(-50%, -20px) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -60px) scale(1); }
+}
+
+/* Buttons */
+.ctrl-row {
+  display: flex; gap: 10px; padding: 0 16px 20px; flex-wrap: wrap; justify-content: center;
+}
+.btn {
+  font-family: inherit; font-size: 0.9rem; font-weight: 800;
+  padding: 10px 22px; border-radius: 14px; border: none; cursor: pointer;
+  color: #fff; transition: all 0.2s ease;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+}
+.btn:hover { background: rgba(255,255,255,0.18); }
+.btn:active { transform: scale(0.95); }
+.btn.primary { background: linear-gradient(135deg, #6C63FF, #4834D4); border-color: transparent; }
+
+/* Game over overlay */
+#gameover {
+  display: none;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 100; align-items: center; justify-content: center; flex-direction: column;
+}
+#gameover.show { display: flex; }
+#gameover .panel {
+  background: rgba(25,22,55,0.95); backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 28px 24px; text-align: center;
+  max-width: 340px; width: 90%; color: #e8e0f0;
+}
+#gameover h2 { font-size: 1.5rem; margin-bottom: 8px; color: #FFD93D; }
+#gameover .big-emoji { font-size: 3rem; display: block; margin: 10px 0; }
+#gameover .btn { margin-top: 12px; }
+
+/* Responsive */
+@media (max-width: 400px) {
+  header h1 { font-size: 1.5rem; }
+  .btn { padding: 8px 16px; font-size: 0.8rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧩 合成 2048</h1>
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-classic" onclick="switchMode('classic')">🀄 滑动合成</button>
+    <button class="mode-tab" id="tab-launch" onclick="switchMode('launch')">🎯 发射合成</button>
+  </div>
+  <div class="theme-row">
+    <select id="theme-select" class="theme-select" onchange="onThemeChange(this.value)"></select>
+  </div>
+  <div class="score-bar">
+    <div class="score-item">🏆 得分<span class="score-val" id="score">0</span></div>
+    <div class="score-item">🔝 最高<span class="score-val" id="best">0</span></div>
+    <div class="score-item">📦 等级<span class="score-val" id="level-name">—</span></div>
+  </div>
+</header>
+
+<div class="launch-hud" id="launch-hud" style="display:none">
+  <span class="lh-label">下一发</span>
+  <img id="next-img" class="lh-img" alt="">
+</div>
+
+<div class="board-wrap" id="board-wrap">
+  <div id="board"></div>
+</div>
+
+<div class="ctrl-row">
+  <button class="btn primary" onclick="newGame()">🔄 新游戏</button>
+  <button class="btn" onclick="undoMove()">↩ 撤销</button>
+</div>
+
+<div id="gameover">
+  <div class="panel">
+    <span class="big-emoji" id="go-emoji">🎉</span>
+    <h2 id="go-title"></h2>
+    <p id="go-sub" style="color:rgba(255,255,255,0.5);margin-bottom:12px;"></p>
+    <button class="btn primary" onclick="newGame()">再来一局</button>
+  </div>
+</div>
+
+<script>
+// ==================== LEVELS ====================
+const LEVELS = [
+  { name: '学沫', tagline: '一吹就散', value: 2,    bg: '#6b6b80', fg: '#ccc' },
+  { name: '学渣', tagline: '初见端倪', value: 4,    bg: '#8b7355', fg: '#eee' },
+  { name: '学弱', tagline: '我还能学', value: 8,    bg: '#9b6b43', fg: '#ffe' },
+  { name: '学民', tagline: '就这？',   value: 16,   bg: '#5c6b7a', fg: '#ffe' },
+  { name: '学霸', tagline: '开始卷了', value: 32,   bg: '#3b5998', fg: '#fff' },
+  { name: '学神', tagline: '你还学？', value: 64,   bg: '#6c3b9b', fg: '#fff' },
+  { name: '学仙', tagline: '渡劫中…', value: 128,  bg: '#1a8b8b', fg: '#fff' },
+  { name: '学圣', tagline: '已超神',   value: 256,  bg: '#2d8b46', fg: '#fff' },
+  { name: '学王', tagline: '卷王之王', value: 512,  bg: '#e67e22', fg: '#fff' },
+  { name: '学帝', tagline: '卷无可卷', value: 1024, bg: '#c0392b', fg: '#ffe' },
+  { name: '学祖', tagline: '自己编书', value: 2048, bg: '#9b59b6', fg: '#fff' },
+  { name: '学怪', tagline: '这人开挂', value: 4096, bg: '#f39c12', fg: '#fff', glow: true },
+  { name: '学妖', tagline: '别学了🏆', value: 8192, bg: '#f1c40f', fg: '#1a1a00', glow: true },
+];
+
+// Build value → level map
+const valMap = {};
+LEVELS.forEach((lv, i) => { valMap[lv.value] = i; });
+
+// ==================== THEMES（共享图片皮肤，取自 summon-evolution） ====================
+// roles 为各主题经典皮肤的进化顺序（角色图片文件名），运行时等距采样 13 个映射到 13 级
+const THEMES = [
+  { id: 'fruit',      name: '🍉 水果',       bg: 'bg-candy', dir: 'fruit/classic/',
+    roles: ['watermelon','cantaloupe','muskmelon','pumpkin','dragonfruit','pineapple','coconut','banana','apple','orange','peach','mango','grape','strawberry','blueberry','cherry','longan','lychee'],
+    names: ['西瓜','哈密瓜','香瓜','南瓜','火龙果','菠萝','椰子','香蕉','苹果','橙子','桃子','芒果','葡萄','草莓','蓝莓','樱桃','龙眼','荔枝'] },
+  { id: 'dragon',     name: '🐉 神龙',       bg: 'bg-ocean', dir: 'dragon/classic/',
+    roles: ['snakelet','greensnake','python','cobra','viper','flamesnake','jadesnake','gemsnake','spiritsnake','jiao','chi','qiu','pan','ying','qinglong','zhulong','shenlong','jinlong'],
+    names: ['小蛇','青蛇','蟒蛇','眼镜王蛇','蝰蛇','赤炎蛇','碧鳞蛇','紫晶蛇','灵蛇','蛟','螭龙','虬龙','蟠龙','应龙','青龙','烛龙','神龙','五爪金龙'] },
+  { id: 'kun',        name: '🐋 神鲲',       bg: 'bg-ocean', dir: 'kun/classic/',
+    roles: ['tadpole','redfin','koi','eel','swordfish','shark','octopus','squid','orca','whale','tortoise','kraken','leviathan','jiao','tuntian','kun','shenkun','peng'],
+    names: ['幼鲲','赤鳞鱼','锦鲤','电鳗','剑鱼','食人鲨','八爪章鱼','大王乌贼','虎鲸','蓝鲸','玄龟','北海巨妖','利维坦','蛟龙','吞天兽','北冥鲲','神鲲','神鲲·鹏'] },
+  { id: 'classic',    name: '🎵 节奏盒子',   bg: 'bg-cyber', dir: 'classic/',
+    roles: ['raddy','garnold','black','gray','funbot','sky','oren','mrsun','mrtree','jevin','lime','vineria','clukr','brud','durple','simon','tunner','funcomputer','doghead','wenda','pinki'],
+    names: ['瑞迪','佳诺德','布莱克','格雷','快乐机器人','小天','奥伦','太阳先生','大树先生','杰文','莱姆','藤蔓妹妹','克拉克','布拉德','达普','西蒙','坦纳','快乐电脑','狗头','温达','平基'] },
+  { id: 'minecraft',  name: '⛏️ 我的世界',   bg: 'bg-forest', dir: 'minecraft/classic/',
+    roles: ['chicken','pig','sheep','rabbit','fox','villager','wolf','zombie','skeleton','creeper','steve','alex','witch','ironGolem','witherSkeleton','warden','enderDragon'],
+    names: ['鸡','猪','羊','兔子','狐狸','村民','狼','僵尸','骷髅','苦力怕','史蒂夫','艾利克斯','女巫','铁傀儡','凋灵骷髅','监守者','末影龙'] },
+  { id: 'ultraman',   name: '👾 奥特曼',     bg: 'bg-space', dir: 'ultraman/classic/',
+    roles: ['pigmon','miclas','windom','eleking','gomora','tyrant','bemular','zetton','baltan','darktiga','ultraman','seven','taro','leo','tiga','dyna','mebius','zero'],
+    names: ['皮古蒙','米克拉斯','乌英达姆','艾雷王','哥莫拉','泰兰特','贝蒙斯坦','杰顿','巴尔坦星人','黑暗迪迦','初代奥特曼','赛文','泰罗','雷欧','迪迦','戴拿','梦比优斯','赛罗'] },
+  { id: 'saintseiya', name: '🛡️ 圣斗士',    bg: 'bg-cyber', dir: 'saintseiya/classic/',
+    roles: ['soldier','pegasus','shiryu','hyoga','shun','ikki','eagle','lyra','lizard','aries','taurus','gemini','cancer','leoaioria','virgo','scorpio','sagittarius','athena'],
+    names: ['杂兵','天马·星矢','天龙·紫龙','白鸟·冰河','仙女·瞬','凤凰·一辉','天鹰·魔铃','天琴·奥路菲','蜥蜴·美斯狄','白羊·穆','金牛·阿鲁迪巴','双子·撒加','巨蟹·迪斯马斯克','狮子·艾奥里亚','处女·沙加','天蝎·米罗','射手·艾俄洛斯','雅典娜'] },
+  { id: 'ninja',      name: '🥷 忍者',       bg: 'bg-forest', dir: 'ninja/classic/',
+    roles: ['rantaro','kirimaru','shinbe','year2','year3','year4','year5','year6','rikichi','doi','yamada','ando','kyojin','headmaster','kuroki','kurokikaze','nyamaro','nyamaropower'],
+    names: ['乱太郎','雾丸','新兵卫','二年级生','三年级生','四年级生','五年级生','六年级生','精英·利吉','土井老师','山田老师','安藤老师','巨汉忍者','学园长','黑木老师','黑木·疾风','猫丸·见习','猫丸·觉醒'] },
+  { id: 'brainrot',   name: '🧠 脑残',       bg: 'bg-candy', dir: 'brainrot/classic/',
+    roles: ['sneakerShark','bomberCroc','treeMonkey','cactusElephant','coffeeNinja','ballerinaCup','bananaChimp','bomberGoose','fridgeCamel','saturnCow','teapotMan'],
+    names: ['运动鞋鲨鱼','轰炸鳄鱼','树精猴','仙人掌大象','咖啡忍者','芭蕾咖啡姬','香蕉猩猩','轰炸鹅','冰箱骆驼','土星奶牛','茶壶人'] },
+  { id: 'eggy',       name: '🥚 蛋仔',       bg: 'bg-candy', dir: 'eggy/classic/',
+    roles: ['white','yellow','pink','blue','green','panda','bunny','cat','cowboy','pirate','knight','ninja','magician','astronaut','ice','flame','aurora','eggking'],
+    names: ['白蛋仔','黄蛋仔','粉蛋仔','蓝蛋仔','绿蛋仔','熊猫蛋仔','兔兔蛋仔','猫咪蛋仔','牛仔蛋仔','海盗蛋仔','骑士蛋仔','忍者蛋仔','魔法师蛋仔','宇航员蛋仔','冰晶蛋仔','烈焰蛋仔','极光蛋仔','蛋皇·传说'] },
+  { id: 'academic',   name: '🔢 经典',       bg: null,       dir: null, roles: null, names: null },
+];
+
+// 默认皮肤：水果
+let currentTheme = THEMES[0];
+let themeRoles = null;          // 采样后的 13 个角色图片名
+let themeRoleNames = null;      // 采样后的 13 个角色中文名
+const themeImgCache = {};       // src -> Image
+
+function sampleRoles(theme) {
+  const roles = theme.roles;
+  const names = theme.names || roles;
+  const n = roles.length;
+  const idxs = [];
+  if (n >= 13) {
+    for (let i = 0; i < 13; i++) idxs.push(Math.round(i * (n - 1) / 12));
+  } else {
+    for (let i = 0; i < 13; i++) idxs.push(Math.min(i, n - 1));
+  }
+  return { roles: idxs.map(i => roles[i]), names: idxs.map(i => names[i]) };
+}
+
+function imgSrcFor(v) {
+  if (!themeRoles) return null;
+  const lvIdx = valMap[v];
+  const role = themeRoles[lvIdx];
+  if (!role) return null;
+  return '../images/' + currentTheme.dir + role + '.png';
+}
+
+function levelNameOf(v) {
+  const lvIdx = valMap[v];
+  if (lvIdx === undefined) return '—';
+  if (themeRoleNames) return themeRoleNames[lvIdx];
+  return String(v);   // 经典主题直接显示数值，不用学术文字
+}
+
+function applyTheme() {
+  if (currentTheme.roles) {
+    const sample = sampleRoles(currentTheme);
+    themeRoles = sample.roles;
+    themeRoleNames = sample.names;
+    themeRoles.forEach(role => {
+      const src = '../images/' + currentTheme.dir + role + '.png';
+      if (!themeImgCache[src]) {
+        const img = new Image();
+        img.src = src;
+        themeImgCache[src] = img;
+      }
+    });
+  } else {
+    themeRoles = null;
+    themeRoleNames = null;
+  }
+  // 背景：2048 专属简洁背景，所有皮肤统一，不让场景图抢戏
+  boardWrap.style.backgroundImage = "url('../images/bg-2048.png')";
+  boardWrap.style.backgroundColor = 'rgba(255,255,255,0.04)';
+  updateNextPreview();
+  render();
+}
+
+function onThemeChange(id) {
+  currentTheme = THEMES.find(t => t.id === id) || THEMES[0];
+  applyTheme();
+}
+
+// ==================== MODE ====================
+let mode = 'classic';
+const BEST_KEYS = { classic: 'merge2048_best', launch: 'merge2048_best_launch' };
+
+// ==================== STATE ====================
+let ROWS = 4, COLS = 4;
+let grid = [];
+let score = 0;
+let bestScore = parseInt(localStorage.getItem(BEST_KEYS[mode]) || '0');
+let gameOver = false;
+let won = false;
+let history = [];
+let nextTile = 2;   // 发射模式下一发
+
+const board = document.getElementById('board');
+const boardWrap = document.getElementById('board-wrap');
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const levelNameEl = document.getElementById('level-name');
+const nextImg = document.getElementById('next-img');
+
+function emptyGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
+
+function setupBoard() {
+  if (mode === 'launch') { ROWS = 5; COLS = 4; }
+  else { ROWS = 4; COLS = 4; }
+  board.style.gridTemplateColumns = 'repeat(' + COLS + ', 1fr)';
+  board.style.gridTemplateRows = 'repeat(' + ROWS + ', 1fr)';
+  boardWrap.style.aspectRatio = mode === 'launch' ? '4 / 5' : '1';
+  board.innerHTML = '';
+  for (let i = 0; i < ROWS * COLS; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    board.appendChild(cell);
+  }
+  document.getElementById('launch-hud').style.display = mode === 'launch' ? 'flex' : 'none';
+}
+
+function switchMode(m) {
+  if (m === mode) return;
+  mode = m;
+  document.getElementById('tab-classic').classList.toggle('active', m === 'classic');
+  document.getElementById('tab-launch').classList.toggle('active', m === 'launch');
+  bestScore = parseInt(localStorage.getItem(BEST_KEYS[mode]) || '0');
+  setupBoard();
+  newGame();
+}
+
+// ==================== GRID LOGIC ====================
+function addRandom() {
+  const empties = [];
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (grid[r][c] === 0) empties.push([r, c]);
+  if (empties.length === 0) return false;
+  const [r, c] = empties[Math.floor(Math.random() * empties.length)];
+  grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+  return true;
+}
+
+function nextTileValue() { return Math.random() < 0.9 ? 2 : 4; }
+
+function slide(row) {
+  let arr = row.filter(v => v !== 0);
+  let merged = [];
+  let scoreGain = 0;
+  let mergePositions = [];
+  for (let i = 0; i < arr.length; i++) {
+    if (i + 1 < arr.length && arr[i] === arr[i + 1]) {
+      const newVal = arr[i] * 2;
+      merged.push(newVal);
+      scoreGain += newVal;
+      mergePositions.push(merged.length - 1);
+      i++;
+    } else {
+      merged.push(arr[i]);
+    }
+  }
+  while (merged.length < row.length) merged.push(0);
+  return { row: merged, score: scoreGain, merges: mergePositions };
+}
+
+function move(direction) {
+  const oldGrid = grid.map(r => [...r]);
+  let totalScore = 0;
+  const mergeInfo = [];
+  const rowCount = (direction === 'up' || direction === 'down') ? COLS : ROWS;
+  const lineLen = (direction === 'up' || direction === 'down') ? ROWS : COLS;
+
+  for (let i = 0; i < rowCount; i++) {
+    let raw;
+    if (direction === 'left')  raw = grid[i];
+    else if (direction === 'right') raw = [...grid[i]].reverse();
+    else if (direction === 'up')    raw = Array.from({ length: lineLen }, (_, j) => grid[j][i]);
+    else /* down */                 raw = Array.from({ length: lineLen }, (_, j) => grid[lineLen - 1 - j][i]);
+
+    const result = slide(raw);
+    totalScore += result.score;
+    const finalRow = result.row;
+
+    if (direction === 'left') {
+      for (let j = 0; j < COLS; j++) grid[i][j] = finalRow[j];
+      result.merges.forEach(mi => mergeInfo.push({ r: i, c: mi }));
+    } else if (direction === 'right') {
+      const rev = [...finalRow].reverse();
+      for (let j = 0; j < COLS; j++) grid[i][j] = rev[j];
+      result.merges.forEach(mi => mergeInfo.push({ r: i, c: COLS - 1 - mi }));
+    } else if (direction === 'up') {
+      for (let j = 0; j < ROWS; j++) grid[j][i] = finalRow[j];
+      result.merges.forEach(mi => mergeInfo.push({ r: mi, c: i }));
+    } else { // down
+      const rev = [...finalRow].reverse();
+      for (let j = 0; j < ROWS; j++) grid[j][i] = rev[j];
+      result.merges.forEach(mi => mergeInfo.push({ r: ROWS - 1 - mi, c: i }));
+    }
+  }
+
+  let changed = false;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (grid[r][c] !== oldGrid[r][c]) changed = true;
+  if (!changed) return;
+
+  history.push({ grid: oldGrid.map(r => [...r]), score });
+
+  score += totalScore;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem(BEST_KEYS[mode], bestScore);
+  }
+
+  addRandom();
+  render(mergeInfo);
+  updateHUD();
+  checkGameState();
+}
+
+function canMove() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (grid[r][c] === 0) return true;
+      if (c < COLS - 1 && grid[r][c] === grid[r][c + 1]) return true;
+      if (r < ROWS - 1 && grid[r][c] === grid[r + 1][c]) return true;
+    }
+  }
+  return false;
+}
+
+function boardFull() {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (grid[r][c] === 0) return false;
+  return true;
+}
+
+function checkGameState() {
+  if (won) return;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (grid[r][c] >= 8192) {
+        won = true;
+        document.getElementById('go-emoji').textContent = '👑';
+        document.getElementById('go-title').textContent = '恭喜登顶学妖！';
+        document.getElementById('go-sub').textContent = '别学了，你已经无敌了 🏆';
+        document.getElementById('gameover').classList.add('show');
+        return;
+      }
+
+  let dead = false;
+  if (mode === 'launch') {
+    dead = boardFull(); // 发射模式：棋盘全满即结束
+  } else {
+    dead = !canMove();
+  }
+  if (dead) {
+    gameOver = true;
+    document.getElementById('go-emoji').textContent = '💀';
+    document.getElementById('go-title').textContent = mode === 'launch' ? '无处可落' : '无路可走';
+    document.getElementById('go-sub').textContent = '得分：' + score;
+    document.getElementById('gameover').classList.add('show');
+  }
+}
+
+function undoMove() {
+  if (history.length === 0 || gameOver) return;
+  const prev = history.pop();
+  grid = prev.grid;
+  score = prev.score;
+  if (mode === 'launch') {
+    nextTile = prev.nextTile;
+    updateNextPreview();
+  }
+  render();
+  updateHUD();
+}
+
+function newGame() {
+  grid = emptyGrid();
+  score = 0;
+  gameOver = false;
+  won = false;
+  history = [];
+  if (mode === 'launch') {
+    nextTile = nextTileValue();
+    updateNextPreview();
+  } else {
+    addRandom();
+    addRandom();
+  }
+  render();
+  updateHUD();
+  document.getElementById('gameover').classList.remove('show');
+}
+
+function updateNextPreview() {
+  const src = imgSrcFor(nextTile);
+  if (src) nextImg.src = src;
+  else nextImg.src = '';
+}
+
+function updateHUD() {
+  scoreEl.textContent = score;
+  bestEl.textContent = bestScore;
+  let maxV = 0;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (grid[r][c] > maxV) maxV = grid[r][c];
+  levelNameEl.textContent = levelNameOf(maxV);
+}
+
+// ==================== RENDER ====================
+function getTilePos(r, c) {
+  const wrapRect = boardWrap.getBoundingClientRect();
+  const cells = board.children;
+  const first = cells[0].getBoundingClientRect();
+  const second = cells[1].getBoundingClientRect();
+  const below = cells[COLS].getBoundingClientRect();
+  const cellW = first.width;
+  const cellH = first.height;
+  const gapX = second.left - first.right;
+  const gapY = below.top - first.bottom;
+  return {
+    left: (first.left - wrapRect.left) + c * (cellW + gapX),
+    top: (first.top - wrapRect.top) + r * (cellH + gapY),
+    w: cellW,
+    h: cellH,
+  };
+}
+
+let tileEls = [];
+
+function render(mergeInfo = []) {
+  tileEls.forEach(el => el.remove());
+  tileEls = [];
+  document.querySelectorAll('.float-tagline').forEach(el => el.remove());
+  document.querySelectorAll('.projectile').forEach(el => el.remove());
+
+  const isAcademic = !themeRoles;
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const v = grid[r][c];
+      if (v === 0) continue;
+
+      const lvIdx = valMap[v];
+      const lv = lvIdx !== undefined ? LEVELS[lvIdx] : null;
+
+      const pos = getTilePos(r, c);
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.dataset.r = r;
+      tile.dataset.c = c;
+      const shrink = 0.92;
+      const marginX = pos.w * (1 - shrink) / 2;
+      const marginY = pos.h * (1 - shrink) / 2;
+      tile.style.left = (pos.left + marginX) + 'px';
+      tile.style.top = (pos.top + marginY) + 'px';
+      tile.style.width = (pos.w * shrink) + 'px';
+      tile.style.height = (pos.h * shrink) + 'px';
+
+      if (isAcademic && lv) {
+        tile.style.background = lv.bg;
+        tile.style.color = lv.fg;
+        if (lv.glow) tile.style.boxShadow = '0 0 18px rgba(255,215,0,0.55)';
+        const name = document.createElement('span');
+        name.className = 'tile-name';
+        name.textContent = lv.name;
+        tile.appendChild(name);
+        const lvEl = document.createElement('span');
+        lvEl.className = 'tile-lv';
+        lvEl.textContent = lv.value;
+        tile.appendChild(lvEl);
+      } else if (lv) {
+        const src = imgSrcFor(v);
+        if (src) {
+          const im = document.createElement('img');
+          im.src = src;
+          im.className = 'tile-img';
+          tile.appendChild(im);
+        }
+      } else {
+        tile.style.background = '#333';
+        tile.textContent = v;
+      }
+
+      boardWrap.appendChild(tile);
+      tileEls.push(tile);
+    }
+  }
+
+  mergeInfo.forEach(m => {
+    const t = tileAt(m.r, m.c);
+    if (t) t.classList.add('merged');
+  });
+}
+
+function tileAt(r, c) {
+  return tileEls.find(t => +t.dataset.r === r && +t.dataset.c === c) || null;
+}
+
+function floatTag(r, c, text) {
+  const pos = getTilePos(r, c);
+  const ft = document.createElement('span');
+  ft.className = 'float-tagline';
+  ft.style.left = (pos.left + pos.w / 2) + 'px';
+  ft.style.top = pos.top + 'px';
+  ft.textContent = text;
+  ft.addEventListener('animationend', () => ft.remove());
+  boardWrap.appendChild(ft);
+}
+
+function impactEffect(r, c, cls) {
+  const t = tileAt(r, c);
+  if (t) t.classList.add(cls);
+  else {
+    const cell = board.children[r * COLS + c];
+    if (cell) cell.classList.add(cls);
+  }
+}
+
+// ==================== LAUNCH MODE ====================
+let launching = false;
+
+// 同值连锁合成：BFS，每格只参与一次
+function mergeCascade(r, c, v) {
+  let curV = v * 2;
+  let gain = curV;
+  grid[r][c] = 0;
+  const queue = [[r, c]];
+  const visited = new Set([r + ',' + c]);
+  while (queue.length) {
+    const [qr, qc] = queue.shift();
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const nr = qr + dr, nc = qc + dc;
+      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+      const key = nr + ',' + nc;
+      if (visited.has(key)) continue;
+      visited.add(key);
+      if (grid[nr][nc] === curV) {
+        grid[nr][nc] = 0;
+        curV *= 2;
+        gain += curV;
+        queue.push([nr, nc]);
+      }
+    }
+  }
+  grid[r][c] = curV;
+  score += gain;
+  return curV;
+}
+
+function bounceOff(proj, x, y, r, c) {
+  proj.style.left = (x - proj.offsetWidth / 2) + 'px';
+  proj.style.top = (y - proj.offsetHeight / 2) + 'px';
+  proj.style.transition = 'left .3s ease-out, top .3s ease-out, opacity .3s ease-out, transform .3s ease-out';
+  const dir = Math.random() < 0.5 ? -1 : 1;
+  proj.style.left = (x - proj.offsetWidth / 2 + dir * 90) + 'px';
+  proj.style.top = (y - proj.offsetHeight / 2 + 50) + 'px';
+  proj.style.transform = 'rotate(' + (dir * 70) + 'deg)';
+  proj.style.opacity = '0';
+  setTimeout(() => proj.remove(), 320);
+  impactEffect(r, c, 'jelly');
+}
+
+function fire(row, col) {
+  const v = nextTile;
+  nextTile = nextTileValue();
+  updateNextPreview();
+  history.push({ grid: grid.map(r => [...r]), score, nextTile });
+
+  const target = getTilePos(row, col);
+  const size = target.w * 0.8;
+  const startX = target.left + target.w / 2;
+  const startY = -size;
+  const endX = target.left + target.w / 2;
+  const endY = target.top + target.h / 2;
+
+  const proj = document.createElement('img');
+  proj.className = 'projectile';
+  const src = imgSrcFor(v);
+  if (src) proj.src = src;
+  proj.style.width = size + 'px';
+  proj.style.height = size + 'px';
+  proj.style.left = (startX - size / 2) + 'px';
+  proj.style.top = (startY - size / 2) + 'px';
+  boardWrap.appendChild(proj);
+
+  launching = true;
+  const cur = grid[row][col];
+  const t0 = performance.now();
+  const DUR = 300;
+
+  function step(now) {
+    let t = Math.min(1, (now - t0) / DUR);
+    const ease = 1 - Math.pow(1 - t, 2.2);
+    const px = startX + (endX - startX) * ease;
+    const py = startY + (endY - startY) * ease;
+    proj.style.left = (px - size / 2) + 'px';
+    proj.style.top = (py - size / 2) + 'px';
+    proj.style.transform = 'rotate(' + (t * 200) + 'deg)';
+    if (t < 1) { requestAnimationFrame(step); return; }
+
+    // 命中判定
+    if (cur === 0) {
+      proj.remove();
+      grid[row][col] = v;
+      render();
+      impactEffect(row, col, 'new');
+      impactEffect(row, col, 'jelly');
+    } else if (cur === v) {
+      proj.remove();
+      const finalV = mergeCascade(row, col, v);
+      render([{ r: row, c: col }]);
+      impactEffect(row, col, 'jelly');
+      floatTag(row, col, '合成 ' + levelNameOf(finalV));
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem(BEST_KEYS[mode], bestScore);
+      }
+    } else {
+      bounceOff(proj, endX, endY, row, col);
+    }
+
+    launching = false;
+    updateHUD();
+    checkGameState();
+  }
+  requestAnimationFrame(step);
+}
+
+function launchAt(clientX, clientY) {
+  if (mode !== 'launch' || gameOver || launching) return;
+  const wrapRect = boardWrap.getBoundingClientRect();
+  const x = clientX - wrapRect.left;
+  const y = clientY - wrapRect.top;
+  const p0 = getTilePos(0, 0);
+  const p1 = getTilePos(0, 1);
+  const p2 = getTilePos(1, 0);
+  const cellW = p0.w, cellH = p0.h;
+  const gapX = p1.left - (p0.left + p0.w);
+  const gapY = p2.top - (p0.top + p0.h);
+  const col = Math.max(0, Math.min(COLS - 1, Math.round((x - p0.left) / (cellW + gapX))));
+  const row = Math.max(0, Math.min(ROWS - 1, Math.round((y - p0.top) / (cellH + gapY))));
+  fire(row, col);
+}
+
+// ==================== INPUT ====================
+// 经典模式：键盘方向键 / 滑动
+// 发射模式：点击即发射
+const SWIPE_THRESHOLD = 10;
+let touchStart = null;
+
+boardWrap.addEventListener('pointerdown', e => {
+  if (mode === 'launch') {
+    launchAt(e.clientX, e.clientY);
+    return;
+  }
+  touchStart = { x: e.clientX, y: e.clientY };
+});
+
+boardWrap.addEventListener('pointerup', e => {
+  if (mode !== 'classic' || !touchStart) return;
+  const dx = e.clientX - touchStart.x;
+  const dy = e.clientY - touchStart.y;
+  touchStart = null;
+  if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return;
+  if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 'right' : 'left');
+  else move(dy > 0 ? 'down' : 'up');
+});
+
+document.addEventListener('keydown', e => {
+  if (mode !== 'classic') return;
+  const k = e.key;
+  if (k === 'ArrowLeft' || k === 'a' || k === 'A') move('left');
+  else if (k === 'ArrowRight' || k === 'd' || k === 'D') move('right');
+  else if (k === 'ArrowUp' || k === 'w' || k === 'W') move('up');
+  else if (k === 'ArrowDown' || k === 's' || k === 'S') move('down');
+});
+
+window.addEventListener('resize', () => render());
+
+// ==================== INIT ====================
+function initThemeSelect() {
+  const sel = document.getElementById('theme-select');
+  THEMES.forEach((t, i) => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.name;
+    sel.appendChild(opt);
+  });
+  sel.value = currentTheme.id;
+}
+
+initThemeSelect();
+setupBoard();
+newGame();
+applyTheme();
+</script>
+</body>
+</html>
