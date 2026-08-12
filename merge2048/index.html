@@ -559,7 +559,7 @@ function checkGameState() {
 }
 
 function undoMove() {
-  if (history.length === 0 || gameOver) return;
+  if (history.length === 0 || gameOver || launching) return;
   const prev = history.pop();
   grid = prev.grid;
   score = prev.score;
@@ -572,6 +572,9 @@ function undoMove() {
 }
 
 function newGame() {
+  launching = false;
+  launchGen++;
+  document.querySelectorAll('.projectile').forEach(el => el.remove());
   grid = emptyGrid();
   score = 0;
   gameOver = false;
@@ -630,7 +633,8 @@ function render(mergeInfo = []) {
   tileEls.forEach(el => el.remove());
   tileEls = [];
   document.querySelectorAll('.float-tagline').forEach(el => el.remove());
-  document.querySelectorAll('.projectile').forEach(el => el.remove());
+  // 注意：不删除 .projectile。飞行/弹开中的发射物由 fire/bounceOff 自行回收，
+  // 若在此删除会误删飞行途中的发射物（如 resize 触发 render），导致"发射丢失"。
 
   const isAcademic = !themeRoles;
 
@@ -717,6 +721,7 @@ function impactEffect(r, c, cls) {
 
 // ==================== LAUNCH MODE ====================
 let launching = false;
+let launchGen = 0;   // 局数代际：newGame 时自增，用于取消旧局的在飞 rAF（防幽灵落子）
 
 // 同值连锁合成：BFS，每格只参与一次
 function mergeCascade(r, c, v) {
@@ -775,7 +780,20 @@ function fire(row, col) {
   const proj = document.createElement('img');
   proj.className = 'projectile';
   const src = imgSrcFor(v);
-  if (src) proj.src = src;
+  if (src) {
+    proj.src = src;
+  } else {
+    // 经典主题无图片：用数字方块显示发射物，避免隐形"丢失"
+    proj.style.background = 'linear-gradient(135deg, #6C63FF, #4834D4)';
+    proj.style.borderRadius = '10px';
+    proj.style.display = 'flex';
+    proj.style.alignItems = 'center';
+    proj.style.justifyContent = 'center';
+    proj.style.color = '#fff';
+    proj.style.fontWeight = '900';
+    proj.style.fontSize = Math.max(10, size * 0.4) + 'px';
+    proj.textContent = v;
+  }
   proj.style.width = size + 'px';
   proj.style.height = size + 'px';
   proj.style.left = (startX - size / 2) + 'px';
@@ -784,6 +802,7 @@ function fire(row, col) {
 
   launching = true;
   const cur = grid[row][col];
+  const gen = launchGen;
   const t0 = performance.now();
   const DUR = 300;
 
@@ -796,6 +815,9 @@ function fire(row, col) {
     proj.style.top = (py - size / 2) + 'px';
     proj.style.transform = 'rotate(' + (t * 200) + 'deg)';
     if (t < 1) { requestAnimationFrame(step); return; }
+
+    // 局数已重置（点了新游戏/切模式）：丢弃这次在飞发射，不落子
+    if (gen !== launchGen) { proj.remove(); return; }
 
     // 命中判定
     if (cur === 0) {
