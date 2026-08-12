@@ -716,7 +716,8 @@ function render(mergeInfo = []) {
 
 // ==================== LAUNCH RENDER（无格子堆叠） ====================
 function blockSize() {
-  return boardWrap.clientWidth / COLS * 0.72;
+  // 方块填满列宽（0.92），四列贴紧，视觉上是"堆在一起"而不是四根格子柱
+  return boardWrap.clientWidth / COLS * 0.92;
 }
 function colCenterX(c) {
   return (c + 0.5) * (boardWrap.clientWidth / COLS);
@@ -725,14 +726,14 @@ function colCenterX(c) {
 function stackTopY(col) {
   const st = stacks[col];
   const bw = blockSize();
-  const gap = 2;
+  const gap = Math.max(1, bw * 0.015);   // 极小的缝，保持贴合的堆叠感
   const ground = boardWrap.clientHeight - bw / 2 - 10;
   return ground - (st.length - 1) * (bw + gap);
 }
 // 列 c 第 idx 个方块（从底部 0 起）中心的 y
 function stackBlockY(col, idx) {
   const bw = blockSize();
-  const gap = 2;
+  const gap = Math.max(1, bw * 0.015);
   const ground = boardWrap.clientHeight - bw / 2 - 10;
   return ground - idx * (bw + gap);
 }
@@ -879,6 +880,9 @@ function fire(col) {
     y += vy * dt;
     if (y >= targetY) {
       y = targetY;
+      // 先让发射物真实"压"到撞击最深处，再回弹，视觉连续不沉底
+      proj.style.left = (x - bw / 2) + 'px';
+      proj.style.top = (y - bw / 2) + 'px';
       // 打到了：若不是合成且速度还大，回弹一下，有重力的感觉
       if (!willMerge && Math.abs(vy) > 60) {
         vy = -vy * BOUNCE;
