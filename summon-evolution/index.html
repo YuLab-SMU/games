@@ -1131,12 +1131,13 @@ const HUNT_ABANDON_RANGE = 300; // give up chase & return if follower drifts too
 const HUNT_ABANDON_RANGE_SQ = HUNT_ABANDON_RANGE * HUNT_ABANDON_RANGE;
 const MAX_TRAIL_DIST = 300;     // follow 模式拖尾上限：跟随者到玩家的最大距离（px）
 const MAX_TRAIL_DIST_SQ = MAX_TRAIL_DIST * MAX_TRAIL_DIST;
+const SIZE_SCALE = window.innerWidth <= 600 ? 0.8 : 1; // 手机小屏统一缩小角色尺寸，避免高等级角色过大
 
 function createCharacter(x, y, level, isPlayer = false) {
   const lv = LEVELS[level];
   return {
     x, y, level, isPlayer,
-    size: lv.size,
+    size: lv.size * SIZE_SCALE,
     name: lv.name,
     color: lv.color,
     dark: lv.dark,
@@ -2101,7 +2102,7 @@ function playerEatChar(ai) {
     state.playerLevel = ai.level;
     const lv = LEVELS[state.playerLevel];
     player.level = state.playerLevel;
-    player.size = lv.size;
+    player.size = lv.size * SIZE_SCALE;
     player.color = lv.color;
     player.dark = lv.dark;
     player.accent = lv.accent;
@@ -2174,7 +2175,7 @@ function playerEatChar(ai) {
       level,
       x: ai.x, y: ai.y,
       targetX: player.x, targetY: player.y,
-      size: lv.size,
+      size: lv.size * SIZE_SCALE,
       color: lv.color,
       dark: lv.dark,
       accent: lv.accent,
@@ -2235,7 +2236,7 @@ function checkFollowerMerge() {
             level: nextLv,
             x: lastF.x, y: lastF.y,
             targetX: player.x, targetY: player.y,
-            size: nl.size, color: nl.color, dark: nl.dark, accent: nl.accent,
+            size: nl.size * SIZE_SCALE, color: nl.color, dark: nl.dark, accent: nl.accent,
             role: nl.role, name: nl.name,
             bobPhase: Math.random() * Math.PI * 2,
           });
@@ -2264,7 +2265,7 @@ function evolvePlayer() {
   spawnEatParticles(player.x, player.y, lv.accent);
   
   player.level = state.playerLevel;
-  player.size = lv.size;
+  player.size = lv.size * SIZE_SCALE;
   player.color = lv.color;
   player.dark = lv.dark;
   player.accent = lv.accent;
@@ -2444,7 +2445,7 @@ function checkFollowerCollisions() {
             level: a.level,
             x: a.x, y: a.y,
             targetX: f.x, targetY: f.y,
-            size: nl.size, color: nl.color, dark: nl.dark, accent: nl.accent,
+            size: nl.size * SIZE_SCALE, color: nl.color, dark: nl.dark, accent: nl.accent,
             role: nl.role, name: nl.name,
             bobPhase: Math.random() * Math.PI * 2,
           });
