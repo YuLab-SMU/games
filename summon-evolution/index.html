@@ -547,7 +547,7 @@ const CHAR_IMAGE_SETS = { classic: {}, refreshed: {} };
 const IMG_ROLE_MAP = ['raddy','garnold','black','gray','funbot','sky','oren','mrsun','mrtree','jevin','lime','vineria','clukr','brud','durple','simon','tunner','funcomputer','ice','wenda','pinki'];
 function preloadImages() {
   for (const skin of ['classic', 'refreshed']) {
-    const base = skin === 'classic' ? 'images/classic/' : 'images/';
+    const base = skin === 'classic' ? '../images/classic/' : '../images/';
     IMG_ROLE_MAP.forEach((name, i) => {
       const img = new Image();
       img.src = base + name + '.png';
@@ -564,7 +564,7 @@ const BRAINROT_IMAGE_SETS = { classic: {}, refreshed: {} };
 function preloadBrainrotImages() {
   const ROLES = ['sneakerShark','bomberCroc','treeMonkey','cactusElephant','coffeeNinja','ballerinaCup','bananaChimp','bomberGoose','fridgeCamel','saturnCow','teapotMan'];
   for (const skin of ['classic', 'refreshed']) {
-    const base = 'images/brainrot/' + skin + '/';
+    const base = '../images/brainrot/' + skin + '/';
     ROLES.forEach(role => {
       const img = new Image();
       img.src = base + role + '.png';
@@ -581,7 +581,7 @@ function preloadMinecraftImages() {
   // 焕新皮肤为程序化手绘，无需预加载图片；经典皮肤用 gpt 生成的像素图
   ROLES.forEach(role => {
     const img = new Image();
-    img.src = 'images/minecraft/classic/' + role + '.png';
+    img.src = '../images/minecraft/classic/' + role + '.png';
     MINECRAFT_IMAGE_SETS.classic[role] = img;
   });
 }
@@ -593,7 +593,7 @@ function preloadKunImages() {
   const ROLES = ['tadpole','redfin','koi','eel','swordfish','shark','octopus','squid','orca','whale','tortoise','kraken','leviathan','jiao','tuntian','kun','shenkun','peng'];
   ROLES.forEach(role => {
     const img = new Image();
-    img.src = 'images/kun/classic/' + role + '.png';
+    img.src = '../images/kun/classic/' + role + '.png';
     KUN_IMAGE_SETS.classic[role] = img;
   });
 }
@@ -605,7 +605,7 @@ function preloadDragonImages() {
   const ROLES = ['snakelet','greensnake','python','cobra','viper','flamesnake','jadesnake','gemsnake','spiritsnake','jiao','chi','qiu','pan','ying','qinglong','zhulong','shenlong','jinlong'];
   ROLES.forEach(role => {
     const img = new Image();
-    img.src = 'images/dragon/classic/' + role + '.png';
+    img.src = '../images/dragon/classic/' + role + '.png';
     DRAGON_IMAGE_SETS.classic[role] = img;
   });
 }
@@ -617,7 +617,7 @@ function preloadUltramanImages() {
   const ROLES = ['pigmon','miclas','windom','eleking','gomora','tyrant','bemular','zetton','baltan','darktiga','ultraman','seven','taro','leo','tiga','dyna','mebius','zero'];
   ROLES.forEach(role => {
     const img = new Image();
-    img.src = 'images/ultraman/classic/' + role + '.png';
+    img.src = '../images/ultraman/classic/' + role + '.png';
     ULTRAMAN_IMAGE_SETS.classic[role] = img;
   });
 }
@@ -628,7 +628,7 @@ function preloadSaintseiyaImages() {
   const ROLES = ['soldier','pegasus','shiryu','hyoga','shun','ikki','eagle','lyra','lizard','aries','taurus','gemini','cancer','leoaioria','virgo','scorpio','sagittarius','athena'];
   ROLES.forEach(role => {
     const img = new Image();
-    img.src = 'images/saintseiya/classic/' + role + '.png';
+    img.src = '../images/saintseiya/classic/' + role + '.png';
     SAINTSEIYA_IMAGE_SETS.classic[role] = img;
   });
 }
@@ -639,7 +639,7 @@ function preloadNinjaImages() {
   const ROLES = ['rantaro','kirimaru','shinbe','year2','year3','year4','year5','year6','rikichi','doi','yamada','ando','kyojin','headmaster','kuroki','kurokikaze','nyamaro','nyamaropower'];
   ROLES.forEach(role => {
     const img = new Image();
-    img.src = 'images/ninja/classic/' + role + '.png';
+    img.src = '../images/ninja/classic/' + role + '.png';
     NINJA_IMAGE_SETS.classic[role] = img;
   });
 }
@@ -651,7 +651,7 @@ function preloadFruitImages() {
   const ROLES = ['watermelon','cantaloupe','muskmelon','pumpkin','dragonfruit','pineapple','coconut','banana','apple','orange','peach','mango','grape','strawberry','blueberry','cherry','longan','lychee'];
   ROLES.forEach(role => {
     const img = new Image();
-    img.src = 'images/fruit/classic/' + role + '.png';
+    img.src = '../images/fruit/classic/' + role + '.png';
     FRUIT_IMAGE_SETS.classic[role] = img;
   });
 }
@@ -663,7 +663,7 @@ function preloadEggyImages() {
   const ROLES = ['white','yellow','pink','blue','green','panda','bunny','cat','cowboy','pirate','knight','ninja','magician','astronaut','ice','flame','aurora','eggking'];
   ROLES.forEach(role => {
     const img = new Image();
-    img.src = 'images/eggy/classic/' + role + '.png';
+    img.src = '../images/eggy/classic/' + role + '.png';
     EGGY_IMAGE_SETS.classic[role] = img;
   });
 }
@@ -5354,8 +5354,8 @@ function renderSkinSelector() {
   const classicBase = isBrainrot ? 'brainrot/classic/' : isMinecraft ? 'minecraft/classic/' : isKun ? 'kun/classic/' : isDragon ? 'dragon/classic/' : isUltraman ? 'ultraman/classic/' : isSaintseiya ? 'saintseiya/classic/' : isNinja ? 'ninja/classic/' : isFruit ? 'fruit/classic/' : isEggy ? 'eggy/classic/' : 'classic/';
   const refreshedBase = isBrainrot ? 'brainrot/refreshed/' : isMinecraft ? 'minecraft/refreshed/' : isKun ? 'kun/refreshed/' : isDragon ? 'dragon/refreshed/' : isUltraman ? 'ultraman/refreshed/' : isSaintseiya ? 'saintseiya/refreshed/' : isNinja ? 'ninja/refreshed/' : isFruit ? 'fruit/refreshed/' : isEggy ? 'eggy/refreshed/' : '';
   [
-    { id: 'classic', name: '经典', src: `images/${classicBase}${first}.png` },
-    { id: 'refreshed', name: '焕新', src: `images/${refreshedBase}${first}.png` },
+    { id: 'classic', name: '经典', src: `../images/${classicBase}${first}.png` },
+    { id: 'refreshed', name: '焕新', src: `../images/${refreshedBase}${first}.png` },
   ].forEach(skin => {
     const btn = document.createElement('button');
     btn.className = 'scene-btn skin-btn' + (skin.id === state.skin ? ' active' : '');
