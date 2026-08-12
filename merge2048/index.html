@@ -382,6 +382,8 @@ const BEST_KEYS = { classic: 'merge2048_best', launch: 'merge2048_best_launch' }
 // ==================== STATE ====================
 let ROWS = 4, COLS = 4;
 let grid = [];
+let stacks = [];            // 发射模式：每列一个栈，stacks[c] = [底, ..., 顶]
+const MAX_STACK = 6;        // 发射模式单列最大堆叠高度
 let score = 0;
 let bestScore = parseInt(localStorage.getItem(BEST_KEYS[mode]) || '0');
 let gameOver = false;
@@ -399,16 +401,23 @@ const nextImg = document.getElementById('next-img');
 function emptyGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
 
 function setupBoard() {
-  if (mode === 'launch') { ROWS = 5; COLS = 4; }
-  else { ROWS = 4; COLS = 4; }
-  board.style.gridTemplateColumns = 'repeat(' + COLS + ', 1fr)';
-  board.style.gridTemplateRows = 'repeat(' + ROWS + ', 1fr)';
-  boardWrap.style.aspectRatio = mode === 'launch' ? '4 / 5' : '1';
-  board.innerHTML = '';
-  for (let i = 0; i < ROWS * COLS; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    board.appendChild(cell);
+  if (mode === 'launch') {
+    COLS = 4;
+    ROWS = MAX_STACK;
+    board.style.display = 'none';  // 发射模式无格子网格
+    boardWrap.style.aspectRatio = '4 / 6';
+  } else {
+    ROWS = 4; COLS = 4;
+    board.style.display = 'grid';
+    board.style.gridTemplateColumns = 'repeat(' + COLS + ', 1fr)';
+    board.style.gridTemplateRows = 'repeat(' + ROWS + ', 1fr)';
+    boardWrap.style.aspectRatio = '1';
+    board.innerHTML = '';
+    for (let i = 0; i < ROWS * COLS; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      board.appendChild(cell);
+    }
   }
   document.getElementById('launch-hud').style.display = mode === 'launch' ? 'flex' : 'none';
 }
@@ -523,29 +532,28 @@ function canMove() {
   return false;
 }
 
-function boardFull() {
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++)
-      if (grid[r][c] === 0) return false;
-  return true;
-}
-
 function checkGameState() {
   if (won) return;
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++)
-      if (grid[r][c] >= 8192) {
-        won = true;
-        document.getElementById('go-emoji').textContent = '👑';
-        document.getElementById('go-title').textContent = '恭喜登顶学妖！';
-        document.getElementById('go-sub').textContent = '别学了，你已经无敌了 🏆';
-        document.getElementById('gameover').classList.add('show');
-        return;
-      }
+  let maxV = 0;
+  if (mode === 'launch') {
+    stacks.forEach(st => st.forEach(v => { if (v > maxV) maxV = v; }));
+  } else {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (grid[r][c] > maxV) maxV = grid[r][c];
+  }
+  if (maxV >= 8192) {
+    won = true;
+    document.getElementById('go-emoji').textContent = '👑';
+    document.getElementById('go-title').textContent = '恭喜合成终极形态！';
+    document.getElementById('go-sub').textContent = '合成之力，深不可测 🏆';
+    document.getElementById('gameover').classList.add('show');
+    return;
+  }
 
   let dead = false;
   if (mode === 'launch') {
-    dead = boardFull(); // 发射模式：棋盘全满即结束
+    dead = stacks.some(st => st.length >= MAX_STACK); // 任一列堆满即结束
   } else {
     dead = !canMove();
   }
@@ -561,7 +569,11 @@ function checkGameState() {
 function undoMove() {
   if (history.length === 0 || gameOver || launching) return;
   const prev = history.pop();
-  grid = prev.grid;
+  if (mode === 'launch') {
+    stacks = prev.stacks.map(s => [...s]);
+  } else {
+    grid = prev.grid;
+  }
   score = prev.score;
   if (mode === 'launch') {
     nextTile = prev.nextTile;
@@ -576,6 +588,7 @@ function newGame() {
   launchGen++;
   document.querySelectorAll('.projectile').forEach(el => el.remove());
   grid = emptyGrid();
+  stacks = Array.from({ length: COLS }, () => []);
   score = 0;
   gameOver = false;
   won = false;
@@ -602,9 +615,13 @@ function updateHUD() {
   scoreEl.textContent = score;
   bestEl.textContent = bestScore;
   let maxV = 0;
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++)
-      if (grid[r][c] > maxV) maxV = grid[r][c];
+  if (mode === 'launch') {
+    stacks.forEach(st => st.forEach(v => { if (v > maxV) maxV = v; }));
+  } else {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (grid[r][c] > maxV) maxV = grid[r][c];
+  }
   levelNameEl.textContent = levelNameOf(maxV);
 }
 
@@ -630,6 +647,8 @@ function getTilePos(r, c) {
 let tileEls = [];
 
 function render(mergeInfo = []) {
+  if (mode === 'launch') { renderLaunch(); return; }
+
   tileEls.forEach(el => el.remove());
   tileEls = [];
   document.querySelectorAll('.float-tagline').forEach(el => el.remove());
@@ -695,87 +714,126 @@ function render(mergeInfo = []) {
   });
 }
 
+// ==================== LAUNCH RENDER（无格子堆叠） ====================
+function blockSize() {
+  return boardWrap.clientWidth / COLS * 0.72;
+}
+function colCenterX(c) {
+  return (c + 0.5) * (boardWrap.clientWidth / COLS);
+}
+// 列 c 堆叠顶部落点（落定后新方块中心的 y）
+function stackTopY(col) {
+  const st = stacks[col];
+  const bw = blockSize();
+  const gap = 2;
+  const ground = boardWrap.clientHeight - bw / 2 - 10;
+  return ground - (st.length - 1) * (bw + gap);
+}
+// 列 c 第 idx 个方块（从底部 0 起）中心的 y
+function stackBlockY(col, idx) {
+  const bw = blockSize();
+  const gap = 2;
+  const ground = boardWrap.clientHeight - bw / 2 - 10;
+  return ground - idx * (bw + gap);
+}
+
+function renderLaunch() {
+  tileEls.forEach(el => el.remove());
+  tileEls = [];
+  document.querySelectorAll('.float-tagline').forEach(el => el.remove());
+
+  const isAcademic = !themeRoles;
+  const bw = blockSize();
+
+  for (let c = 0; c < COLS; c++) {
+    const st = stacks[c];
+    for (let i = 0; i < st.length; i++) {
+      const v = st[i];
+      const x = colCenterX(c);
+      const y = stackBlockY(c, i);
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.dataset.col = c;
+      tile.dataset.idx = i;
+      tile.style.left = (x - bw / 2) + 'px';
+      tile.style.top = (y - bw / 2) + 'px';
+      tile.style.width = bw + 'px';
+      tile.style.height = bw + 'px';
+
+      const lvIdx = valMap[v];
+      const lv = lvIdx !== undefined ? LEVELS[lvIdx] : null;
+      if (isAcademic && lv) {
+        tile.style.background = lv.bg;
+        tile.style.color = lv.fg;
+        if (lv.glow) tile.style.boxShadow = '0 0 18px rgba(255,215,0,0.55)';
+        const name = document.createElement('span');
+        name.className = 'tile-name';
+        name.textContent = v;   // 数值，不用学术文字
+        tile.appendChild(name);
+      } else if (lv) {
+        const src = imgSrcFor(v);
+        if (src) {
+          const im = document.createElement('img');
+          im.src = src;
+          im.className = 'tile-img';
+          tile.appendChild(im);
+        }
+      } else {
+        tile.style.background = '#333';
+        tile.textContent = v;
+      }
+
+      boardWrap.appendChild(tile);
+      tileEls.push(tile);
+    }
+  }
+}
+
 function tileAt(r, c) {
   return tileEls.find(t => +t.dataset.r === r && +t.dataset.c === c) || null;
-}
-
-function floatTag(r, c, text) {
-  const pos = getTilePos(r, c);
-  const ft = document.createElement('span');
-  ft.className = 'float-tagline';
-  ft.style.left = (pos.left + pos.w / 2) + 'px';
-  ft.style.top = pos.top + 'px';
-  ft.textContent = text;
-  ft.addEventListener('animationend', () => ft.remove());
-  boardWrap.appendChild(ft);
-}
-
-function impactEffect(r, c, cls) {
-  const t = tileAt(r, c);
-  if (t) t.classList.add(cls);
-  else {
-    const cell = board.children[r * COLS + c];
-    if (cell) cell.classList.add(cls);
-  }
 }
 
 // ==================== LAUNCH MODE ====================
 let launching = false;
 let launchGen = 0;   // 局数代际：newGame 时自增，用于取消旧局的在飞 rAF（防幽灵落子）
 
-// 同值连锁合成：BFS，每格只参与一次
-function mergeCascade(r, c, v) {
+// 飘字（按坐标，发射模式用）
+function floatTagAt(x, y, text) {
+  const ft = document.createElement('span');
+  ft.className = 'float-tagline';
+  ft.style.left = x + 'px';
+  ft.style.top = y + 'px';
+  ft.textContent = text;
+  ft.addEventListener('animationend', () => ft.remove());
+  boardWrap.appendChild(ft);
+}
+
+// 柱顶同值合并 + 向下连锁（发射模式）
+function mergeStackTop(col, v) {
+  const st = stacks[col];
+  st.pop();                                  // 去掉柱顶（与发射物同值）
   let curV = v * 2;
   let gain = curV;
-  grid[r][c] = 0;
-  const queue = [[r, c]];
-  const visited = new Set([r + ',' + c]);
-  while (queue.length) {
-    const [qr, qc] = queue.shift();
-    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-      const nr = qr + dr, nc = qc + dc;
-      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
-      const key = nr + ',' + nc;
-      if (visited.has(key)) continue;
-      visited.add(key);
-      if (grid[nr][nc] === curV) {
-        grid[nr][nc] = 0;
-        curV *= 2;
-        gain += curV;
-        queue.push([nr, nc]);
-      }
-    }
+  while (st.length && st[st.length - 1] === curV) {  // 合并结果继续与下层同值连锁
+    st.pop();
+    curV *= 2;
+    gain += curV;
   }
-  grid[r][c] = curV;
+  st.push(curV);
   score += gain;
   return curV;
 }
 
-function bounceOff(proj, x, y, r, c) {
-  proj.style.left = (x - proj.offsetWidth / 2) + 'px';
-  proj.style.top = (y - proj.offsetHeight / 2) + 'px';
-  proj.style.transition = 'left .3s ease-out, top .3s ease-out, opacity .3s ease-out, transform .3s ease-out';
-  const dir = Math.random() < 0.5 ? -1 : 1;
-  proj.style.left = (x - proj.offsetWidth / 2 + dir * 90) + 'px';
-  proj.style.top = (y - proj.offsetHeight / 2 + 50) + 'px';
-  proj.style.transform = 'rotate(' + (dir * 70) + 'deg)';
-  proj.style.opacity = '0';
-  setTimeout(() => proj.remove(), 320);
-  impactEffect(r, c, 'jelly');
-}
-
-function fire(row, col) {
+function fire(col) {
   const v = nextTile;
   nextTile = nextTileValue();
   updateNextPreview();
-  history.push({ grid: grid.map(r => [...r]), score, nextTile });
+  history.push({ stacks: stacks.map(s => [...s]), score, nextTile });
 
-  const target = getTilePos(row, col);
-  const size = target.w * 0.8;
-  const startX = target.left + target.w / 2;
-  const startY = -size;
-  const endX = target.left + target.w / 2;
-  const endY = target.top + target.h / 2;
+  const bw = blockSize();
+  const x = colCenterX(col);
+  const targetY = stackTopY(col);   // 落到该列堆叠顶部（空列落到地面）
+  const startY = -bw;
 
   const proj = document.createElement('img');
   proj.className = 'projectile';
@@ -791,76 +849,80 @@ function fire(row, col) {
     proj.style.justifyContent = 'center';
     proj.style.color = '#fff';
     proj.style.fontWeight = '900';
-    proj.style.fontSize = Math.max(10, size * 0.4) + 'px';
+    proj.style.fontSize = Math.max(10, bw * 0.4) + 'px';
     proj.textContent = v;
   }
-  proj.style.width = size + 'px';
-  proj.style.height = size + 'px';
-  proj.style.left = (startX - size / 2) + 'px';
-  proj.style.top = (startY - size / 2) + 'px';
+  proj.style.width = bw + 'px';
+  proj.style.height = bw + 'px';
+  proj.style.left = (x - bw / 2) + 'px';
+  proj.style.top = (startY - bw / 2) + 'px';
   boardWrap.appendChild(proj);
 
   launching = true;
-  const cur = grid[row][col];
   const gen = launchGen;
-  const t0 = performance.now();
-  const DUR = 300;
+  const st = stacks[col];
+  const willMerge = st.length > 0 && st[st.length - 1] === v;  // 打到同一种才合并
+
+  // 重力模拟：下落 → 撞击 → 弹性回弹 → 受重力落定
+  let y = startY;
+  let vy = 0;
+  const G = bw * 14;        // 重力加速度
+  const BOUNCE = 0.38;      // 弹性系数（回弹衰减）
+  let last = performance.now();
 
   function step(now) {
-    let t = Math.min(1, (now - t0) / DUR);
-    const ease = 1 - Math.pow(1 - t, 2.2);
-    const px = startX + (endX - startX) * ease;
-    const py = startY + (endY - startY) * ease;
-    proj.style.left = (px - size / 2) + 'px';
-    proj.style.top = (py - size / 2) + 'px';
-    proj.style.transform = 'rotate(' + (t * 200) + 'deg)';
-    if (t < 1) { requestAnimationFrame(step); return; }
-
-    // 局数已重置（点了新游戏/切模式）：丢弃这次在飞发射，不落子
+    // 局数已重置（点了新游戏/切模式）：丢弃这次在飞发射
     if (gen !== launchGen) { proj.remove(); return; }
-
-    // 命中判定
-    if (cur === 0) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    vy += G * dt;
+    y += vy * dt;
+    if (y >= targetY) {
+      y = targetY;
+      // 打到了：若不是合成且速度还大，回弹一下，有重力的感觉
+      if (!willMerge && Math.abs(vy) > 60) {
+        vy = -vy * BOUNCE;
+        requestAnimationFrame(step);
+        return;
+      }
+      // 落定
       proj.remove();
-      grid[row][col] = v;
-      render();
-      impactEffect(row, col, 'new');
-      impactEffect(row, col, 'jelly');
-    } else if (cur === v) {
-      proj.remove();
-      const finalV = mergeCascade(row, col, v);
-      render([{ r: row, c: col }]);
-      impactEffect(row, col, 'jelly');
-      floatTag(row, col, '合成 ' + levelNameOf(finalV));
+      if (willMerge) {
+        const finalV = mergeStackTop(col, v);
+        render();
+        const ti = stacks[col].length - 1;
+        const mt = tileEls.find(tl => +tl.dataset.col === col && +tl.dataset.idx === ti);
+        if (mt) { mt.classList.add('merged'); mt.classList.add('jelly'); }
+        floatTagAt(x, stackBlockY(col, ti) - bw / 2, '合成 ' + levelNameOf(finalV));
+      } else {
+        st.push(v);   // 不同种不合并，堆上去
+        render();
+        const nt = tileEls.find(tl => +tl.dataset.col === col && +tl.dataset.idx === st.length - 1);
+        if (nt) { nt.classList.add('new'); nt.classList.add('jelly'); }
+      }
       if (score > bestScore) {
         bestScore = score;
         localStorage.setItem(BEST_KEYS[mode], bestScore);
       }
-    } else {
-      bounceOff(proj, endX, endY, row, col);
+      launching = false;
+      updateHUD();
+      checkGameState();
+      return;
     }
-
-    launching = false;
-    updateHUD();
-    checkGameState();
+    proj.style.left = (x - bw / 2) + 'px';
+    proj.style.top = (y - bw / 2) + 'px';
+    proj.style.transform = 'rotate(' + Math.max(-110, Math.min(110, vy * 0.9)) + 'deg)';
+    requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
 
-function launchAt(clientX, clientY) {
+function launchAt(clientX) {
   if (mode !== 'launch' || gameOver || launching) return;
   const wrapRect = boardWrap.getBoundingClientRect();
   const x = clientX - wrapRect.left;
-  const y = clientY - wrapRect.top;
-  const p0 = getTilePos(0, 0);
-  const p1 = getTilePos(0, 1);
-  const p2 = getTilePos(1, 0);
-  const cellW = p0.w, cellH = p0.h;
-  const gapX = p1.left - (p0.left + p0.w);
-  const gapY = p2.top - (p0.top + p0.h);
-  const col = Math.max(0, Math.min(COLS - 1, Math.round((x - p0.left) / (cellW + gapX))));
-  const row = Math.max(0, Math.min(ROWS - 1, Math.round((y - p0.top) / (cellH + gapY))));
-  fire(row, col);
+  const col = Math.max(0, Math.min(COLS - 1, Math.floor(x / (wrapRect.width / COLS))));
+  fire(col);
 }
 
 // ==================== INPUT ====================
