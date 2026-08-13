@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🔨 打地鼠</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-1: #0a0a1e; --bg-2: #12103a; --bg-3: #1a1040;
+  --accent: #6C63FF; --pink: #FF6B9D; --gold: #FFD93D; --green: #3ddc84;
+}
+html, body {
+  min-height: 100vh; min-height: 100dvh;
+  background: linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
+  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #e8e0f0;
+  display: flex; flex-direction: column; align-items: center;
+  user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+.wrap { width: 100%; max-width: 520px; padding: 16px; display: flex; flex-direction: column; align-items: center; }
+
+.header { text-align: center; padding: 8px 0 4px; }
+.header h1 {
+  font-size: 2.2rem; font-weight: 900;
+  background: linear-gradient(135deg, #FF6B9D, #FFA94D, #FFD93D, #6C63FF);
+  background-size: 300% 300%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; animation: shimmer 5s ease infinite; letter-spacing: 0.05em;
+}
+@keyframes shimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+.header p { margin-top: 4px; font-size: 0.8rem; color: rgba(240,232,255,0.45); }
+.back {
+  position: absolute; left: 20px; top: 24px; font-size: 0.8rem; color: rgba(240,232,255,0.6);
+  text-decoration: none; padding: 6px 12px; border-radius: 12px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
+}
+
+.status-row {
+  width: min(92vw, 460px); display: flex; justify-content: space-between; gap: 8px; margin: 12px 0 14px;
+}
+.status-item {
+  flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px; padding: 8px 10px; text-align: center; font-size: 0.75rem; color: rgba(255,255,255,0.55);
+}
+.status-item b { display: block; font-size: 1.5rem; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }
+.status-item.time b { color: var(--pink); }
+.status-item.score b { color: var(--gold); }
+
+/* Board */
+.board {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  width: min(92vw, 460px);
+}
+.hole {
+  position: relative; aspect-ratio: 1; overflow: hidden;
+  cursor: pointer; border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #2a1f4d 0%, #120d28 70%);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.mole {
+  position: absolute; left: 50%; bottom: 0; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(2.6rem, 13vw, 4.4rem); line-height: 1;
+  transform: translate(-50%, 105%); transition: transform 0.14s cubic-bezier(0.34,1.3,0.64,1);
+  z-index: 1; pointer-events: auto;
+}
+.mole.up { transform: translate(-50%, 8%); }
+.mole.golden { filter: drop-shadow(0 0 12px rgba(255,217,61,0.9)); }
+.dirt {
+  position: absolute; left: 50%; bottom: -12%; width: 120%; height: 45%;
+  transform: translateX(-50%); border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 0%, #3a2d20 0%, #241a12 70%);
+  z-index: 2; pointer-events: none;
+}
+/* hit flash */
+.hole.hit { animation: flash 0.25s ease; }
+@keyframes flash { 0%{box-shadow: 0 0 0 0 rgba(255,107,157,0.7)} 100%{box-shadow: 0 0 0 24px rgba(255,107,157,0)} }
+
+/* floating score */
+.float {
+  position: absolute; left: 50%; top: 10%; transform: translateX(-50%);
+  font-weight: 900; font-size: 1.4rem; color: var(--gold); pointer-events: none; z-index: 5;
+  animation: rise 0.6s ease forwards;
+}
+@keyframes rise { 0%{opacity:1; transform:translate(-50%,0)} 100%{opacity:0; transform:translate(-50%,-40px)} }
+
+.start-btn {
+  margin-top: 22px; font-family: inherit; font-size: 1.15rem; font-weight: 900;
+  padding: 15px 50px; border-radius: 24px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #FF6B9D, #FF9F43); color: #fff;
+  box-shadow: 0 8px 24px rgba(255,107,157,0.35); transition: transform 0.15s ease;
+}
+.start-btn:active { transform: scale(0.95); }
+.start-btn.hidden { display: none; }
+
+/* overlay */
+.overlay {
+  position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center;
+  background: rgba(5,5,20,0.75); backdrop-filter: blur(6px);
+}
+.overlay.show { display: flex; }
+.card {
+  background: linear-gradient(145deg, rgba(30,25,60,0.95), rgba(20,18,50,0.98));
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 24px;
+  padding: 40px 36px; text-align: center; max-width: 340px; width: 88%;
+  animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes pop { 0%{transform:scale(0.6);opacity:0} 100%{transform:scale(1);opacity:1} }
+.card .emoji { font-size: 4rem; animation: bounce 1s infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.card h2 { margin: 10px 0 6px; font-size: 1.8rem; font-weight: 900; }
+.card p { font-size: 0.95rem; color: rgba(240,232,255,0.7); margin: 5px 0; }
+.card .final { font-size: 2.4rem; font-weight: 900; color: var(--gold); }
+.card button {
+  margin-top: 18px; font-family: inherit; font-size: 1rem; font-weight: 900;
+  padding: 12px 30px; border-radius: 16px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #FF6B9D, #FF9F43); color: #fff;
+}
+</style>
+</head>
+<body>
+
+<a class="back" href="../index.html">← 返回</a>
+
+<div class="wrap">
+  <div class="header">
+    <h1>🔨 打地鼠</h1>
+    <p>30 秒速战 · 🌟 星星 +3 分 · 越打越快</p>
+  </div>
+
+  <div class="status-row">
+    <div class="status-item time">时间<b id="time">30</b></div>
+    <div class="status-item score">得分<b id="score">0</b></div>
+    <div class="status-item">最高<b id="best">0</b></div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <button class="start-btn" id="start">开始游戏</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="card">
+    <div class="emoji">🏆</div>
+    <h2>时间到！</h2>
+    <p>本局得分</p>
+    <div class="final" id="final">0</div>
+    <p id="best-line"></p>
+    <button id="again">再来一局</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const GAME_TIME = 30;
+  const GOLDEN_RATE = 0.15;
+
+  let score = 0, timeLeft = GAME_TIME, playing = false;
+  let best = parseInt(localStorage.getItem('whackamole-best') || '0', 10);
+  let spawnTimer = null, countdownTimer = null;
+  let audioCtx = null;
+  const holes = [];
+
+  // ---------- 构建 9 个洞 ----------
+  const boardEl = $('#board');
+  for (let i = 0; i < 9; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.innerHTML = '<div class="mole">🐹</div><div class="dirt"></div>';
+    const mole = hole.querySelector('.mole');
+    const rec = { el: hole, mole, active: false, timer: null, golden: false };
+    mole.addEventListener('pointerdown', e => { e.preventDefault(); whack(rec); });
+    boardEl.appendChild(hole);
+    holes.push(rec);
+  }
+
+  $('#best').textContent = best;
+
+  // ---------- 音效 ----------
+  function playHit(golden) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = audioCtx, t = ctx.currentTime;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(golden ? 900 : 620, t);
+    o.frequency.exponentialRampToValueAtTime(golden ? 200 : 120, t + 0.09);
+    g.gain.setValueAtTime(0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    o.connect(g).connect(ctx.destination);
+    o.start(); o.stop(t + 0.09);
+  }
+
+  // ---------- 难度曲线 ----------
+  const spawnInterval = () => Math.max(420, 850 - score * 4);
+  const stayTime = golden => Math.max(500, 950 - score * 4) * (golden ? 0.55 : 1);
+
+  // ---------- 地鼠行为 ----------
+  function spawnMole() {
+    if (!playing) return;
+    const empty = holes.filter(h => !h.active);
+    if (empty.length) {
+      const h = empty[Math.floor(Math.random() * empty.length)];
+      h.active = true;
+      h.golden = Math.random() < GOLDEN_RATE;
+      h.mole.textContent = h.golden ? '🌟' : '🐹';
+      h.mole.classList.toggle('golden', h.golden);
+      h.mole.classList.add('up');
+      h.timer = setTimeout(() => hideMole(h), stayTime(h.golden));
+    }
+    spawnTimer = setTimeout(spawnMole, spawnInterval());
+  }
+
+  function hideMole(h) {
+    clearTimeout(h.timer);
+    h.active = false;
+    h.mole.classList.remove('up');
+    setTimeout(() => h.mole.classList.remove('golden'), 150);
+  }
+
+  function whack(h) {
+    if (!playing || !h.active) return;
+    hideMole(h);
+    const gain = h.golden ? 3 : 1;
+    score += gain;
+    playHit(h.golden);
+    // 命中闪光 + 浮动分数
+    h.el.classList.remove('hit');
+    void h.el.offsetWidth;
+    h.el.classList.add('hit');
+    const f = document.createElement('div');
+    f.className = 'float';
+    f.textContent = '+' + gain;
+    h.el.appendChild(f);
+    setTimeout(() => f.remove(), 600);
+    updateUI();
+  }
+
+  // ---------- 游戏流程 ----------
+  function startGame() {
+    score = 0; timeLeft = GAME_TIME; playing = true;
+    updateUI();
+    $('#start').classList.add('hidden');
+    $('#overlay').classList.remove('show');
+    clearTimeout(spawnTimer); clearInterval(countdownTimer);
+    holes.forEach(h => { clearTimeout(h.timer); h.active = false; h.mole.classList.remove('up', 'golden'); });
+    countdownTimer = setInterval(() => {
+      timeLeft--;
+      updateUI();
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+    spawnTimer = setTimeout(spawnMole, 300);
+  }
+
+  function endGame() {
+    playing = false;
+    clearTimeout(spawnTimer); clearInterval(countdownTimer);
+    holes.forEach(h => { clearTimeout(h.timer); h.active = false; h.mole.classList.remove('up', 'golden'); });
+    if (score > best) { best = score; localStorage.setItem('whackamole-best', String(best)); }
+    $('#final').textContent = score;
+    $('#best-line').textContent = score >= best ? '🎉 新纪录！' : '最高分：' + best;
+    $('#overlay').classList.add('show');
+    $('#start').classList.remove('hidden');
+    $('#start').textContent = '再来一局';
+    $('#best').textContent = best;
+  }
+
+  function updateUI() {
+    $('#time').textContent = timeLeft;
+    $('#score').textContent = score;
+    $('#best').textContent = best;
+  }
+
+  // ---------- 事件 ----------
+  $('#start').addEventListener('click', startGame);
+  $('#again').addEventListener('click', startGame);
+})();
+</script>
+</body>
+</html>
