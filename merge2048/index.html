@@ -856,7 +856,7 @@ function initLaunchPhysics() {
   if (engine) destroyLaunchPhysics();
   const W = boardWrap.clientWidth;
   const H = boardWrap.clientHeight;
-  engine = Matter.Engine.create({ enableSleeping: true });
+  engine = Matter.Engine.create({ enableSleeping: false });   // 禁用休眠：合并消掉下方球后，上方球能立即落下
   engine.gravity.y = 1.2;
 
   const thick = 80;
