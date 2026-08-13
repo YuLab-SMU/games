@@ -71,16 +71,40 @@ header h1 {
   display: block; font-size: 1.2rem; font-weight: 900; color: #fff;
 }
 
-/* Launch HUD */
-.launch-hud {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  padding: 6px 18px; margin: 0 auto 6px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 14px;
+/* 发射模式：物理球 + 发射器 */
+#ball-layer {
+  position: absolute; inset: 0; z-index: 2; overflow: hidden;
 }
-.launch-hud .lh-label { font-size: 0.75rem; color: #ccc; font-weight: 700; }
-.lh-img { width: 42px; height: 42px; object-fit: contain; }
+.ball {
+  position: absolute; border-radius: 50%; overflow: hidden;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.35));
+}
+.ball img { width: 100%; height: 100%; object-fit: cover; }
+.ball.merged { animation: ballMerge 0.28s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes ballMerge {
+  0% { transform: translate(-50%,-50%) scale(0.6); }
+  60% { transform: translate(-50%,-50%) scale(1.25); }
+  100% { transform: translate(-50%,-50%) scale(1); }
+}
+.launcher {
+  position: absolute; left: 50%; top: 6px; transform: translateX(-50%);
+  z-index: 3; pointer-events: none; text-align: center;
+}
+.launcher .aim-arrow {
+  display: block; margin: 0 auto;
+  width: 0; height: 0;
+  border-left: 9px solid transparent; border-right: 9px solid transparent;
+  border-top: 16px solid #fff;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 0 5px rgba(255,255,255,0.7));
+}
+.launcher .next-ball {
+  display: block; margin: 4px auto 0;
+  border-radius: 50%; overflow: hidden;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
 
 /* Game board */
 .board-wrap {
@@ -231,13 +255,9 @@ header h1 {
   </div>
 </header>
 
-<div class="launch-hud" id="launch-hud" style="display:none">
-  <span class="lh-label">下一发</span>
-  <img id="next-img" class="lh-img" alt="">
-</div>
-
 <div class="board-wrap" id="board-wrap">
   <div id="board"></div>
+  <div id="ball-layer" style="display:none"></div>
 </div>
 
 <div class="ctrl-row">
@@ -254,6 +274,7 @@ header h1 {
   </div>
 </div>
 
+<script src="../lib/matter.min.js"></script>
 <script>
 // ==================== LEVELS ====================
 const LEVELS = [
@@ -368,6 +389,7 @@ function applyTheme() {
   boardWrap.style.backgroundColor = 'rgba(255,255,255,0.04)';
   updateNextPreview();
   render();
+  if (mode === 'launch') refreshBallsSkin();   // 发射模式下 render 不重绘球，需手动刷新贴图
 }
 
 function onThemeChange(id) {
@@ -382,8 +404,6 @@ const BEST_KEYS = { classic: 'merge2048_best', launch: 'merge2048_best_launch' }
 // ==================== STATE ====================
 let ROWS = 4, COLS = 4;
 let grid = [];
-let stacks = [];            // 发射模式：每列一个栈，stacks[c] = [底, ..., 顶]
-const MAX_STACK = 6;        // 发射模式单列最大堆叠高度
 let score = 0;
 let bestScore = parseInt(localStorage.getItem(BEST_KEYS[mode]) || '0');
 let gameOver = false;
@@ -393,19 +413,18 @@ let nextTile = 2;   // 发射模式下一发
 
 const board = document.getElementById('board');
 const boardWrap = document.getElementById('board-wrap');
+const ballLayer = document.getElementById('ball-layer');
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const levelNameEl = document.getElementById('level-name');
-const nextImg = document.getElementById('next-img');
 
 function emptyGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
 
 function setupBoard() {
   if (mode === 'launch') {
-    COLS = 4;
-    ROWS = MAX_STACK;
-    board.style.display = 'none';  // 发射模式无格子网格
+    board.style.display = 'none';  // 发射模式无格子网格，用物理球层
     boardWrap.style.aspectRatio = '4 / 6';
+    ballLayer.style.display = 'block';
   } else {
     ROWS = 4; COLS = 4;
     board.style.display = 'grid';
@@ -418,8 +437,8 @@ function setupBoard() {
       cell.className = 'cell';
       board.appendChild(cell);
     }
+    ballLayer.style.display = 'none';
   }
-  document.getElementById('launch-hud').style.display = mode === 'launch' ? 'flex' : 'none';
 }
 
 function switchMode(m) {
@@ -429,6 +448,8 @@ function switchMode(m) {
   document.getElementById('tab-launch').classList.toggle('active', m === 'launch');
   bestScore = parseInt(localStorage.getItem(BEST_KEYS[mode]) || '0');
   setupBoard();
+  if (mode === 'launch') initLaunchPhysics();
+  else destroyLaunchPhysics();
   newGame();
 }
 
@@ -444,7 +465,14 @@ function addRandom() {
   return true;
 }
 
-function nextTileValue() { return Math.random() < 0.9 ? 2 : 4; }
+// 发射模式下一发：随机低级别（2/4/8/16），等级越低概率越高
+function nextTileValue() {
+  const r = Math.random();
+  if (r < 0.50) return 2;
+  if (r < 0.80) return 4;
+  if (r < 0.95) return 8;
+  return 16;
+}
 
 function slide(row) {
   let arr = row.filter(v => v !== 0);
@@ -536,7 +564,7 @@ function checkGameState() {
   if (won) return;
   let maxV = 0;
   if (mode === 'launch') {
-    stacks.forEach(st => st.forEach(v => { if (v > maxV) maxV = v; }));
+    balls.forEach(b => { if (b.value > maxV) maxV = b.value; });
   } else {
     for (let r = 0; r < ROWS; r++)
       for (let c = 0; c < COLS; c++)
@@ -553,7 +581,7 @@ function checkGameState() {
 
   let dead = false;
   if (mode === 'launch') {
-    dead = stacks.some(st => st.length >= MAX_STACK); // 任一列堆满即结束
+    dead = dangerFrames > 30;   // 球持续停在顶部危险区约 0.5s 才判死
   } else {
     dead = !canMove();
   }
@@ -567,10 +595,10 @@ function checkGameState() {
 }
 
 function undoMove() {
-  if (history.length === 0 || gameOver || launching) return;
+  if (history.length === 0 || gameOver) return;
   const prev = history.pop();
   if (mode === 'launch') {
-    stacks = prev.stacks.map(s => [...s]);
+    restoreBalls(prev.balls);
   } else {
     grid = prev.grid;
   }
@@ -584,11 +612,11 @@ function undoMove() {
 }
 
 function newGame() {
-  launching = false;
-  launchGen++;
   document.querySelectorAll('.projectile').forEach(el => el.remove());
+  tileEls.forEach(el => el.remove());   // 清掉经典模式残留方块，避免切模式时"两个西瓜"残影
+  tileEls = [];
   grid = emptyGrid();
-  stacks = Array.from({ length: COLS }, () => []);
+  clearBalls();
   score = 0;
   gameOver = false;
   won = false;
@@ -596,6 +624,9 @@ function newGame() {
   if (mode === 'launch') {
     nextTile = nextTileValue();
     updateNextPreview();
+    dangerFrames = 0;
+    if (physicsRaf) cancelAnimationFrame(physicsRaf);
+    physicsRaf = requestAnimationFrame(renderLoop);   // game over 后重启物理循环
   } else {
     addRandom();
     addRandom();
@@ -606,9 +637,12 @@ function newGame() {
 }
 
 function updateNextPreview() {
+  if (!nextBallImg) return;
   const src = imgSrcFor(nextTile);
-  if (src) nextImg.src = src;
-  else nextImg.src = '';
+  const d = ballRadius(nextTile) * 2;
+  nextBallImg.src = src || '';
+  nextBallImg.style.width = d + 'px';
+  nextBallImg.style.height = d + 'px';
 }
 
 function updateHUD() {
@@ -616,7 +650,7 @@ function updateHUD() {
   bestEl.textContent = bestScore;
   let maxV = 0;
   if (mode === 'launch') {
-    stacks.forEach(st => st.forEach(v => { if (v > maxV) maxV = v; }));
+    balls.forEach(b => { if (b.value > maxV) maxV = b.value; });
   } else {
     for (let r = 0; r < ROWS; r++)
       for (let c = 0; c < COLS; c++)
@@ -647,7 +681,7 @@ function getTilePos(r, c) {
 let tileEls = [];
 
 function render(mergeInfo = []) {
-  if (mode === 'launch') { renderLaunch(); return; }
+  if (mode === 'launch') return;  // 发射模式由物理渲染循环负责
 
   tileEls.forEach(el => el.remove());
   tileEls = [];
@@ -714,91 +748,208 @@ function render(mergeInfo = []) {
   });
 }
 
-// ==================== LAUNCH RENDER（无格子堆叠） ====================
-function blockSize() {
-  // 方块填满列宽（0.92），四列贴紧，视觉上是"堆在一起"而不是四根格子柱
-  return boardWrap.clientWidth / COLS * 0.92;
-}
-function colCenterX(c) {
-  return (c + 0.5) * (boardWrap.clientWidth / COLS);
-}
-// 列 c 堆叠顶部落点（落定后新方块中心的 y）
-function stackTopY(col) {
-  const st = stacks[col];
-  const bw = blockSize();
-  const gap = Math.max(1, bw * 0.015);   // 极小的缝，保持贴合的堆叠感
-  const ground = boardWrap.clientHeight - bw / 2 - 10;
-  return ground - (st.length - 1) * (bw + gap);
-}
-// 列 c 第 idx 个方块（从底部 0 起）中心的 y
-function stackBlockY(col, idx) {
-  const bw = blockSize();
-  const gap = Math.max(1, bw * 0.015);
-  const ground = boardWrap.clientHeight - bw / 2 - 10;
-  return ground - idx * (bw + gap);
+// ==================== LAUNCH PHYSICS（物理弹球合成） ====================
+let engine = null;        // Matter 引擎
+let balls = [];           // 每个：{ body, el, value, r }
+let mergeQueue = [];      // 待合并 body 对
+let launcherEl = null;    // 发射器容器
+let arrowEl = null;       // 瞄准箭头
+let nextBallImg = null;   // 下一发球 img
+let physicsRaf = null;    // 渲染循环句柄
+let dangerFrames = 0;     // 球持续停留在顶部危险区的帧数（避免瞬时误判）
+const DANGER_LINE = 70;   // 球堆越过此高度即结束（px，相对 board 顶部）
+
+// 球半径随等级递增
+function ballRadius(v) {
+  const lvIdx = valMap[v] !== undefined ? valMap[v] : 0;
+  const base = boardWrap.clientWidth / COLS * 0.26;
+  return base * (1 + lvIdx * 0.10);
 }
 
-function renderLaunch() {
-  tileEls.forEach(el => el.remove());
-  tileEls = [];
-  document.querySelectorAll('.float-tagline').forEach(el => el.remove());
-
-  const isAcademic = !themeRoles;
-  const bw = blockSize();
-
-  for (let c = 0; c < COLS; c++) {
-    const st = stacks[c];
-    for (let i = 0; i < st.length; i++) {
-      const v = st[i];
-      const x = colCenterX(c);
-      const y = stackBlockY(c, i);
-      const tile = document.createElement('div');
-      tile.className = 'tile';
-      tile.dataset.col = c;
-      tile.dataset.idx = i;
-      tile.style.left = (x - bw / 2) + 'px';
-      tile.style.top = (y - bw / 2) + 'px';
-      tile.style.width = bw + 'px';
-      tile.style.height = bw + 'px';
-
-      const lvIdx = valMap[v];
-      const lv = lvIdx !== undefined ? LEVELS[lvIdx] : null;
-      if (isAcademic && lv) {
-        tile.style.background = lv.bg;
-        tile.style.color = lv.fg;
-        if (lv.glow) tile.style.boxShadow = '0 0 18px rgba(255,215,0,0.55)';
-        const name = document.createElement('span');
-        name.className = 'tile-name';
-        name.textContent = v;   // 数值，不用学术文字
-        tile.appendChild(name);
-      } else if (lv) {
-        const src = imgSrcFor(v);
-        if (src) {
-          const im = document.createElement('img');
-          im.src = src;
-          im.className = 'tile-img';
-          tile.appendChild(im);
-        }
-      } else {
-        tile.style.background = '#333';
-        tile.textContent = v;
-      }
-
-      boardWrap.appendChild(tile);
-      tileEls.push(tile);
-    }
+// 按当前皮肤设置球的视觉（图片或数值圆球）
+function setBallVisual(el, value, r) {
+  el.innerHTML = '';
+  el.style.background = '';
+  el.style.display = '';
+  el.style.alignItems = '';
+  el.style.justifyContent = '';
+  el.style.color = '';
+  el.style.fontWeight = '';
+  el.style.fontSize = '';
+  el.textContent = '';
+  const src = imgSrcFor(value);
+  if (src) {
+    const im = document.createElement('img');
+    im.src = src;
+    el.appendChild(im);
+  } else {
+    const lvIdx = valMap[value];
+    el.style.background = (lvIdx !== undefined && LEVELS[lvIdx]) ? LEVELS[lvIdx].bg : '#333';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+    el.style.color = '#fff';
+    el.style.fontWeight = '900';
+    el.style.fontSize = (r * 0.9) + 'px';
+    el.textContent = value;
   }
+}
+
+function spawnBall(x, y, value) {
+  const r = ballRadius(value);
+  const body = Matter.Bodies.circle(x, y, r, {
+    restitution: 0.25, friction: 0.3, density: 0.001, frictionStatic: 0.5,
+  });
+  body.plugin = { value, dead: false };
+  const el = document.createElement('div');
+  el.className = 'ball';
+  el.style.width = (r * 2) + 'px';
+  el.style.height = (r * 2) + 'px';
+  setBallVisual(el, value, r);
+  ballLayer.appendChild(el);
+  const ball = { body, el, value, r };
+  balls.push(ball);
+  Matter.Composite.add(engine.world, body);
+  return ball;
+}
+
+// 切换皮肤后刷新已存在球的贴图
+function refreshBallsSkin() {
+  for (const b of balls) setBallVisual(b.el, b.value, b.r);
+}
+
+function removeBall(ball) {
+  const idx = balls.indexOf(ball);
+  if (idx >= 0) balls.splice(idx, 1);
+  if (ball.el) ball.el.remove();
+  Matter.Composite.remove(engine.world, ball.body);
+}
+
+function clearBalls() {
+  mergeQueue = [];
+  if (engine) {
+    for (const b of balls) {
+      if (b.el) b.el.remove();
+      Matter.Composite.remove(engine.world, b.body);
+    }
+  } else {
+    balls.forEach(b => { if (b.el) b.el.remove(); });
+  }
+  balls = [];
+}
+
+function ballsSnapshot() {
+  return balls.map(b => ({ x: b.body.position.x, y: b.body.position.y, value: b.value }));
+}
+
+function restoreBalls(snapshot) {
+  clearBalls();
+  snapshot.forEach(s => spawnBall(s.x, s.y, s.value));
 }
 
 function tileAt(r, c) {
   return tileEls.find(t => +t.dataset.r === r && +t.dataset.c === c) || null;
 }
 
-// ==================== LAUNCH MODE ====================
-let launching = false;
-let launchGen = 0;   // 局数代际：newGame 时自增，用于取消旧局的在飞 rAF（防幽灵落子）
+// ==================== LAUNCH PHYSICS（物理引擎 + 渲染循环） ====================
+function initLaunchPhysics() {
+  if (engine) destroyLaunchPhysics();
+  const W = boardWrap.clientWidth;
+  const H = boardWrap.clientHeight;
+  engine = Matter.Engine.create({ enableSleeping: true });
+  engine.gravity.y = 1.2;
 
-// 飘字（按坐标，发射模式用）
+  const thick = 80;
+  const ground = Matter.Bodies.rectangle(W / 2, H + thick / 2, W + thick * 2, thick, { isStatic: true, friction: 0.6 });
+  const left = Matter.Bodies.rectangle(-thick / 2, H / 2, thick, H * 3, { isStatic: true });
+  const right = Matter.Bodies.rectangle(W + thick / 2, H / 2, thick, H * 3, { isStatic: true });
+  Matter.Composite.add(engine.world, [ground, left, right]);
+
+  // 发射器（顶部箭头 + 下一发球）
+  launcherEl = document.createElement('div');
+  launcherEl.className = 'launcher';
+  arrowEl = document.createElement('div');
+  arrowEl.className = 'aim-arrow';
+  nextBallImg = document.createElement('img');
+  nextBallImg.className = 'next-ball';
+  launcherEl.appendChild(arrowEl);
+  launcherEl.appendChild(nextBallImg);
+  ballLayer.appendChild(launcherEl);
+
+  Matter.Events.on(engine, 'collisionStart', onCollision);
+
+  clearBalls();
+  updateNextPreview();
+  physicsRaf = requestAnimationFrame(renderLoop);
+}
+
+function destroyLaunchPhysics() {
+  if (physicsRaf) cancelAnimationFrame(physicsRaf);
+  physicsRaf = null;
+  clearBalls();
+  if (engine) { Matter.Engine.clear(engine); engine = null; }
+  if (launcherEl) { launcherEl.remove(); launcherEl = null; arrowEl = null; nextBallImg = null; }
+}
+
+function onCollision(ev) {
+  for (const pair of ev.pairs) {
+    const A = pair.bodyA, B = pair.bodyB;
+    if (!A.plugin || !B.plugin) continue;
+    if (A.plugin.dead || B.plugin.dead) continue;
+    if (A.plugin.value && A.plugin.value === B.plugin.value) {
+      mergeQueue.push([A, B]);
+    }
+  }
+}
+
+function processMerges() {
+  let changed = false;
+  while (mergeQueue.length) {
+    const [A, B] = mergeQueue.shift();
+    if (A.plugin.dead || B.plugin.dead) continue;
+    if (A.plugin.value !== B.plugin.value) continue;
+    const ballA = balls.find(b => b.body === A);
+    const ballB = balls.find(b => b.body === B);
+    if (!ballA || !ballB) continue;
+    A.plugin.dead = B.plugin.dead = true;
+    const nv = A.plugin.value * 2;
+    const nx = (A.position.x + B.position.x) / 2;
+    const ny = (A.position.y + B.position.y) / 2;
+    removeBall(ballA);
+    removeBall(ballB);
+    const nb = spawnBall(nx, ny, nv);
+    Matter.Body.setVelocity(nb.body, { x: 0, y: -1.5 });
+    nb.el.classList.add('merged');
+    score += nv;
+    changed = true;
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem(BEST_KEYS[mode], bestScore);
+    }
+    floatTagAt(nx, ny - nb.r, '合成 ' + levelNameOf(nv));
+  }
+  if (changed) updateHUD();
+}
+
+function renderLoop() {
+  if (!engine || mode !== 'launch') return;
+  processMerges();
+  Matter.Engine.update(engine, 1000 / 60);
+  for (const b of balls) {
+    const p = b.body.position;
+    b.el.style.left = p.x + 'px';
+    b.el.style.top = p.y + 'px';
+  }
+  // 危险线计数：球持续静止在顶部危险区才判死，避免合并上弹瞬时误判
+  const dangerous = balls.some(b => b.body.speed < 0.5 && (b.body.position.y - b.r) < DANGER_LINE);
+  dangerFrames = dangerous ? dangerFrames + 1 : 0;
+  if (!gameOver) {
+    checkGameState();
+    physicsRaf = requestAnimationFrame(renderLoop);
+  }
+}
+
+// 飘字（按坐标）
 function floatTagAt(x, y, text) {
   const ft = document.createElement('span');
   ft.className = 'float-tagline';
@@ -809,138 +960,51 @@ function floatTagAt(x, y, text) {
   boardWrap.appendChild(ft);
 }
 
-// 柱顶同值合并 + 向下连锁（发射模式）
-function mergeStackTop(col, v) {
-  const st = stacks[col];
-  st.pop();                                  // 去掉柱顶（与发射物同值）
-  let curV = v * 2;
-  let gain = curV;
-  while (st.length && st[st.length - 1] === curV) {  // 合并结果继续与下层同值连锁
-    st.pop();
-    curV *= 2;
-    gain += curV;
-  }
-  st.push(curV);
-  score += gain;
-  return curV;
-}
-
-function fire(col) {
+// 朝目标方向发射
+function fireAt(targetX, targetY) {
+  if (gameOver || !engine) return;
+  const W = boardWrap.clientWidth;
+  const sx = W / 2;
+  const sy = 40;
   const v = nextTile;
   nextTile = nextTileValue();
+  history.push({ balls: ballsSnapshot(), score, nextTile: v });
+  const body = spawnBall(sx, sy, v).body;
+  const dx = targetX - sx;
+  const dy = targetY - sy;
+  const len = Math.hypot(dx, dy) || 1;
+  const speed = Math.max(12, W * 0.045);
+  Matter.Body.setVelocity(body, { x: dx / len * speed, y: dy / len * speed });
   updateNextPreview();
-  history.push({ stacks: stacks.map(s => [...s]), score, nextTile });
-
-  const bw = blockSize();
-  const x = colCenterX(col);
-  const targetY = stackTopY(col);   // 落到该列堆叠顶部（空列落到地面）
-  const startY = -bw;
-
-  const proj = document.createElement('img');
-  proj.className = 'projectile';
-  const src = imgSrcFor(v);
-  if (src) {
-    proj.src = src;
-  } else {
-    // 经典主题无图片：用数字方块显示发射物，避免隐形"丢失"
-    proj.style.background = 'linear-gradient(135deg, #6C63FF, #4834D4)';
-    proj.style.borderRadius = '10px';
-    proj.style.display = 'flex';
-    proj.style.alignItems = 'center';
-    proj.style.justifyContent = 'center';
-    proj.style.color = '#fff';
-    proj.style.fontWeight = '900';
-    proj.style.fontSize = Math.max(10, bw * 0.4) + 'px';
-    proj.textContent = v;
-  }
-  proj.style.width = bw + 'px';
-  proj.style.height = bw + 'px';
-  proj.style.left = (x - bw / 2) + 'px';
-  proj.style.top = (startY - bw / 2) + 'px';
-  boardWrap.appendChild(proj);
-
-  launching = true;
-  const gen = launchGen;
-  const st = stacks[col];
-  const willMerge = st.length > 0 && st[st.length - 1] === v;  // 打到同一种才合并
-
-  // 重力模拟：下落 → 撞击 → 弹性回弹 → 受重力落定
-  let y = startY;
-  let vy = 0;
-  const G = bw * 14;        // 重力加速度
-  const BOUNCE = 0.38;      // 弹性系数（回弹衰减）
-  let last = performance.now();
-
-  function step(now) {
-    // 局数已重置（点了新游戏/切模式）：丢弃这次在飞发射
-    if (gen !== launchGen) { proj.remove(); return; }
-    const dt = Math.min(0.05, (now - last) / 1000);
-    last = now;
-    vy += G * dt;
-    y += vy * dt;
-    if (y >= targetY) {
-      y = targetY;
-      // 先让发射物真实"压"到撞击最深处，再回弹，视觉连续不沉底
-      proj.style.left = (x - bw / 2) + 'px';
-      proj.style.top = (y - bw / 2) + 'px';
-      // 打到了：若不是合成且速度还大，回弹一下，有重力的感觉
-      if (!willMerge && Math.abs(vy) > 60) {
-        vy = -vy * BOUNCE;
-        requestAnimationFrame(step);
-        return;
-      }
-      // 落定
-      proj.remove();
-      if (willMerge) {
-        const finalV = mergeStackTop(col, v);
-        render();
-        const ti = stacks[col].length - 1;
-        const mt = tileEls.find(tl => +tl.dataset.col === col && +tl.dataset.idx === ti);
-        if (mt) { mt.classList.add('merged'); mt.classList.add('jelly'); }
-        floatTagAt(x, stackBlockY(col, ti) - bw / 2, '合成 ' + levelNameOf(finalV));
-      } else {
-        st.push(v);   // 不同种不合并，堆上去
-        render();
-        const nt = tileEls.find(tl => +tl.dataset.col === col && +tl.dataset.idx === st.length - 1);
-        if (nt) { nt.classList.add('new'); nt.classList.add('jelly'); }
-      }
-      if (score > bestScore) {
-        bestScore = score;
-        localStorage.setItem(BEST_KEYS[mode], bestScore);
-      }
-      launching = false;
-      updateHUD();
-      checkGameState();
-      return;
-    }
-    proj.style.left = (x - bw / 2) + 'px';
-    proj.style.top = (y - bw / 2) + 'px';
-    proj.style.transform = 'rotate(' + Math.max(-110, Math.min(110, vy * 0.9)) + 'deg)';
-    requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
 }
 
-function launchAt(clientX) {
-  if (mode !== 'launch' || gameOver || launching) return;
+// 更新瞄准箭头方向
+function aimAt(clientX, clientY) {
+  if (!arrowEl) return;
   const wrapRect = boardWrap.getBoundingClientRect();
-  const x = clientX - wrapRect.left;
-  const col = Math.max(0, Math.min(COLS - 1, Math.floor(x / (wrapRect.width / COLS))));
-  fire(col);
+  const sx = wrapRect.left + wrapRect.width / 2;
+  const sy = wrapRect.top + 40;
+  const ang = Math.atan2(clientY - sy, clientX - sx);
+  arrowEl.style.transform = 'rotate(' + (ang * 180 / Math.PI + 90) + 'deg)';
 }
 
 // ==================== INPUT ====================
 // 经典模式：键盘方向键 / 滑动
-// 发射模式：点击即发射
+// 发射模式：点击任意位置 → 朝该方向发射；移动指针 → 瞄准
 const SWIPE_THRESHOLD = 10;
 let touchStart = null;
 
 boardWrap.addEventListener('pointerdown', e => {
   if (mode === 'launch') {
-    launchAt(e.clientX, e.clientY);
+    const wrapRect = boardWrap.getBoundingClientRect();
+    fireAt(e.clientX - wrapRect.left, e.clientY - wrapRect.top);
     return;
   }
   touchStart = { x: e.clientX, y: e.clientY };
+});
+
+boardWrap.addEventListener('pointermove', e => {
+  if (mode === 'launch') aimAt(e.clientX, e.clientY);
 });
 
 boardWrap.addEventListener('pointerup', e => {
