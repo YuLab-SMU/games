@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🔢 数独</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-1: #0a0a1e; --bg-2: #12103a; --bg-3: #1a1040;
+  --accent: #6C63FF; --accent-2: #00D2FF; --pink: #FF6B9D; --gold: #FFD93D;
+  --given: #e8e0f0; --user: #6C63FF; --error: #FF5252;
+  --line: rgba(255,255,255,0.12); --line-thick: rgba(255,255,255,0.38);
+}
+html, body {
+  min-height: 100vh; min-height: 100dvh;
+  background: linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
+  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #e8e0f0;
+  display: flex; flex-direction: column; align-items: center;
+  user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+.wrap { width: 100%; max-width: 520px; padding: 16px; display: flex; flex-direction: column; align-items: center; }
+
+/* Header */
+.header { text-align: center; padding: 8px 0 4px; }
+.header h1 {
+  font-size: 2.1rem; font-weight: 900;
+  background: linear-gradient(135deg, #FF6B9D, #FFA94D, #FFD93D, #6C63FF);
+  background-size: 300% 300%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 5s ease infinite;
+  letter-spacing: 0.05em;
+}
+@keyframes shimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+.header p { margin-top: 4px; font-size: 0.8rem; color: rgba(240,232,255,0.45); }
+.back {
+  position: absolute; left: 20px; top: 24px;
+  font-size: 0.8rem; color: rgba(240,232,255,0.6);
+  text-decoration: none; padding: 6px 12px; border-radius: 12px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* Difficulty tabs */
+.diff-row { display: flex; gap: 8px; margin: 12px 0 6px; }
+.diff-tab {
+  font-family: inherit; font-size: 0.85rem; font-weight: 800;
+  padding: 7px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.75);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.diff-tab.active {
+  background: linear-gradient(135deg, #6C63FF, #4834D4);
+  border-color: transparent; color: #fff;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.35);
+}
+.diff-tab:active { transform: scale(0.95); }
+
+/* Status bar */
+.status-row {
+  width: min(92vw, 480px); display: flex; justify-content: space-between; align-items: center;
+  margin: 4px 0 10px; gap: 8px;
+}
+.status-item {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px; padding: 6px 14px; font-size: 0.75rem; color: rgba(255,255,255,0.6);
+  text-align: center; min-width: 80px;
+}
+.status-item b { display: block; font-size: 1.15rem; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }
+.status-item.err b { color: var(--pink); }
+
+/* Board */
+.board {
+  display: grid; grid-template-columns: repeat(9, 1fr);
+  width: min(92vw, 480px); aspect-ratio: 1;
+  background: rgba(255,255,255,0.03);
+  border: 2px solid var(--line-thick);
+  border-radius: 8px; overflow: hidden;
+}
+.cell {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.12s ease;
+  background: rgba(255,255,255,0.02);
+}
+.cell .num { font-size: clamp(1.3rem, 5.2vw, 1.9rem); font-weight: 700; line-height: 1; }
+.cell.given .num { color: var(--given); }
+.cell.user .num { color: var(--user); }
+.cell.error .num { color: var(--error); }
+
+/* peer (row/col/box) highlight */
+.cell.peer { background: rgba(108,99,255,0.14); }
+/* same number highlight */
+.cell.same { background: rgba(108,99,255,0.30); }
+/* selected */
+.cell.sel { background: rgba(108,99,255,0.55); }
+.cell.sel .num { color: #fff; }
+
+/* notes grid */
+.notes { position: absolute; inset: 1px; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); }
+.notes span {
+  font-size: clamp(0.5rem, 2.4vw, 0.78rem); font-weight: 600;
+  color: var(--accent-2); display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+}
+.notes span.on { opacity: 1; }
+.cell.hidden-num .num { display: none; }
+
+/* Number pad */
+.pad { width: min(92vw, 480px); display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; margin-top: 14px; }
+.pad-btn {
+  font-family: inherit; font-size: clamp(1rem, 4.5vw, 1.4rem); font-weight: 800;
+  aspect-ratio: 1; border-radius: 12px; cursor: pointer;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.16);
+  color: #fff; position: relative; transition: all 0.12s ease;
+}
+.pad-btn .left { position: absolute; bottom: 3px; right: 6px; font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.4); }
+.pad-btn:active { transform: scale(0.9); }
+.pad-btn.done { opacity: 0.28; }
+.pad-btn.hl { background: var(--accent); border-color: transparent; box-shadow: 0 0 14px rgba(108,99,255,0.5); }
+
+/* Tool row */
+.tools { width: min(92vw, 480px); display: flex; gap: 8px; margin-top: 12px; }
+.tool-btn {
+  flex: 1; font-family: inherit; font-size: 0.82rem; font-weight: 800;
+  padding: 12px 4px; border-radius: 14px; cursor: pointer;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.85); transition: all 0.15s ease;
+}
+.tool-btn:active { transform: scale(0.95); }
+.tool-btn.on { background: var(--accent-2); border-color: transparent; color: #06222a; }
+.tool-btn.new { background: linear-gradient(135deg, #FF6B9D, #FF9F43); border-color: transparent; color: #fff; }
+
+/* Win overlay */
+.overlay {
+  position: fixed; inset: 0; z-index: 10; display: none;
+  align-items: center; justify-content: center;
+  background: rgba(5,5,20,0.75); backdrop-filter: blur(6px);
+}
+.overlay.show { display: flex; }
+.win-card {
+  background: linear-gradient(145deg, rgba(30,25,60,0.95), rgba(20,18,50,0.98));
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 24px;
+  padding: 40px 36px; text-align: center; max-width: 340px; width: 88%;
+  animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes pop { 0%{transform:scale(0.6);opacity:0} 100%{transform:scale(1);opacity:1} }
+.win-card .emoji { font-size: 4rem; animation: bounce 1s infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.win-card h2 { margin: 10px 0 6px; font-size: 1.8rem; font-weight: 900; }
+.win-card p { font-size: 0.9rem; color: rgba(240,232,255,0.6); margin: 4px 0; }
+.win-card .again {
+  margin-top: 18px; font-family: inherit; font-size: 1rem; font-weight: 800;
+  padding: 12px 30px; border-radius: 16px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #FF6B9D, #FF9F43); color: #fff;
+}
+</style>
+</head>
+<body>
+
+<a class="back" href="../index.html">← 返回</a>
+
+<div class="wrap">
+  <div class="header">
+    <h1>🔢 数独</h1>
+    <p>经典 9×9 数字谜题 · 笔记 / 撤销 / 提示</p>
+  </div>
+
+  <div class="diff-row">
+    <button class="diff-tab active" data-diff="easy">简单</button>
+    <button class="diff-tab" data-diff="medium">中等</button>
+    <button class="diff-tab" data-diff="hard">困难</button>
+  </div>
+
+  <div class="status-row">
+    <div class="status-item">用时<b id="timer">00:00</b></div>
+    <div class="status-item">剩余<b id="remain">0</b></div>
+    <div class="status-item err">错误<b id="errs">0</b></div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="pad" id="pad"></div>
+
+  <div class="tools">
+    <button class="tool-btn" id="btn-note">✏️ 笔记</button>
+    <button class="tool-btn" id="btn-undo">↩️ 撤销</button>
+    <button class="tool-btn" id="btn-erase">🧽 清除</button>
+    <button class="tool-btn" id="btn-hint">💡 提示</button>
+    <button class="tool-btn new" id="btn-new">🔄 新局</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="win-card">
+    <div class="emoji">🏆</div>
+    <h2>完成！</h2>
+    <p>难度：<span id="win-diff"></span></p>
+    <p>用时：<span id="win-time"></span></p>
+    <button class="again" id="btn-again">再来一局</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- 工具 ----------
+  const $ = s => document.querySelector(s);
+  const shuffle = arr => { const a = arr.slice(); for (let i = a.length-1; i>0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+  // ---------- 数独算法 ----------
+  function isValid(board, r, c, n) {
+    for (let i = 0; i < 9; i++) {
+      if (board[r][i] === n) return false;
+      if (board[i][c] === n) return false;
+    }
+    const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+    for (let i = br; i < br+3; i++) for (let j = bc; j < bc+3; j++)
+      if (board[i][j] === n) return false;
+    return true;
+  }
+
+  // 回溯求完整解（随机顺序填充）
+  function fillBoard(b) {
+    let row = -1, col = -1;
+    for (let i = 0; i < 81; i++) { const r = Math.floor(i/9), c = i%9; if (b[r][c] === 0){ row=r; col=c; break; } }
+    if (row === -1) return true;
+    for (const n of shuffle([1,2,3,4,5,6,7,8,9])) {
+      if (isValid(b, row, col, n)) {
+        b[row][col] = n;
+        if (fillBoard(b)) return true;
+        b[row][col] = 0;
+      }
+    }
+    return false;
+  }
+
+  // 统计解数量（最多 limit 个）
+  function countSolutions(board, limit = 2) {
+    const b = board.map(r => r.slice());
+    let count = 0;
+    function solve() {
+      let row = -1, col = -1;
+      for (let i = 0; i < 81; i++) { const r = Math.floor(i/9), c = i%9; if (b[r][c] === 0){ row=r; col=c; break; } }
+      if (row === -1) { count++; return; }
+      for (let n = 1; n <= 9; n++) {
+        if (isValid(b, row, col, n)) {
+          b[row][col] = n;
+          solve();
+          b[row][col] = 0;
+          if (count >= limit) return;
+        }
+      }
+    }
+    solve();
+    return count;
+  }
+
+  function generatePuzzle(holes) {
+    const solution = Array.from({length:9}, () => Array(9).fill(0));
+    fillBoard(solution);
+    const puzzle = solution.map(r => r.slice());
+    const positions = shuffle([...Array(81).keys()]);
+    let made = 0;
+    for (const p of positions) {
+      if (made >= holes) break;
+      const r = Math.floor(p/9), c = p%9;
+      const backup = puzzle[r][c];
+      puzzle[r][c] = 0;
+      if (countSolutions(puzzle, 2) === 1) made++;
+      else puzzle[r][c] = backup;
+    }
+    return { puzzle, solution };
+  }
+
+  // ---------- 状态 ----------
+  const HOLES = { easy: 32, medium: 45, hard: 55 };
+  let difficulty = 'easy';
+  let board, solution, given, notes;   // board 9x9, given 布尔, notes 9x9 bitmask
+  let selected = null;                  // {r,c}
+  let noteMode = false;
+  let errs = 0;
+  let timerSec = 0, timerId = null;
+  let undoStack = [];
+  let cells = [];                       // DOM cell 数组
+
+  // ---------- DOM 构建 ----------
+  const boardEl = $('#board');
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const isThickR = (r % 3 === 2), isThickC = (c % 3 === 2);
+      const lastR = (r === 8), lastC = (c === 8);
+      const lr = 'rgba(255,255,255,0.12)', lk = 'rgba(255,255,255,0.38)';
+      cell.style.borderRight = lastC ? 'none' : (isThickC ? `2px solid ${lk}` : `1px solid ${lr}`);
+      cell.style.borderBottom = lastR ? 'none' : (isThickR ? `2px solid ${lk}` : `1px solid ${lr}`);
+      cell.innerHTML = '<div class="num"></div><div class="notes">' +
+        '<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>';
+      cell.dataset.r = r; cell.dataset.c = c;
+      cell.addEventListener('click', () => selectCell(r, c));
+      boardEl.appendChild(cell);
+      cells.push(cell);
+    }
+  }
+
+  // 数字键盘
+  const padEl = $('#pad');
+  const padBtns = [];
+  for (let n = 1; n <= 9; n++) {
+    const b = document.createElement('button');
+    b.className = 'pad-btn';
+    b.innerHTML = `${n}<span class="left"></span>`;
+    b.addEventListener('click', () => inputNumber(n));
+    padEl.appendChild(b);
+    padBtns.push(b);
+  }
+
+  // ---------- 游戏控制 ----------
+  function startGame(diff) {
+    difficulty = diff;
+    document.querySelectorAll('.diff-tab').forEach(t => t.classList.toggle('active', t.dataset.diff === diff));
+    const { puzzle, solution: sol } = generatePuzzle(HOLES[diff]);
+    board = puzzle; solution = sol;
+    given = board.map(r => r.map(v => v !== 0));
+    notes = Array.from({length:9}, () => Array(9).fill(0));
+    selected = null; errs = 0; undoStack = [];
+    resetTimer();
+    render();
+  }
+
+  function resetTimer() {
+    clearInterval(timerId);
+    timerSec = 0;
+    $('#timer').textContent = '00:00';
+    timerId = setInterval(() => { timerSec++; $('#timer').textContent = fmt(timerSec); }, 1000);
+  }
+  const fmt = s => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+
+  function snapshot() {
+    undoStack.push({ board: board.map(r=>r.slice()), notes: notes.map(r=>r.slice()) });
+    if (undoStack.length > 200) undoStack.shift();
+  }
+
+  function selectCell(r, c) {
+    if (selected && selected.r === r && selected.c === c) { selected = null; }
+    else selected = { r, c };
+    render();
+  }
+
+  function inputNumber(n) {
+    if (!selected) return;
+    const { r, c } = selected;
+    if (given[r][c]) return;   // 预填不可改
+    if (noteMode) {
+      snapshot();
+      notes[r][c] ^= (1 << (n-1));   // 切换候选
+      render();
+      return;
+    }
+    if (board[r][c] === n) return;
+    snapshot();
+    board[r][c] = n;
+    notes[r][c] = 0;
+    if (n !== solution[r][c]) errs++;
+    render();
+    checkWin();
+  }
+
+  function eraseCell() {
+    if (!selected) return;
+    const { r, c } = selected;
+    if (given[r][c]) return;
+    if (board[r][c] === 0 && notes[r][c] === 0) return;
+    snapshot();
+    board[r][c] = 0; notes[r][c] = 0;
+    render();
+  }
+
+  function undo() {
+    const last = undoStack.pop();
+    if (!last) return;
+    board = last.board; notes = last.notes;
+    render();
+  }
+
+  function hint() {
+    // 优先找填错或空的格子，填正确解
+    const candidates = [];
+    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+      if (!given[r][c] && board[r][c] !== solution[r][c]) candidates.push({r,c});
+    }
+    if (!candidates.length) return;
+    // 优先提示当前选中格，否则随机
+    let target = candidates.find(p => selected && p.r === selected.r && p.c === selected.c) ||
+                 candidates[Math.floor(Math.random()*candidates.length)];
+    snapshot();
+    board[target.r][target.c] = solution[target.r][target.c];
+    notes[target.r][target.c] = 0;
+    selected = target;
+    render();
+    checkWin();
+  }
+
+  function checkWin() {
+    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++)
+      if (board[r][c] !== solution[r][c]) return;
+    clearInterval(timerId);
+    $('#win-diff').textContent = {easy:'简单',medium:'中等',hard:'困难'}[difficulty];
+    $('#win-time').textContent = fmt(timerSec);
+    $('#overlay').classList.add('show');
+  }
+
+  // ---------- 渲染 ----------
+  function isPeer(r1,c1,r2,c2) {
+    if (r1===r2 || c1===c2) return true;
+    return Math.floor(r1/3)===Math.floor(r2/3) && Math.floor(c1/3)===Math.floor(c2/3);
+  }
+
+  function render() {
+    // 数字出现次数统计
+    const counts = Array(10).fill(0);
+    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++)
+      if (board[r][c]) counts[board[r][c]]++;
+
+    let selNum = selected && board[selected.r][selected.c] ? board[selected.r][selected.c] : 0;
+
+    let idx = 0;
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        const cell = cells[idx++];
+        const val = board[r][c];
+        const numEl = cell.querySelector('.num');
+        const noteSpans = cell.querySelectorAll('.notes span');
+
+        // 基础类
+        cell.classList.remove('given','user','error','peer','same','sel','hidden-num');
+
+        // 冲突检测（用户填的数字与其行列宫重复）
+        let conflict = false;
+        if (val && !given[r][c]) {
+          for (let i = 0; i < 9; i++) {
+            if (i !== c && board[r][i] === val) { conflict = true; break; }
+            if (i !== r && board[i][c] === val) { conflict = true; break; }
+          }
+          if (!conflict) {
+            const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+            outer: for (let i = br; i < br+3; i++) for (let j = bc; j < bc+3; j++) {
+              if (!(i===r && j===c) && board[i][j] === val) { conflict = true; break outer; }
+            }
+          }
+        }
+
+        if (val) {
+          cell.classList.add(given[r][c] ? 'given' : 'user');
+          if (conflict) cell.classList.add('error');
+          numEl.textContent = val;
+        } else {
+          numEl.textContent = '';
+        }
+
+        // 笔记显示
+        const hasNotes = notes[r][c] !== 0;
+        if (hasNotes && !val) {
+          cell.classList.add('hidden-num');
+          noteSpans.forEach((sp, i) => sp.classList.toggle('on', (notes[r][c] & (1<<i)) !== 0));
+        } else {
+          noteSpans.forEach(sp => sp.classList.remove('on'));
+        }
+
+        // 高亮
+        if (selected) {
+          if (selected.r === r && selected.c === c) cell.classList.add('sel');
+          else if (isPeer(selected.r, selected.c, r, c)) cell.classList.add('peer');
+        }
+        if (selNum && val === selNum && !(selected && selected.r===r && selected.c===c)) cell.classList.add('same');
+      }
+    }
+
+    // 剩余空格
+    let remain = 0;
+    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (board[r][c] === 0) remain++;
+    $('#remain').textContent = remain;
+    $('#errs').textContent = errs;
+
+    // 数字键盘剩余数 + 高亮
+    padBtns.forEach((btn, i) => {
+      const n = i + 1;
+      const left = btn.querySelector('.left');
+      left.textContent = 9 - counts[n];
+      btn.classList.toggle('done', counts[n] >= 9);
+      btn.classList.toggle('hl', selNum === n);
+    });
+
+    // 笔记按钮状态
+    $('#btn-note').classList.toggle('on', noteMode);
+  }
+
+  // ---------- 事件 ----------
+  document.querySelectorAll('.diff-tab').forEach(t => t.addEventListener('click', () => startGame(t.dataset.diff)));
+  $('#btn-note').addEventListener('click', () => { noteMode = !noteMode; render(); });
+  $('#btn-undo').addEventListener('click', undo);
+  $('#btn-erase').addEventListener('click', eraseCell);
+  $('#btn-hint').addEventListener('click', hint);
+  $('#btn-new').addEventListener('click', () => startGame(difficulty));
+  $('#btn-again').addEventListener('click', () => { $('#overlay').classList.remove('show'); startGame(difficulty); });
+
+  // 键盘支持
+  document.addEventListener('keydown', e => {
+    if (e.key >= '1' && e.key <= '9') inputNumber(parseInt(e.key));
+    else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') eraseCell();
+    else if (e.key === 'n' || e.key === 'N') { noteMode = !noteMode; render(); }
+    else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
+    else if (e.key === 'h' || e.key === 'H') hint();
+    else if (e.key.startsWith('Arrow') && selected) {
+      e.preventDefault();
+      let { r, c } = selected;
+      if (e.key === 'ArrowUp') r = (r+8)%9;
+      else if (e.key === 'ArrowDown') r = (r+1)%9;
+      else if (e.key === 'ArrowLeft') c = (c+8)%9;
+      else if (e.key === 'ArrowRight') c = (c+1)%9;
+      selected = { r, c };
+      render();
+    }
+  });
+
+  // 启动
+  startGame('easy');
+})();
+</script>
+</body>
+</html>
