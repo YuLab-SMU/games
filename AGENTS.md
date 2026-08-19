@@ -1,5 +1,8 @@
 # games 角色图片生成规则
 
+> 本文件只管 games 仓库的“图片生成/切割”通用规则。  
+> 小程序侧（bioinfoCal）的“原生移植/代码复用/同步策略”等规则见 `01_Development/source/wechatMiniapp/AGENTS.md`。
+
 > 所有主题的角色图片统一放在 games 根下共享目录 `images/<theme>/`：
 > `images/<theme>/classic/`（gpt-image 贴图）与 `images/<theme>/refreshed/`（程序化手绘缩略图）。
 
