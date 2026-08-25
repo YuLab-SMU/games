@@ -1,0 +1,52 @@
+Create one single sprite sheet image for a children's Chinese-learning web game.
+
+Style:
+- cute cartoon mascots for children age 4-8
+- clean 2D illustration, flat color, soft shading, rounded shapes
+- warm, joyful, friendly, collectible game character style
+- consistent proportions and consistent camera angle for every character
+- no realism, no horror, no text, no labels, no numbers, no UI, no watermark
+- each character centered inside its own cell, full body visible, not crossing cell boundaries
+
+Layout:
+- strict 6 columns x 3 rows grid
+- 18 cells total
+- one mascot per cell
+- same size ratio in every cell
+- light solid background color #B5E2FC in every cell
+- keep all cells aligned and evenly spaced
+
+Characters in row-major order from left to right, top to bottom:
+
+Row 1:
+1. momo - a round peach-pink baby monster with tiny horns and a happy smile
+2. doudou - a yellow bean-shaped monster with leaf ears and bright eyes
+3. tuantuan - a fluffy cream-colored monster with a star tail
+4. yaya - a lavender little dragon-chick hybrid with tiny wings
+5. huohuo - a coral-red fire sprite monster with soft flame hair
+6. nuannuan - a mint-green sleepy blob monster holding a tiny book
+
+Row 2:
+7. qiqiu - a sky-blue balloon monster with little feet
+8. mifen - a rice-ball monster with rosy cheeks and a head ribbon
+9. keke - a cocoa-colored bear-like monster with a tiny satchel
+10. lulu - a grass-green sprout monster with long ears
+11. tangtang - a candy-colored jelly monster with swirly antennae
+12. xingxing - a golden star monster with cape-like side fins
+
+Row 3:
+13. shanbao - a small mountain guardian monster with pebble horns
+14. shuizai - a blue water-drop monster with floating fins
+15. fengfeng - a white wind spirit monster with spiral tail
+16. yunbao - a cloud monster with chubby paws and blush
+17. huahua - a flower monster with petal hood and tiny boots
+18. guoguo - a fruit basket monster with orange-peach colors and a playful grin
+
+Important constraints:
+- all 18 characters must appear
+- uniform style across all cells
+- no extra decorative objects outside the characters
+- no background patterns
+- no outlines that touch or mimic grid lines
+- do not merge cells
+- leave visible separation between characters and the cell edges

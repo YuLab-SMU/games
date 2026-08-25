@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>汉字小怪兽</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-1: #fff5d7;
+  --bg-2: #ffe8f1;
+  --bg-3: #eef4ff;
+  --ink: #312341;
+  --muted: #6f6380;
+  --brand: #7b69ff;
+  --brand-2: #ff9152;
+  --good: #29b36f;
+  --bad: #ff5f7d;
+  --card: rgba(255, 255, 255, 0.9);
+  --line: rgba(49, 35, 65, 0.1);
+  --shadow: 0 18px 40px rgba(84, 58, 106, 0.14);
+}
+
+html, body {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255,255,255,0.9), transparent 25%),
+    radial-gradient(circle at 100% 0%, rgba(255,255,255,0.78), transparent 20%),
+    linear-gradient(135deg, var(--bg-1), var(--bg-2) 52%, var(--bg-3));
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+body { padding: 20px; }
+
+.app {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr;
+  gap: 18px;
+  align-items: stretch;
+}
+
+.hero-main {
+  padding: 28px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #6653ff;
+  background: rgba(123, 105, 255, 0.12);
+}
+
+.hero h1 {
+  margin-top: 14px;
+  font-size: clamp(2.1rem, 5vw, 3.6rem);
+  line-height: 1.02;
+  letter-spacing: 0.02em;
+}
+
+.hero p {
+  margin-top: 14px;
+  max-width: 60ch;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.hero-tip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.tag {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(49,35,65,0.06);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.hero-side {
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.pet-wrap {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.pet-card {
+  position: relative;
+  height: 132px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #fff7d8, #ffe4b7);
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 -10px 18px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.pet-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.pet-card.has-3d img {
+  opacity: 0;
+}
+
+.flying-token {
+  position: fixed;
+  z-index: 40;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 900;
+  background: radial-gradient(circle at 30% 30%, #fff2a8, #ff9a4f 70%, #ff6d5f);
+  box-shadow: 0 12px 24px rgba(255,145,82,0.35);
+}
+
+.pet-card img {
+  position: relative;
+  z-index: 1;
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  image-rendering: auto;
+  transition: opacity 0.2s ease;
+}
+
+.pet-title {
+  font-size: 1.42rem;
+  font-weight: 900;
+}
+
+.pet-desc {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.pet-mood {
+  margin-top: 10px;
+  color: #ff8a48;
+  font-weight: 900;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat {
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(49,35,65,0.05);
+  border: 1px solid rgba(49,35,65,0.06);
+}
+
+.stat .label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.stat .value {
+  margin-top: 6px;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.deck {
+  display: grid;
+  grid-template-columns: 1.16fr 0.94fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.game {
+  padding: 24px;
+}
+
+.game-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.progress-box {
+  min-width: 260px;
+  display: grid;
+  gap: 8px;
+}
+
+.meter {
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(49,35,65,0.08);
+}
+
+.meter > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+  transition: width 0.25s ease;
+}
+
+.config-card {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.84));
+  border: 1px solid rgba(49,35,65,0.08);
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.field select,
+.field input,
+.save-tools input,
+.save-tools textarea {
+  width: 100%;
+  border: 1px solid rgba(49,35,65,0.12);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.94);
+  color: var(--ink);
+  padding: 12px 14px;
+  font: inherit;
+}
+
+.field select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, rgba(49,35,65,0.5) 50%), linear-gradient(135deg, rgba(49,35,65,0.5) 50%, transparent 50%);
+  background-position: calc(100% - 20px) calc(50% - 3px), calc(100% - 14px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.config-note {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.level-rail {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.level-step {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(49,35,65,0.08);
+  border-radius: 18px;
+  padding: 12px 12px 11px;
+  background: rgba(255,255,255,0.82);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.level-step:hover,
+.level-step:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(123,105,255,0.24);
+  box-shadow: 0 12px 24px rgba(49,35,65,0.08);
+  outline: none;
+}
+
+.level-step.current {
+  border-color: rgba(255,145,82,0.28);
+  background: linear-gradient(180deg, rgba(255,244,235,0.98), rgba(255,251,246,0.88));
+  box-shadow: 0 12px 24px rgba(255,145,82,0.12);
+}
+
+.level-step.locked {
+  cursor: not-allowed;
+  opacity: 0.62;
+  filter: grayscale(0.18);
+}
+
+.level-step.done {
+  background: linear-gradient(180deg, rgba(242,255,248,0.98), rgba(255,255,255,0.9));
+}
+
+.level-kicker {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.level-title {
+  display: block;
+  margin-top: 4px;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.level-meta,
+.level-rule {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.level-meta {
+  color: #6e6084;
+  font-weight: 800;
+}
+
+.level-rule {
+  color: var(--muted);
+}
+
+.question-card {
+  margin-top: 18px;
+  padding: 22px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.84));
+  border: 1px solid rgba(49,35,65,0.08);
+}
+
+.question-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255,145,82,0.14);
+  color: #c9561d;
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.mode-chip.playable::after {
+  content: "点我朗读";
+  margin-left: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.64);
+  color: #a84f20;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.mode-chip:hover,
+.mode-chip:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(255,145,82,0.14);
+  outline: none;
+}
+
+.mode-chip:disabled {
+  cursor: default;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+.prompt-action {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: var(--ink);
+  background: rgba(49,35,65,0.06);
+  cursor: pointer;
+}
+
+.prompt-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.prompt {
+  margin-top: 16px;
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  line-height: 1.4;
+  font-weight: 900;
+}
+
+.helper {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.pinyin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(123,105,255,0.12);
+  color: #5a46f5;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.pinyin-chip:hover {
+  background: rgba(123,105,255,0.18);
+}
+
+.pinyin-chip.speaking {
+  background: rgba(255,145,82,0.18);
+  color: #c9561d;
+  box-shadow: 0 0 0 3px rgba(255,145,82,0.14);
+}
+
+.choices {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.choice {
+  width: 100%;
+  min-height: 118px;
+  border: 0;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff, #fff7fa);
+  border: 2px solid rgba(49,35,65,0.08);
+  box-shadow: 0 12px 24px rgba(49,35,65,0.08);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.choice:hover, .choice:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(123,105,255,0.3);
+  box-shadow: 0 16px 28px rgba(49,35,65,0.12);
+  outline: none;
+}
+
+.choice.correct {
+  border-color: rgba(41,179,111,0.46);
+  background: linear-gradient(180deg, #ffffff, #ecfff4);
+}
+
+.choice.wrong {
+  border-color: rgba(255,95,125,0.38);
+  background: linear-gradient(180deg, #ffffff, #fff0f4);
+}
+
+.choice-char {
+  display: block;
+  font-size: clamp(2.7rem, 7vw, 4.4rem);
+  font-weight: 900;
+}
+
+.choice-char.speaking,
+.spoken-char.speaking {
+  color: #ff7a33;
+  text-shadow: 0 0 18px rgba(255,145,82,0.35);
+}
+
+.choice-meta {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.result {
+  margin-top: 16px;
+  min-height: 60px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(49,35,65,0.05);
+  color: var(--ink);
+  line-height: 1.65;
+  font-size: 0.96rem;
+}
+
+.result.good { background: rgba(41,179,111,0.12); }
+.result.bad { background: rgba(255,95,125,0.12); }
+
+.spoken-char {
+  display: inline-block;
+  transition: color 0.18s ease, text-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.spoken-char.speaking {
+  transform: translateY(-1px) scale(1.04);
+}
+
+.toolbar {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn {
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), #4e9cff);
+  box-shadow: 0 12px 24px rgba(102, 90, 230, 0.22);
+  cursor: pointer;
+}
+
+.btn.subtle {
+  color: var(--ink);
+  background: rgba(49,35,65,0.08);
+  box-shadow: none;
+}
+
+.btn.warn {
+  background: linear-gradient(135deg, #ff8f68, #ff5f7d);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+  opacity: 0.55;
+}
+
+.side {
+  display: grid;
+  gap: 18px;
+}
+
+.side-panel {
+  padding: 20px;
+}
+
+.side-panel h3 {
+  font-size: 1.06rem;
+}
+
+.side-panel p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.68;
+}
+
+.theme-list,
+.wrong-list,
+.collection-grid {
+  margin-top: 14px;
+}
+
+.theme-list,
+.wrong-list {
+  display: grid;
+  gap: 10px;
+}
+
+.theme-item,
+.wrong-item {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(49,35,65,0.05);
+  border: 1px solid rgba(49,35,65,0.06);
+}
+
+.theme-head,
+.wrong-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.mini-meter {
+  margin-top: 8px;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(49,35,65,0.08);
+}
+
+.mini-meter > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #ff8c42, #ffd659);
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sprite-card {
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(49,35,65,0.05);
+  border: 1px solid rgba(49,35,65,0.06);
+  text-align: center;
+}
+
+.sprite-card.locked {
+  filter: grayscale(1);
+  opacity: 0.52;
+}
+
+.sprite-card img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.sprite-name {
+  margin-top: 4px;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.sprite-rule {
+  color: var(--muted);
+  font-size: 0.74rem;
+  margin-top: 3px;
+}
+
+.save-tools {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.save-tools textarea {
+  min-height: 98px;
+  resize: vertical;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.footer-note {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.72;
+}
+
+@media (max-width: 980px) {
+  .hero, .deck {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  body { padding: 14px; }
+  .hero-main, .hero-side, .game, .side-panel { padding: 18px; }
+  .config-grid { grid-template-columns: 1fr; }
+  .level-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .choices { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pet-wrap { grid-template-columns: 100px 1fr; }
+  .pet-card { height: 100px; border-radius: 24px; }
+  .pet-card img { width: 76px; height: 76px; }
+  .collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="hero">
+    <div class="panel hero-main">
+      <div class="eyebrow">📚 第二版：更像正式产品了</div>
+      <h1>汉字小怪兽</h1>
+      <p>
+        这次不只是“能玩”。第二版把玩法拆成了 <strong>混合闯关</strong>、<strong>主题专练</strong>、<strong>错题复习</strong> 三条路，
+        又补了一套真正的卡通角色图。目标很明确：别把识字做成卷子，而是让小朋友每天愿意多来两轮。
+      </p>
+      <div class="hero-tip">
+        <span class="tag">静态 H5 在线可部署</span>
+        <span class="tag">手机 / 平板适配</span>
+        <span class="tag">自动本地存档</span>
+        <span class="tag">学习码跨设备恢复</span>
+        <span class="tag">可扩展角色图</span>
+      </div>
+    </div>
+
+    <div class="panel hero-side">
+      <div class="pet-wrap">
+        <div class="pet-card">
+          <div class="pet-stage" id="petStage" aria-hidden="true"></div>
+          <img id="petSprite" src="../images/hanzi-monster/classic/momo.png" alt="小怪兽形象">
+        </div>
+        <div>
+          <div class="pet-title" id="petTitle">小怪兽 Lv.1</div>
+          <div class="pet-desc" id="petDesc">刚出壳，最喜欢吃新学会的汉字。</div>
+          <div class="pet-mood" id="petMood">今天也来吃一点字字能量</div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label">累计答题</div>
+          <div class="value" id="statAnswered">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">认识汉字</div>
+          <div class="value" id="statSeen">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">掌握较稳</div>
+          <div class="value" id="statMastered">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">连续学习</div>
+          <div class="value" id="statStreak">0 天</div>
+        </div>
+        <div class="stat">
+          <div class="label">准确率</div>
+          <div class="value" id="statAccuracy">0%</div>
+        </div>
+        <div class="stat">
+          <div class="label">小饼干</div>
+          <div class="value" id="statCoins">0</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="deck">
+    <div class="panel game">
+      <div class="game-top">
+        <div>
+          <div class="eyebrow" id="nicknameBadge">👶 小朋友模式</div>
+          <h2 style="margin-top:12px;">今天学一轮，别太多，先让兴趣活下来</h2>
+        </div>
+        <div class="progress-box">
+          <div style="display:flex; justify-content:space-between; gap:12px; font-weight:900;">
+            <span id="roundText">第 1 / 5 题</span>
+            <span id="comboText">连对 0 次</span>
+          </div>
+          <div class="meter"><span id="roundMeter"></span></div>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <div class="config-grid">
+          <div class="field">
+            <label for="studyMode">今天怎么学</label>
+            <select id="studyMode">
+              <option value="mix">混合闯关</option>
+              <option value="theme">主题专练</option>
+              <option value="review">错题复习</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="themeSelect">主题</label>
+            <select id="themeSelect"></select>
+          </div>
+          <div class="field">
+            <label for="levelSelect">字阶</label>
+            <select id="levelSelect"></select>
+          </div>
+          <div class="field">
+            <label for="targetSelect">本轮题数</label>
+            <select id="targetSelect">
+              <option value="5">5 题</option>
+              <option value="10">10 题</option>
+              <option value="15">15 题</option>
+            </select>
+          </div>
+        </div>
+        <div class="level-rail" id="levelRail"></div>
+        <div class="config-note" id="sessionHint">默认混合闯关。系统会优先抽那些不熟、或者刚刚答错过的字。</div>
+      </div>
+
+      <div class="question-card">
+        <div class="question-head">
+          <button class="mode-chip" id="modeChip" type="button">🎯 准备开始</button>
+          <button class="prompt-action" id="promptSpeakBtn" type="button" disabled>🔊 再听一遍</button>
+        </div>
+        <div class="prompt" id="promptText">准备好了吗？点“开始学习”就开练。</div>
+        <div class="helper" id="helperText">第二版新增了主题专练和错题复习。别贪多，先把一轮做顺就很值。</div>
+
+        <div class="choices" id="choices"></div>
+
+        <div class="result" id="resultBox">先来一题轻松的热身。</div>
+
+        <div class="toolbar">
+          <button class="btn" id="startBtn">开始学习</button>
+          <button class="btn subtle" id="speakBtn" disabled>朗读提示</button>
+          <button class="btn subtle" id="pronounceBtn" disabled>读汉字</button>
+          <button class="btn subtle" id="nextBtn" disabled>下一题</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="panel side-panel">
+        <h3>学习档案</h3>
+        <p>默认自动保存在浏览器里。想换平板或手机，就导出一份“学习码”，回来再导入。</p>
+        <div class="save-tools">
+          <input id="nicknameInput" type="text" maxlength="12" placeholder="给小怪兽起个名字">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn subtle" id="saveNameBtn">保存昵称</button>
+            <button class="btn subtle" id="exportBtn">导出学习码</button>
+            <button class="btn subtle" id="importBtn">导入学习码</button>
+          </div>
+          <textarea id="saveCode" placeholder="这里会显示学习码，也可以把别处复制来的学习码贴进来。"></textarea>
+          <button class="btn warn" id="resetBtn">重置本地进度</button>
+        </div>
+        <div class="footer-note">
+          现在还是纯静态 H5，所以第二版继续走“本地自动存档 + 学习码备份”这条最稳路线。以后真要云同步，再把这一层换成账号体系即可。
+        </div>
+      </div>
+
+      <div class="panel side-panel">
+        <h3>主题图鉴进度</h3>
+        <p>这次字库扩了不少：动物、食物、颜色、自然、家庭、身体、数字、学校，已经比第一版厚实很多。</p>
+        <div class="theme-list" id="themeList"></div>
+      </div>
+
+      <div class="panel side-panel">
+        <h3>怪兽图鉴</h3>
+        <p>每掌握更多汉字，就会解锁更多字灵。现在这套图已经是按 6×3 大图切出来的真角色素材，不是空壳子。</p>
+        <div class="collection-grid" id="collectionGrid"></div>
+      </div>
+
+      <div class="panel side-panel">
+        <h3>错题回放</h3>
+        <p>老卡住的字会优先回炉。别嫌它烦，这块才是真正能把进度留住的地方。</p>
+        <div class="wrong-list" id="wrongList"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="hanzi-bank-2000.js"></script>
+<script src="https://unpkg.com/three@0.169.0/build/three.min.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const STORAGE_KEY = 'hanzi-monster-save-v2';
+  const LEGACY_STORAGE_KEY = 'hanzi-monster-save-v1';
+  const DEFAULT_TARGET = 5;
+  const PET_STAGES = [
+    { sprite: 'momo', name: '桃桃球', desc: '刚出壳，最喜欢吃新学会的汉字。', need: 0 },
+    { sprite: 'doudou', name: '豆豆兽', desc: '开始对熟悉的字有反应了，答对会开心晃耳朵。', need: 4 },
+    { sprite: 'tuantuan', name: '团团兽', desc: '已经会主动把错题拖回复习池。', need: 8 },
+    { sprite: 'yaya', name: '芽芽龙', desc: '主题图鉴越满，它越爱炫耀自己的小翅膀。', need: 14 },
+    { sprite: 'huohuo', name: '火火灵', desc: '连对时会特别兴奋，学习节奏也跟着起来。', need: 22 },
+    { sprite: 'xingxing', name: '星星王', desc: '这是汉字小怪兽里的毕业气质了。', need: 32 }
+  ];
+
+  const SPRITES = [
+    { key: 'momo', label: '桃桃球' },
+    { key: 'doudou', label: '豆豆兽' },
+    { key: 'tuantuan', label: '团团兽' },
+    { key: 'yaya', label: '芽芽龙' },
+    { key: 'huohuo', label: '火火灵' },
+    { key: 'nuannuan', label: '暖暖团' },
+    { key: 'qiqiu', label: '气球仔' },
+    { key: 'mifen', label: '米粉宝' },
+    { key: 'keke', label: '可可熊' },
+    { key: 'lulu', label: '噜噜芽' },
+    { key: 'tangtang', label: '糖糖冻' },
+    { key: 'xingxing', label: '星星王' },
+    { key: 'shanbao', label: '山宝' },
+    { key: 'shuizai', label: '水仔' },
+    { key: 'fengfeng', label: '风风' },
+    { key: 'yunbao', label: '云宝' },
+    { key: 'huahua', label: '花花' },
+    { key: 'guoguo', label: '果果' }
+  ];
+
+  const CURATED_HANZI_BANK = [
+    { char: '猫', pinyin: 'mao1', meaning: '小猫', emoji: '🐱', word: '猫咪', theme: '动物' },
+    { char: '狗', pinyin: 'gou3', meaning: '小狗', emoji: '🐶', word: '小狗', theme: '动物' },
+    { char: '鸟', pinyin: 'niao3', meaning: '小鸟', emoji: '🐦', word: '飞鸟', theme: '动物' },
+    { char: '鱼', pinyin: 'yu2', meaning: '小鱼', emoji: '🐟', word: '金鱼', theme: '动物' },
+    { char: '牛', pinyin: 'niu2', meaning: '小牛', emoji: '🐮', word: '黄牛', theme: '动物' },
+    { char: '羊', pinyin: 'yang2', meaning: '小羊', emoji: '🐑', word: '山羊', theme: '动物' },
+    { char: '鸡', pinyin: 'ji1', meaning: '小鸡', emoji: '🐤', word: '公鸡', theme: '动物' },
+    { char: '兔', pinyin: 'tu4', meaning: '兔子', emoji: '🐰', word: '白兔', theme: '动物' },
+    { char: '马', pinyin: 'ma3', meaning: '小马', emoji: '🐴', word: '白马', theme: '动物' },
+    { char: '鸭', pinyin: 'ya1', meaning: '鸭子', emoji: '🦆', word: '鸭子', theme: '动物' },
+
+    { char: '米', pinyin: 'mi3', meaning: '大米', emoji: '🍚', word: '米饭', theme: '食物' },
+    { char: '面', pinyin: 'mian4', meaning: '面条', emoji: '🍜', word: '面条', theme: '食物' },
+    { char: '果', pinyin: 'guo3', meaning: '水果', emoji: '🍎', word: '水果', theme: '食物' },
+    { char: '菜', pinyin: 'cai4', meaning: '蔬菜', emoji: '🥬', word: '青菜', theme: '食物' },
+    { char: '蛋', pinyin: 'dan4', meaning: '鸡蛋', emoji: '🥚', word: '鸡蛋', theme: '食物' },
+    { char: '肉', pinyin: 'rou4', meaning: '肉', emoji: '🍖', word: '牛肉', theme: '食物' },
+    { char: '饭', pinyin: 'fan4', meaning: '吃饭', emoji: '🍚', word: '午饭', theme: '食物' },
+    { char: '糖', pinyin: 'tang2', meaning: '糖果', emoji: '🍬', word: '糖果', theme: '食物' },
+    { char: '瓜', pinyin: 'gua1', meaning: '瓜', emoji: '🍈', word: '西瓜', theme: '食物' },
+    { char: '豆', pinyin: 'dou4', meaning: '豆子', emoji: '🫘', word: '豆豆', theme: '食物' },
+    { char: '茶', pinyin: 'cha2', meaning: '茶', emoji: '🍵', word: '茶水', theme: '食物' },
+    { char: '奶', pinyin: 'nai3', meaning: '牛奶', emoji: '🥛', word: '牛奶', theme: '食物' },
+
+    { char: '红', pinyin: 'hong2', meaning: '红色', emoji: '🟥', word: '红花', theme: '颜色' },
+    { char: '黄', pinyin: 'huang2', meaning: '黄色', emoji: '🟨', word: '黄花', theme: '颜色' },
+    { char: '蓝', pinyin: 'lan2', meaning: '蓝色', emoji: '🟦', word: '蓝天', theme: '颜色' },
+    { char: '绿', pinyin: 'lv4', meaning: '绿色', emoji: '🟩', word: '绿草', theme: '颜色' },
+    { char: '白', pinyin: 'bai2', meaning: '白色', emoji: '⬜', word: '白云', theme: '颜色' },
+    { char: '黑', pinyin: 'hei1', meaning: '黑色', emoji: '⬛', word: '黑夜', theme: '颜色' },
+    { char: '紫', pinyin: 'zi3', meaning: '紫色', emoji: '🟪', word: '紫花', theme: '颜色' },
+    { char: '金', pinyin: 'jin1', meaning: '金色', emoji: '🟨', word: '金星', theme: '颜色' },
+    { char: '灰', pinyin: 'hui1', meaning: '灰色', emoji: '⬜', word: '灰云', theme: '颜色' },
+    { char: '粉', pinyin: 'fen3', meaning: '粉色', emoji: '🌸', word: '粉花', theme: '颜色' },
+
+    { char: '山', pinyin: 'shan1', meaning: '高山', emoji: '⛰️', word: '大山', theme: '自然' },
+    { char: '水', pinyin: 'shui3', meaning: '河水', emoji: '💧', word: '河水', theme: '自然' },
+    { char: '火', pinyin: 'huo3', meaning: '火苗', emoji: '🔥', word: '大火', theme: '自然' },
+    { char: '木', pinyin: 'mu4', meaning: '树木', emoji: '🌳', word: '树木', theme: '自然' },
+    { char: '风', pinyin: 'feng1', meaning: '风', emoji: '💨', word: '大风', theme: '自然' },
+    { char: '云', pinyin: 'yun2', meaning: '云朵', emoji: '☁️', word: '白云', theme: '自然' },
+    { char: '雨', pinyin: 'yu3', meaning: '下雨', emoji: '🌧️', word: '雨天', theme: '自然' },
+    { char: '花', pinyin: 'hua1', meaning: '花朵', emoji: '🌸', word: '花园', theme: '自然' },
+    { char: '草', pinyin: 'cao3', meaning: '小草', emoji: '🌿', word: '青草', theme: '自然' },
+    { char: '日', pinyin: 'ri4', meaning: '太阳', emoji: '☀️', word: '日光', theme: '自然' },
+    { char: '月', pinyin: 'yue4', meaning: '月亮', emoji: '🌙', word: '月亮', theme: '自然' },
+    { char: '星', pinyin: 'xing1', meaning: '星星', emoji: '⭐', word: '星空', theme: '自然' },
+
+    { char: '爸', pinyin: 'ba4', meaning: '爸爸', emoji: '👨', word: '爸爸', theme: '家庭' },
+    { char: '妈', pinyin: 'ma1', meaning: '妈妈', emoji: '👩', word: '妈妈', theme: '家庭' },
+    { char: '哥', pinyin: 'ge1', meaning: '哥哥', emoji: '🧒', word: '哥哥', theme: '家庭' },
+    { char: '姐', pinyin: 'jie3', meaning: '姐姐', emoji: '👧', word: '姐姐', theme: '家庭' },
+    { char: '家', pinyin: 'jia1', meaning: '家', emoji: '🏠', word: '回家', theme: '家庭' },
+    { char: '门', pinyin: 'men2', meaning: '门', emoji: '🚪', word: '开门', theme: '家庭' },
+    { char: '床', pinyin: 'chuang2', meaning: '床', emoji: '🛏️', word: '床边', theme: '家庭' },
+    { char: '灯', pinyin: 'deng1', meaning: '灯', emoji: '💡', word: '台灯', theme: '家庭' },
+    { char: '爷', pinyin: 'ye2', meaning: '爷爷', emoji: '👴', word: '爷爷', theme: '家庭' },
+    { char: '妹', pinyin: 'mei4', meaning: '妹妹', emoji: '👧', word: '妹妹', theme: '家庭' },
+
+    { char: '手', pinyin: 'shou3', meaning: '手', emoji: '✋', word: '小手', theme: '身体' },
+    { char: '足', pinyin: 'zu2', meaning: '脚', emoji: '🦶', word: '手足', theme: '身体' },
+    { char: '口', pinyin: 'kou3', meaning: '嘴巴', emoji: '👄', word: '口水', theme: '身体' },
+    { char: '耳', pinyin: 'er3', meaning: '耳朵', emoji: '👂', word: '耳朵', theme: '身体' },
+    { char: '目', pinyin: 'mu4', meaning: '眼睛', emoji: '👀', word: '目光', theme: '身体' },
+    { char: '心', pinyin: 'xin1', meaning: '心', emoji: '❤️', word: '爱心', theme: '身体' },
+    { char: '头', pinyin: 'tou2', meaning: '脑袋', emoji: '🙂', word: '头发', theme: '身体' },
+    { char: '牙', pinyin: 'ya2', meaning: '牙齿', emoji: '😁', word: '刷牙', theme: '身体' },
+    { char: '鼻', pinyin: 'bi2', meaning: '鼻子', emoji: '👃', word: '鼻子', theme: '身体' },
+    { char: '脸', pinyin: 'lian3', meaning: '脸蛋', emoji: '😊', word: '笑脸', theme: '身体' },
+
+    { char: '一', pinyin: 'yi1', meaning: '数字一', emoji: '1️⃣', word: '一个', theme: '数字' },
+    { char: '二', pinyin: 'er4', meaning: '数字二', emoji: '2️⃣', word: '二月', theme: '数字' },
+    { char: '三', pinyin: 'san1', meaning: '数字三', emoji: '3️⃣', word: '三天', theme: '数字' },
+    { char: '四', pinyin: 'si4', meaning: '数字四', emoji: '4️⃣', word: '四季', theme: '数字' },
+    { char: '五', pinyin: 'wu3', meaning: '数字五', emoji: '5️⃣', word: '五天', theme: '数字' },
+    { char: '六', pinyin: 'liu4', meaning: '数字六', emoji: '6️⃣', word: '六月', theme: '数字' },
+    { char: '七', pinyin: 'qi1', meaning: '数字七', emoji: '7️⃣', word: '七星', theme: '数字' },
+    { char: '八', pinyin: 'ba1', meaning: '数字八', emoji: '8️⃣', word: '八月', theme: '数字' },
+    { char: '九', pinyin: 'jiu3', meaning: '数字九', emoji: '9️⃣', word: '九天', theme: '数字' },
+    { char: '十', pinyin: 'shi2', meaning: '数字十', emoji: '🔟', word: '十个', theme: '数字' },
+
+    { char: '书', pinyin: 'shu1', meaning: '书', emoji: '📚', word: '看书', theme: '学校' },
+    { char: '字', pinyin: 'zi4', meaning: '字', emoji: '✍️', word: '汉字', theme: '学校' },
+    { char: '笔', pinyin: 'bi3', meaning: '笔', emoji: '✏️', word: '铅笔', theme: '学校' },
+    { char: '纸', pinyin: 'zhi3', meaning: '纸', emoji: '📄', word: '白纸', theme: '学校' },
+    { char: '本', pinyin: 'ben3', meaning: '本子', emoji: '📘', word: '书本', theme: '学校' },
+    { char: '校', pinyin: 'xiao4', meaning: '学校', emoji: '🏫', word: '学校', theme: '学校' },
+    { char: '老', pinyin: 'lao3', meaning: '老师的老', emoji: '🧑‍🏫', word: '老师', theme: '学校' },
+    { char: '师', pinyin: 'shi1', meaning: '老师的师', emoji: '🧑‍🏫', word: '老师', theme: '学校' },
+    { char: '同', pinyin: 'tong2', meaning: '相同的同', emoji: '👫', word: '同学', theme: '学校' },
+    { char: '学', pinyin: 'xue2', meaning: '学习的学', emoji: '🎒', word: '同学', theme: '学校' },
+    { char: '课', pinyin: 'ke4', meaning: '上课的课', emoji: '📝', word: '上课', theme: '学校' },
+    { char: '桌', pinyin: 'zhuo1', meaning: '桌子', emoji: '🪑', word: '书桌', theme: '学校' },
+    { char: '包', pinyin: 'bao1', meaning: '书包', emoji: '🎒', word: '书包', theme: '学校' },
+    { char: '读', pinyin: 'du2', meaning: '读书', emoji: '📖', word: '读书', theme: '学校' },
+    { char: '写', pinyin: 'xie3', meaning: '写字', emoji: '🖍️', word: '写字', theme: '学校' }
+  ];
+
+  const EXTENDED_HANZI_BANK = (window.HANZI_MONSTER_EXTENDED_BANK || []).map((item) => ({
+    meaning: '',
+    word: '',
+    emoji: '📘',
+    theme: '扩展识字',
+    ...item
+  }));
+  const ORDERED_HANZI_BANK = uniqueOptions(
+    CURATED_HANZI_BANK.concat(
+      EXTENDED_HANZI_BANK.slice().sort((a, b) => Number(a.sourceRank || Infinity) - Number(b.sourceRank || Infinity))
+    )
+  );
+  const HANZI_BANK = ORDERED_HANZI_BANK;
+  const BANK_BY_CHAR = {};
+  HANZI_BANK.forEach((item) => { BANK_BY_CHAR[item.char] = item; });
+  const THEMES = ['全部'].concat([...new Set(HANZI_BANK.map((item) => item.theme))]);
+  const LEVELS = [
+    { value: 'starter', label: '启蒙 300', size: 300, unlockNeed: 0, tip: '先把最常见、最该先会的那批字吃下来。' },
+    { value: 'core', label: '常用 800', size: 800, unlockNeed: 60, tip: '日常阅读最常碰到的字，大多都在这一层。' },
+    { value: 'growth', label: '进阶 1400', size: 1400, unlockNeed: 180, tip: '开始往更完整的识字能力推进，不再只靠最基础词。' },
+    { value: 'all', label: '全量 2000', size: HANZI_BANK.length, unlockNeed: 420, tip: '整套 2000 字全开，适合系统刷量和查漏补缺。' }
+  ];
+
+  const els = {
+    petCard: document.querySelector('.pet-card'),
+    petStage: document.getElementById('petStage'),
+    petSprite: document.getElementById('petSprite'),
+    petTitle: document.getElementById('petTitle'),
+    petDesc: document.getElementById('petDesc'),
+    petMood: document.getElementById('petMood'),
+    nicknameBadge: document.getElementById('nicknameBadge'),
+    statAnswered: document.getElementById('statAnswered'),
+    statSeen: document.getElementById('statSeen'),
+    statMastered: document.getElementById('statMastered'),
+    statStreak: document.getElementById('statStreak'),
+    statAccuracy: document.getElementById('statAccuracy'),
+    statCoins: document.getElementById('statCoins'),
+    roundText: document.getElementById('roundText'),
+    comboText: document.getElementById('comboText'),
+    roundMeter: document.getElementById('roundMeter'),
+    studyMode: document.getElementById('studyMode'),
+    themeSelect: document.getElementById('themeSelect'),
+    levelSelect: document.getElementById('levelSelect'),
+    levelRail: document.getElementById('levelRail'),
+    targetSelect: document.getElementById('targetSelect'),
+    sessionHint: document.getElementById('sessionHint'),
+    modeChip: document.getElementById('modeChip'),
+    promptSpeakBtn: document.getElementById('promptSpeakBtn'),
+    promptText: document.getElementById('promptText'),
+    helperText: document.getElementById('helperText'),
+    choices: document.getElementById('choices'),
+    resultBox: document.getElementById('resultBox'),
+    startBtn: document.getElementById('startBtn'),
+    speakBtn: document.getElementById('speakBtn'),
+    pronounceBtn: document.getElementById('pronounceBtn'),
+    nextBtn: document.getElementById('nextBtn'),
+    nicknameInput: document.getElementById('nicknameInput'),
+    saveNameBtn: document.getElementById('saveNameBtn'),
+    exportBtn: document.getElementById('exportBtn'),
+    importBtn: document.getElementById('importBtn'),
+    saveCode: document.getElementById('saveCode'),
+    resetBtn: document.getElementById('resetBtn'),
+    themeList: document.getElementById('themeList'),
+    wrongList: document.getElementById('wrongList'),
+    collectionGrid: document.getElementById('collectionGrid')
+  };
+
+  function spritePath(name) {
+    return `../images/hanzi-monster/classic/${name}.png`;
+  }
+
+  let audioCtx = null;
+  let petStage3d = null;
+  let speechCleanupTimer = 0;
+
+  function toneifySyllable(raw) {
+    const lower = raw.toLowerCase().replace(/u:/g, 'v').replace(/ü/g, 'v');
+    const match = lower.match(/^([a-zv]+)([1-5])$/);
+    if (!match) return raw.replace(/v/g, 'ü');
+    const base = match[1];
+    const tone = Number(match[2]);
+    if (tone === 5) return base.replace(/v/g, 'ü');
+    const toneMap = {
+      a: ['ā', 'á', 'ǎ', 'à'],
+      e: ['ē', 'é', 'ě', 'è'],
+      i: ['ī', 'í', 'ǐ', 'ì'],
+      o: ['ō', 'ó', 'ǒ', 'ò'],
+      u: ['ū', 'ú', 'ǔ', 'ù'],
+      v: ['ǖ', 'ǘ', 'ǚ', 'ǜ']
+    };
+    let idx = -1;
+    const target = base;
+    if (target.includes('a')) idx = target.indexOf('a');
+    else if (target.includes('e')) idx = target.indexOf('e');
+    else if (target.includes('ou')) idx = target.indexOf('o');
+    else {
+      for (let i = target.length - 1; i >= 0; i--) {
+        if ('aeiouv'.includes(target[i])) {
+          idx = i;
+          break;
+        }
+      }
+    }
+    if (idx < 0) return raw.replace(/v/g, 'ü');
+    const vowel = target[idx];
+    const marked = toneMap[vowel][tone - 1];
+    return (target.slice(0, idx) + marked + target.slice(idx + 1)).replace(/v/g, 'ü');
+  }
+
+  function toneifyPinyin(raw) {
+    return String(raw || '')
+      .trim()
+      .split(/\s+/)
+      .map((part) => toneifySyllable(part))
+      .join(' ');
+  }
+
+  function renderPinyinChip(item) {
+    return `<button class="pinyin-chip" type="button" data-speak="${item.char}" aria-label="听 ${item.char} 的发音">🔊 ${toneifyPinyin(item.pinyin)}</button>`;
+  }
+
+  function renderSpokenChar(char) {
+    return `<span class="spoken-char" data-char="${char}">${char}</span>`;
+  }
+
+  function displayMeaning(item) {
+    return item.meaning || '这个字的常用读音';
+  }
+
+  function displayWord(item) {
+    return item.word || `${item.char}字`;
+  }
+
+  function sameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function dayDiff(a, b) {
+    const aa = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+    const bb = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+    return Math.round((bb - aa) / 86400000);
+  }
+
+  function makeDefaultState() {
+    return {
+      version: 2,
+      profile: {
+        nickname: '小朋友',
+        createdAt: Date.now()
+      },
+      settings: {
+        mode: 'mix',
+        theme: '全部',
+        level: 'starter',
+        target: DEFAULT_TARGET
+      },
+      progress: {
+        answered: 0,
+        correct: 0,
+        streakDays: 1,
+        lastPlayedAt: Date.now(),
+        exp: 0,
+        coins: 0,
+        todayFinished: 0,
+        bestCombo: 0
+      },
+      chars: {},
+      wrongBook: {}
+    };
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return hydrateState(JSON.parse(raw));
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacy) return hydrateState(JSON.parse(legacy));
+      return hydrateState(makeDefaultState());
+    } catch (_) {
+      return hydrateState(makeDefaultState());
+    }
+  }
+
+  function hydrateState(input) {
+    const state = input && typeof input === 'object' ? input : makeDefaultState();
+    const defaults = makeDefaultState();
+    if (!state.profile) state.profile = defaults.profile;
+    if (!state.settings) state.settings = defaults.settings;
+    if (!state.progress) state.progress = defaults.progress;
+    if (!state.chars) state.chars = {};
+    if (!state.wrongBook) state.wrongBook = {};
+
+    state.settings.mode = state.settings.mode || defaults.settings.mode;
+    state.settings.theme = state.settings.theme || defaults.settings.theme;
+    state.settings.level = state.settings.level || defaults.settings.level;
+    state.settings.target = Number(state.settings.target || defaults.settings.target);
+    if (!THEMES.includes(state.settings.theme)) state.settings.theme = '全部';
+    if (!LEVELS.some((item) => item.value === state.settings.level)) state.settings.level = defaults.settings.level;
+
+    HANZI_BANK.forEach((item) => {
+      if (!state.chars[item.char]) state.chars[item.char] = { seen: 0, correct: 0, wrong: 0, mastery: 0 };
+    });
+
+    normalizeStreak(state);
+    return state;
+  }
+
+  function normalizeStreak(state) {
+    const now = new Date();
+    const last = new Date(state.progress.lastPlayedAt || now.getTime());
+    if (sameDay(last, now)) return;
+    const gap = dayDiff(last, now);
+    if (gap === 1) state.progress.streakDays += 1;
+    else if (gap > 1) state.progress.streakDays = 1;
+    state.progress.todayFinished = 0;
+    state.progress.lastPlayedAt = now.getTime();
+  }
+
+  function saveState() {
+    state.progress.lastPlayedAt = Date.now();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function masteryFrom(stat) {
+    const score = stat.correct * 2 - stat.wrong;
+    if (score >= 12 && stat.correct >= 8) return 5;
+    if (score >= 8 && stat.correct >= 6) return 4;
+    if (score >= 5 && stat.correct >= 4) return 3;
+    if (score >= 2 && stat.correct >= 2) return 2;
+    if (stat.correct >= 1) return 1;
+    return 0;
+  }
+
+  function shuffle(arr) {
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = copy[i];
+      copy[i] = copy[j];
+      copy[j] = tmp;
+    }
+    return copy;
+  }
+
+  function encodeSaveCode(payload) {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  }
+
+  function decodeSaveCode(code) {
+    return JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+  }
+
+  function uniqueOptions(items) {
+    const out = [];
+    const used = new Set();
+    items.forEach((item) => {
+      if (!used.has(item.char)) {
+        used.add(item.char);
+        out.push(item);
+      }
+    });
+    return out;
+  }
+
+  function currentTheme() {
+    return state.settings.theme;
+  }
+
+  function masteredCount() {
+    return HANZI_BANK.filter((item) => state.chars[item.char].mastery >= 4).length;
+  }
+
+  function seenCount() {
+    return HANZI_BANK.filter((item) => state.chars[item.char].seen > 0).length;
+  }
+
+  function isLevelUnlocked(level) {
+    return masteredCount() >= (level.unlockNeed || 0);
+  }
+
+  function highestUnlockedLevel() {
+    let unlocked = LEVELS[0];
+    LEVELS.forEach((level) => {
+      if (isLevelUnlocked(level)) unlocked = level;
+    });
+    return unlocked;
+  }
+
+  function nextLockedLevel() {
+    return LEVELS.find((level) => !isLevelUnlocked(level)) || null;
+  }
+
+  function currentLevel() {
+    const selected = LEVELS.find((item) => item.value === (state.settings.level || 'starter')) || LEVELS[0];
+    return (isLevelUnlocked(selected) ? selected : highestUnlockedLevel()).value;
+  }
+
+  function currentLevelConfig() {
+    return LEVELS.find((item) => item.value === currentLevel()) || LEVELS[0];
+  }
+
+  function levelPool() {
+    const config = currentLevelConfig();
+    return HANZI_BANK.slice(0, Math.min(config.size || HANZI_BANK.length, HANZI_BANK.length));
+  }
+
+  function currentTarget() {
+    return Number(state.settings.target) || DEFAULT_TARGET;
+  }
+
+  function currentPool() {
+    const mode = state.settings.mode;
+    const theme = currentTheme();
+    let pool = levelPool();
+
+    if (theme !== '全部') {
+      pool = pool.filter((item) => item.theme === theme);
+    }
+
+    if (mode === 'review') {
+      const review = pool.filter((item) => (state.wrongBook[item.char] || 0) > 0 || state.chars[item.char].mastery < 2);
+      if (review.length >= 4) return review;
+    }
+
+    return pool;
+  }
+
+  function pickCandidates(pool) {
+    return pool
+      .map((item) => {
+        const stat = state.chars[item.char];
+        const wrong = state.wrongBook[item.char] || 0;
+        const priority = stat.mastery * 8 + stat.seen * 2 - wrong * 6 - stat.correct * 0.5 + Math.random() * 2;
+        return { item, priority };
+      })
+      .sort((a, b) => a.priority - b.priority)
+      .map((entry) => entry.item);
+  }
+
+  function makeMaskedWord(word, target) {
+    const idx = word.indexOf(target);
+    if (idx === -1) return word;
+    return word.slice(0, idx) + '□' + word.slice(idx + target.length);
+  }
+
+  function sessionHintText() {
+    const mode = state.settings.mode;
+    const theme = currentTheme();
+    const level = currentLevelConfig();
+    const poolSize = currentPool().length;
+    const next = nextLockedLevel();
+    const unlockText = next
+      ? `再掌握 ${Math.max(0, next.unlockNeed - masteredCount())} 个字，就能解锁 ${next.label}。`
+      : '四档字阶都已经解锁了，接下来就是稳扎稳打地查漏补缺。';
+    if (mode === 'theme') return theme === '全部'
+      ? `${level.label} 当前可练 ${poolSize} 字。还没选主题，先默认从这层字库里抽。${unlockText}`
+      : `${level.label} · ${theme}。当前这条练习线有 ${poolSize} 个字，适合把一类字一口气打透。${unlockText}`;
+    if (mode === 'review') return theme === '全部'
+      ? `${level.label} 下优先复习老错字和低掌握字，当前可回刷 ${poolSize} 个。${unlockText}`
+      : `${level.label} + ${theme} 过滤。当前可回刷 ${poolSize} 个字，这种补漏洞最有效。${unlockText}`;
+    return `${level.label} 当前开放 ${poolSize} 个字。默认混合闯关，系统会优先抽不熟或刚答错过的字。${unlockText}`;
+  }
+
+  function makeQuestion() {
+    const pool = currentPool();
+    const scopedPool = levelPool();
+    const candidates = pickCandidates(pool.length >= 4 ? pool : scopedPool.length >= 4 ? scopedPool : HANZI_BANK);
+    const target = candidates[Math.floor(Math.random() * Math.min(10, candidates.length))];
+    const localPool = pool.length >= 4 ? pool : scopedPool.length >= 4 ? scopedPool : HANZI_BANK;
+    const sameTheme = shuffle(localPool.filter((item) => item.theme === target.theme && item.char !== target.char)).slice(0, 2);
+    const rest = shuffle(localPool.filter((item) => item.char !== target.char && item.theme !== target.theme)).slice(0, 5);
+    const distractors = uniqueOptions(sameTheme.concat(rest)).filter((item) => item.char !== target.char).slice(0, 3);
+    if (distractors.length < 3) {
+      const fallback = uniqueOptions(localPool.filter((item) => item.char !== target.char && !distractors.some((picked) => picked.char === item.char)));
+      distractors.push(...fallback.slice(0, 3 - distractors.length));
+    }
+    const options = shuffle([target].concat(distractors));
+    const modeKinds = ['pinyin'];
+    if (target.meaning) modeKinds.push('meaning');
+    if (target.word && target.word !== target.char) modeKinds.push('word');
+    const kind = modeKinds[session.round % modeKinds.length];
+
+    let prompt = '';
+    let helper = '';
+    let modeLabel = '';
+    let speech = '';
+
+    if (kind === 'meaning') {
+      prompt = `哪个字表示“${target.meaning}” ${target.emoji}`;
+      helper = `主题：${target.theme}。先看意思，再去认字形。`;
+      modeLabel = '🧠 看意思找字';
+      speech = `${displayMeaning(target)}`;
+    } else if (kind === 'pinyin') {
+      prompt = `读音是 “${toneifyPinyin(target.pinyin)}” 的字是哪一个？`;
+      helper = `先认读音，再认字。孩子容易卡壳的地方，通常就在这。也可以点“读汉字”再听一遍。`;
+      modeLabel = '🔊 听读音找字';
+      speech = target.char;
+    } else {
+      prompt = `“${makeMaskedWord(target.word, target.char)}” 缺哪个字？`;
+      helper = `把字放进词语里记，通常比单独死背更稳。`;
+      modeLabel = '🧩 组词补字';
+      speech = displayWord(target);
+    }
+
+    return { target, options, kind, prompt, helper, modeLabel, speech };
+  }
+
+  function currentPetStage() {
+    const mastered = masteredCount();
+    let current = PET_STAGES[0];
+    PET_STAGES.forEach((stage) => {
+      if (mastered >= stage.need) current = stage;
+    });
+    return current;
+  }
+
+  function ensureAudioContext() {
+    if (!window.AudioContext && !window.webkitAudioContext) return null;
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new Ctx();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    return audioCtx;
+  }
+
+  function playTone(type) {
+    const ctx = ensureAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'success') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(660, now);
+      osc.frequency.exponentialRampToValueAtTime(1040, now + 0.16);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.05, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+      osc.start(now);
+      osc.stop(now + 0.22);
+      return;
+    }
+
+    if (type === 'error') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.18);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.045, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      osc.start(now);
+      osc.stop(now + 0.24);
+      return;
+    }
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(520, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.035, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+    osc.start(now);
+    osc.stop(now + 0.14);
+  }
+
+  function speakText(text, focusChar) {
+    if (!text || !window.speechSynthesis) return;
+    highlightSpeechTarget(focusChar);
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'zh-CN';
+    utter.rate = 0.82;
+    utter.onend = clearSpeechHighlight;
+    utter.onerror = clearSpeechHighlight;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
+  }
+
+  function clearSpeechHighlight() {
+    clearTimeout(speechCleanupTimer);
+    document.querySelectorAll('.speaking').forEach((node) => node.classList.remove('speaking'));
+  }
+
+  function highlightSpeechTarget(char) {
+    clearSpeechHighlight();
+    if (!char) return;
+    document.querySelectorAll(`[data-char="${char}"], [data-speak="${char}"]`).forEach((node) => {
+      node.classList.add('speaking');
+    });
+    speechCleanupTimer = window.setTimeout(clearSpeechHighlight, 2200);
+  }
+
+  function initPetStage() {
+    if (!window.THREE || !els.petStage) return;
+    const width = els.petStage.clientWidth || 132;
+    const height = els.petStage.clientHeight || 132;
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(width, height);
+    els.petStage.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 100);
+    camera.position.set(0, 0.05, 4.8);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 1.3);
+    const directional = new THREE.DirectionalLight(0xfff0dd, 1.8);
+    directional.position.set(2, 3, 4);
+    scene.add(ambient, directional);
+
+    const platform = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.25, 1.45, 0.42, 36),
+      new THREE.MeshStandardMaterial({ color: 0xffd16f, roughness: 0.72, metalness: 0.08 })
+    );
+    platform.position.y = -1.28;
+    scene.add(platform);
+
+    const sparkleGroup = new THREE.Group();
+    for (let i = 0; i < 8; i++) {
+      const orb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07, 14, 14),
+        new THREE.MeshStandardMaterial({ color: i % 2 ? 0x7b69ff : 0xffa35b, emissive: i % 2 ? 0x3b2cff : 0xff8f50, emissiveIntensity: 0.6 })
+      );
+      const angle = (Math.PI * 2 * i) / 8;
+      orb.position.set(Math.cos(angle) * 1.05, -0.1 + Math.sin(i) * 0.12, Math.sin(angle) * 0.9);
+      sparkleGroup.add(orb);
+    }
+    scene.add(sparkleGroup);
+
+    const loader = new THREE.TextureLoader();
+    const spriteMat = new THREE.SpriteMaterial({ transparent: true });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(2.45, 2.45, 1);
+    sprite.position.y = 0.22;
+    scene.add(sprite);
+
+    petStage3d = {
+      renderer,
+      scene,
+      camera,
+      sprite,
+      spriteMat,
+      loader,
+      platform,
+      sparkleGroup,
+      pulse: 0
+    };
+
+    els.petCard.classList.add('has-3d');
+
+    const tick = () => {
+      if (!petStage3d) return;
+      const t = performance.now() * 0.001;
+      petStage3d.platform.rotation.y += 0.008;
+      petStage3d.sprite.position.y = 0.2 + Math.sin(t * 1.4) * 0.08;
+      petStage3d.sparkleGroup.rotation.y -= 0.01;
+      const pulse = Math.max(0, petStage3d.pulse - 0.03);
+      petStage3d.pulse = pulse;
+      petStage3d.platform.scale.setScalar(1 + pulse * 0.06);
+      petStage3d.sparkleGroup.children.forEach((orb, index) => {
+        orb.position.y = -0.12 + Math.sin(t * 2 + index) * (0.08 + pulse * 0.18);
+        orb.scale.setScalar(1 + pulse * 1.4);
+      });
+      renderer.render(scene, camera);
+      requestAnimationFrame(tick);
+    };
+    tick();
+
+    const onResize = () => {
+      if (!petStage3d || !els.petStage) return;
+      const w = els.petStage.clientWidth || 132;
+      const h = els.petStage.clientHeight || 132;
+      petStage3d.camera.aspect = w / h;
+      petStage3d.camera.updateProjectionMatrix();
+      petStage3d.renderer.setSize(w, h);
+    };
+    window.addEventListener('resize', onResize);
+  }
+
+  function updatePetStageSprite(name) {
+    els.petSprite.src = spritePath(name);
+    if (!petStage3d) return;
+    petStage3d.loader.load(spritePath(name), (texture) => {
+      texture.colorSpace = window.THREE && THREE.SRGBColorSpace ? THREE.SRGBColorSpace : texture.colorSpace;
+      petStage3d.spriteMat.map = texture;
+      petStage3d.spriteMat.needsUpdate = true;
+    });
+  }
+
+  function pulsePetStage(strength) {
+    if (!petStage3d) return;
+    petStage3d.pulse = Math.max(petStage3d.pulse, strength);
+  }
+
+  function flyTokenToPet(sourceEl, text) {
+    if (!sourceEl || !els.petCard) return;
+    const from = sourceEl.getBoundingClientRect();
+    const to = els.petCard.getBoundingClientRect();
+    const token = document.createElement('div');
+    token.className = 'flying-token';
+    token.textContent = text;
+    token.style.left = `${from.left + from.width / 2 - 26}px`;
+    token.style.top = `${from.top + from.height / 2 - 26}px`;
+    document.body.appendChild(token);
+
+    const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+    const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+    token.animate(
+      [
+        { transform: 'translate(0,0) scale(1)', opacity: 1 },
+        { transform: `translate(${dx * 0.45}px, ${dy * 0.3 - 32}px) scale(1.15)`, opacity: 1, offset: 0.45 },
+        { transform: `translate(${dx}px, ${dy}px) scale(0.35)`, opacity: 0 }
+      ],
+      { duration: 720, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }
+    ).onfinish = () => token.remove();
+  }
+
+  function renderThemeSelect() {
+    els.themeSelect.innerHTML = '';
+    THEMES.forEach((theme) => {
+      const option = document.createElement('option');
+      option.value = theme;
+      option.textContent = theme;
+      if (theme === state.settings.theme) option.selected = true;
+      els.themeSelect.appendChild(option);
+    });
+    els.levelSelect.innerHTML = '';
+    LEVELS.forEach((level) => {
+      const option = document.createElement('option');
+      option.value = level.value;
+      const unlocked = isLevelUnlocked(level);
+      option.textContent = unlocked ? level.label : `${level.label}（掌握 ${level.unlockNeed} 字解锁）`;
+      option.disabled = !unlocked;
+      if (level.value === currentLevel()) option.selected = true;
+      els.levelSelect.appendChild(option);
+    });
+    els.studyMode.value = state.settings.mode;
+    els.targetSelect.value = String(currentTarget());
+    els.sessionHint.textContent = sessionHintText();
+  }
+
+  function applyLevelSelection(levelValue) {
+    const pickedLevel = LEVELS.find((item) => item.value === levelValue) || LEVELS[0];
+    state.settings.level = isLevelUnlocked(pickedLevel) ? pickedLevel.value : highestUnlockedLevel().value;
+    saveState();
+    renderThemeSelect();
+    renderStats();
+    renderQuestion();
+  }
+
+  function renderLevelRail() {
+    els.levelRail.innerHTML = '';
+    const mastered = masteredCount();
+    const current = currentLevel();
+    LEVELS.forEach((level, index) => {
+      const unlocked = isLevelUnlocked(level);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `level-step${current === level.value ? ' current' : ''}${unlocked && current !== level.value ? ' done' : ''}${unlocked ? '' : ' locked'}`;
+      button.disabled = !unlocked;
+      const remain = Math.max(0, (level.unlockNeed || 0) - mastered);
+      button.innerHTML = `
+        <span class="level-kicker">第 ${index + 1} 阶</span>
+        <span class="level-title">${level.label}</span>
+        <span class="level-meta">${level.size} 字 · ${unlocked ? '已开放' : '待解锁'}</span>
+        <span class="level-rule">${unlocked ? level.tip : `再掌握 ${remain} 个字解锁这一阶。`}</span>
+      `;
+      if (unlocked) {
+        button.addEventListener('click', () => {
+          if (level.value === currentLevel()) return;
+          applyLevelSelection(level.value);
+        });
+      }
+      els.levelRail.appendChild(button);
+    });
+  }
+
+  function renderStats() {
+    const answered = state.progress.answered;
+    const accuracy = answered ? Math.round((state.progress.correct / answered) * 100) : 0;
+    const stage = currentPetStage();
+    const target = currentTarget();
+
+    els.nicknameBadge.textContent = `👶 ${state.profile.nickname} 的学习档`;
+    els.nicknameInput.value = state.profile.nickname;
+    updatePetStageSprite(stage.sprite);
+    els.petTitle.textContent = `${stage.name} · Lv.${Math.floor(state.progress.exp / 70) + 1}`;
+    els.petDesc.textContent = stage.desc;
+    els.petMood.textContent = state.progress.todayFinished >= target
+      ? '今天这轮已经达标，去刷一轮错题也不错'
+      : `今天还差 ${Math.max(0, target - state.progress.todayFinished)} 题就达标`;
+
+    els.statAnswered.textContent = String(answered);
+    els.statSeen.textContent = String(seenCount());
+    els.statMastered.textContent = String(masteredCount());
+    els.statStreak.textContent = `${state.progress.streakDays} 天`;
+    els.statAccuracy.textContent = `${accuracy}%`;
+    els.statCoins.textContent = String(state.progress.coins);
+
+    const done = session.round;
+    els.roundText.textContent = `第 ${Math.min(done + 1, target)} / ${target} 题`;
+    els.comboText.textContent = `连对 ${session.combo} 次`;
+    els.roundMeter.style.width = `${Math.min(100, (done / target) * 100)}%`;
+
+    renderThemes();
+    renderLevelRail();
+    renderWrongBook();
+    renderCollection();
+  }
+
+  function renderThemes() {
+    els.themeList.innerHTML = '';
+    const currentLevelLabel = currentLevelConfig().label;
+    THEMES.filter((theme) => theme !== '全部').forEach((theme) => {
+      const items = levelPool().filter((item) => item.theme === theme);
+      if (!items.length) return;
+      const learned = items.filter((item) => state.chars[item.char].mastery >= 1).length;
+      const mastered = items.filter((item) => state.chars[item.char].mastery >= 4).length;
+      const pct = Math.round((learned / items.length) * 100);
+      const div = document.createElement('div');
+      div.className = 'theme-item';
+      div.innerHTML = `
+        <div class="theme-head">
+          <strong>${theme}</strong>
+          <span>${learned}/${items.length}</span>
+        </div>
+        <div class="mini-meter"><span style="width:${pct}%"></span></div>
+        <div style="margin-top:8px; color:var(--muted); font-size:0.84rem;">${currentLevelLabel} · 掌握较稳 ${mastered} 个</div>
+      `;
+      els.themeList.appendChild(div);
+    });
+  }
+
+  function renderWrongBook() {
+    els.wrongList.innerHTML = '';
+    const sorted = Object.keys(state.wrongBook)
+      .map((char) => ({ char, wrong: state.wrongBook[char], item: BANK_BY_CHAR[char] }))
+      .filter((entry) => entry.item)
+      .sort((a, b) => b.wrong - a.wrong)
+      .slice(0, 6);
+
+    if (!sorted.length) {
+      els.wrongList.innerHTML = '<div class="empty">目前还没有明显的错题坑位。继续保持，别飘就行。</div>';
+      return;
+    }
+
+    sorted.forEach((entry) => {
+      const div = document.createElement('div');
+      div.className = 'wrong-item';
+      div.innerHTML = `
+        <div class="wrong-head">
+          <strong class="spoken-char" data-char="${entry.char}" style="font-size:1.3rem;">${entry.char}</strong>
+          <span>错 ${entry.wrong} 次</span>
+        </div>
+        <div style="margin-top:8px; color:var(--muted); font-size:0.88rem;">
+          ${renderPinyinChip(entry.item)} · ${displayWord(entry.item)} · ${displayMeaning(entry.item)}
+        </div>
+      `;
+      els.wrongList.appendChild(div);
+    });
+  }
+
+  function renderCollection() {
+    els.collectionGrid.innerHTML = '';
+    const unlocked = masteredCount();
+    SPRITES.forEach((sprite, index) => {
+      const need = index * 2;
+      const card = document.createElement('div');
+      card.className = 'sprite-card' + (unlocked >= need ? '' : ' locked');
+      card.innerHTML = `
+        <img src="${spritePath(sprite.key)}" alt="${sprite.label}">
+        <div class="sprite-name">${sprite.label}</div>
+        <div class="sprite-rule">${unlocked >= need ? '已解锁' : `掌握 ${need} 字解锁`}</div>
+      `;
+      els.collectionGrid.appendChild(card);
+    });
+  }
+
+  function renderQuestion() {
+    if (!session.current) {
+      els.modeChip.textContent = '🎯 准备开始';
+      els.modeChip.disabled = true;
+      els.modeChip.classList.remove('playable');
+      els.promptSpeakBtn.disabled = true;
+      els.promptText.textContent = '准备好了吗？点“开始学习”就开练。';
+      els.helperText.textContent = '第二版新增了主题专练和错题复习。别贪多，先把一轮做顺就很值。';
+      els.choices.innerHTML = '';
+      els.resultBox.className = 'result';
+      els.resultBox.textContent = '先来一题轻松的热身。';
+      els.speakBtn.disabled = !('speechSynthesis' in window);
+      els.pronounceBtn.disabled = true;
+      els.nextBtn.disabled = true;
+      return;
+    }
+
+    const q = session.current;
+    els.modeChip.textContent = q.modeLabel;
+    els.modeChip.disabled = !('speechSynthesis' in window);
+    els.modeChip.classList.toggle('playable', 'speechSynthesis' in window);
+    els.promptSpeakBtn.disabled = !('speechSynthesis' in window);
+    els.promptText.textContent = q.prompt;
+    els.helperText.textContent = q.helper;
+    els.resultBox.className = 'result';
+    els.resultBox.textContent = '选一个你觉得对的字。答对加经验，答错进复习池。';
+    els.speakBtn.disabled = !('speechSynthesis' in window);
+    els.pronounceBtn.disabled = !('speechSynthesis' in window);
+    els.nextBtn.disabled = true;
+    els.choices.innerHTML = '';
+
+    q.options.forEach((item) => {
+      const button = document.createElement('button');
+      button.className = 'choice';
+      button.type = 'button';
+      button.innerHTML = `
+        <span class="choice-char" data-char="${item.char}">${item.char}</span>
+        <span class="choice-meta">${item.theme}</span>
+      `;
+      button.addEventListener('click', () => answer(item, button));
+      els.choices.appendChild(button);
+    });
+  }
+
+  function startSession() {
+    session.round = 0;
+    session.combo = 0;
+    session.current = makeQuestion();
+    renderStats();
+    renderQuestion();
+    els.startBtn.textContent = '重新开始';
+  }
+
+  function awardProgress(target, correct) {
+    const stat = state.chars[target.char];
+    stat.seen += 1;
+    state.progress.answered += 1;
+
+    if (correct) {
+      stat.correct += 1;
+      session.combo += 1;
+      state.progress.correct += 1;
+      state.progress.exp += 10 + Math.min(session.combo, 5) * 2;
+      state.progress.coins += 4 + Math.min(session.combo, 5);
+      state.progress.todayFinished += 1;
+      state.progress.bestCombo = Math.max(state.progress.bestCombo, session.combo);
+      if (state.wrongBook[target.char]) {
+        state.wrongBook[target.char] -= 1;
+        if (state.wrongBook[target.char] <= 0) delete state.wrongBook[target.char];
+      }
+    } else {
+      stat.wrong += 1;
+      session.combo = 0;
+      state.wrongBook[target.char] = (state.wrongBook[target.char] || 0) + 1;
+    }
+
+    stat.mastery = masteryFrom(stat);
+  }
+
+  function answer(item, button) {
+    if (!session.current || session.locked) return;
+    session.locked = true;
+
+    const q = session.current;
+    const correct = item.char === q.target.char;
+    awardProgress(q.target, correct);
+
+    Array.from(els.choices.children).forEach((node) => {
+      node.disabled = true;
+      const char = node.querySelector('.choice-char').textContent;
+      if (char === q.target.char) node.classList.add('correct');
+    });
+
+    if (!correct) button.classList.add('wrong');
+
+    if (correct) {
+      els.resultBox.className = 'result good';
+      els.resultBox.innerHTML = `答对了！${renderSpokenChar(q.target.char)}${renderPinyinChip(q.target)} 表示 ${displayMeaning(q.target)}，常见词语是 <strong>${displayWord(q.target)}</strong>。`;
+      playTone('success');
+      pulsePetStage(0.9);
+      flyTokenToPet(button, q.target.char);
+      if (navigator.vibrate) navigator.vibrate(20);
+    } else {
+      els.resultBox.className = 'result bad';
+      els.resultBox.innerHTML = `这题选错了。正确答案是 ${renderSpokenChar(q.target.char)}${renderPinyinChip(q.target)}，词语是 <strong>${displayWord(q.target)}</strong>。没事，系统已经把它放回复习池了。`;
+      playTone('error');
+      pulsePetStage(0.35);
+      if (navigator.vibrate) navigator.vibrate([20, 60, 20]);
+    }
+
+    session.round += 1;
+    saveState();
+    renderStats();
+    els.nextBtn.disabled = false;
+    session.locked = false;
+  }
+
+  function nextQuestion() {
+    const target = currentTarget();
+    if (session.round >= target) {
+      session.current = null;
+      renderStats();
+      renderQuestion();
+      els.resultBox.className = 'result good';
+      els.resultBox.innerHTML = `这一轮已经完成啦。累计经验 <strong>${state.progress.exp}</strong>，小饼干 <strong>${state.progress.coins}</strong>。如果今天状态不错，可以切到“错题复习”再补一轮。`;
+      return;
+    }
+    session.current = makeQuestion();
+    renderStats();
+    renderQuestion();
+  }
+
+  function speakCurrent() {
+    if (!session.current || !window.speechSynthesis) return;
+    playTone('tap');
+    speakText(session.current.speech, session.current.target.char);
+  }
+
+  function pronounceCurrent() {
+    if (!session.current || !window.speechSynthesis) return;
+    const target = session.current.target;
+    playTone('tap');
+    speakText(`${target.char}。${displayWord(target)}`, target.char);
+  }
+
+  function handleSpeakChipClick(event) {
+    const chip = event.target.closest('.pinyin-chip');
+    if (!chip) return;
+    playTone('tap');
+    speakText(chip.dataset.speak || chip.textContent, chip.dataset.speak || '');
+  }
+
+  function saveNickname() {
+    const value = els.nicknameInput.value.trim();
+    if (!value) {
+      els.resultBox.className = 'result bad';
+      els.resultBox.textContent = '昵称别留空，不然小怪兽都不知道该喊谁。';
+      return;
+    }
+    state.profile.nickname = value.slice(0, 12);
+    saveState();
+    renderStats();
+    els.resultBox.className = 'result good';
+    els.resultBox.textContent = `已保存昵称：${state.profile.nickname}。`;
+  }
+
+  function exportSave() {
+    const code = encodeSaveCode(state);
+    els.saveCode.value = code;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).catch(() => {});
+    }
+    els.resultBox.className = 'result good';
+    els.resultBox.textContent = '学习码已经生成好了。复制走，换手机和平板时直接导入即可。';
+  }
+
+  function importSave() {
+    const raw = els.saveCode.value.trim();
+    if (!raw) {
+      els.resultBox.className = 'result bad';
+      els.resultBox.textContent = '先把学习码贴进来，不然导入个寂寞。';
+      return;
+    }
+    try {
+      state = hydrateState(decodeSaveCode(raw));
+      state.settings.level = currentLevel();
+      session = makeSession();
+      renderThemeSelect();
+      saveState();
+      renderStats();
+      renderQuestion();
+      els.resultBox.className = 'result good';
+      els.resultBox.textContent = '导入成功，进度已经恢复。';
+    } catch (_) {
+      els.resultBox.className = 'result bad';
+      els.resultBox.textContent = '学习码解析失败。检查一下是不是复制不完整。';
+    }
+  }
+
+  function resetSave() {
+    if (!confirm('确定要清空本地学习进度吗？这个动作不可撤销。')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    state = hydrateState(makeDefaultState());
+    session = makeSession();
+    renderThemeSelect();
+    renderStats();
+    renderQuestion();
+    els.saveCode.value = '';
+    els.resultBox.className = 'result';
+    els.resultBox.textContent = '本地进度已清空，重新开始也没什么大不了。';
+  }
+
+  function syncSettingsFromUI() {
+    state.settings.mode = els.studyMode.value;
+    state.settings.theme = els.themeSelect.value;
+    state.settings.level = els.levelSelect.value;
+    state.settings.target = Number(els.targetSelect.value);
+    applyLevelSelection(state.settings.level);
+  }
+
+  function makeSession() {
+    return {
+      round: 0,
+      combo: 0,
+      current: null,
+      locked: false
+    };
+  }
+
+  let state = loadState();
+  state.settings.level = currentLevel();
+  let session = makeSession();
+
+  initPetStage();
+  renderThemeSelect();
+  renderStats();
+  renderQuestion();
+
+  els.startBtn.addEventListener('click', startSession);
+  els.nextBtn.addEventListener('click', nextQuestion);
+  els.modeChip.addEventListener('click', speakCurrent);
+  els.promptSpeakBtn.addEventListener('click', speakCurrent);
+  els.speakBtn.addEventListener('click', speakCurrent);
+  els.pronounceBtn.addEventListener('click', pronounceCurrent);
+  els.saveNameBtn.addEventListener('click', saveNickname);
+  els.exportBtn.addEventListener('click', exportSave);
+  els.importBtn.addEventListener('click', importSave);
+  els.resetBtn.addEventListener('click', resetSave);
+  els.studyMode.addEventListener('change', syncSettingsFromUI);
+  els.themeSelect.addEventListener('change', syncSettingsFromUI);
+  els.levelSelect.addEventListener('change', syncSettingsFromUI);
+  els.targetSelect.addEventListener('change', syncSettingsFromUI);
+  els.resultBox.addEventListener('click', handleSpeakChipClick);
+  els.wrongList.addEventListener('click', handleSpeakChipClick);
+})();
+</script>
+</body>
+</html>
